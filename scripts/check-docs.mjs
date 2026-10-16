@@ -122,8 +122,37 @@ function checkLinks(file, source) {
 
 /** Read the Vitest report, refreshing it from a real run if absent. */
 function testCounts() {
-  if (!existsSync(REPORT)) {
-    console.log('check-docs: no .vitest-report.json — running the suite to obtain one…');
+  /**
+   * The report must be *current*, not merely present. A report predating a test
+   * edit would let a document claim a count that the suite has already outgrown —
+   * exactly the drift this check exists to catch. So treat a report older than any
+   * test file as absent.
+   */
+  const newestTestFile = (() => {
+    let newest = 0;
+    const walk = (dir) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          if (SKIP_DIRS.has(entry.name)) continue;
+          walk(join(dir, entry.name));
+        } else if (entry.name.endsWith('.test.ts')) {
+          newest = Math.max(newest, statSync(join(dir, entry.name)).mtimeMs);
+        }
+      }
+    };
+    walk(ROOT);
+    return newest;
+  })();
+
+  const reportIsCurrent =
+    existsSync(REPORT) && statSync(REPORT).mtimeMs >= newestTestFile;
+
+  if (!reportIsCurrent) {
+    console.log(
+      existsSync(REPORT)
+        ? 'check-docs: .vitest-report.json is older than a test file — re-running the suite…'
+        : 'check-docs: no .vitest-report.json — running the suite to obtain one…',
+    );
     // Invoke the local vitest binary directly rather than via `npx`/`pnpm exec`:
     // no shell, no npm config warnings, and no dependency on a package manager
     // being on PATH.
