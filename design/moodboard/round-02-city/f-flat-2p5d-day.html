@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, initial-scale=1">
+<title>Yard-Meridian — flat vector, 2.5D tilt, day</title>
+<style>
+  /* ============================================================
+     Yard-Meridian · Round-02 city mockup
+     style: FLAT VECTOR  ·  perspective: SLIGHT 2.5D TILT (~35°)  ·  time: DAY
+     Single self-contained file. No external resources.
+     ============================================================ */
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#101d26;color:#12212e;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{position:relative;width:1280px;height:720px;overflow:hidden;background:#cfe6f4}
+  svg.city{position:absolute;left:0;top:0;width:1280px;height:720px;display:block}
+  .hud{position:absolute;left:0;top:0;width:1280px;height:720px}
+
+  /* ---------- floating modern HUD ---------- */
+  .card{
+    position:absolute;
+    background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(245,250,254,.87));
+    -webkit-backdrop-filter:blur(9px) saturate(118%);
+    backdrop-filter:blur(9px) saturate(118%);
+    border:1px solid rgba(255,255,255,.92);
+    border-radius:14px;
+    box-shadow:0 12px 26px rgba(13,40,64,.18), 0 1px 0 rgba(255,255,255,.95) inset;
+    padding:9px 11px;overflow:hidden;
+    font-variant-numeric:tabular-nums;
+  }
+  .cap{font-size:8.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#7488a1;white-space:nowrap}
+  .meta{font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#9aa9bb;white-space:nowrap}
+  .hd{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:6px}
+  .sub{font-size:8.5px;color:#6b7f94;line-height:1.35}
+  .sub b{color:#22364b}
+  .vr{width:1px;align-self:stretch;background:linear-gradient(180deg,rgba(38,60,84,0),rgba(38,60,84,.16),rgba(38,60,84,0));margin:0 10px}
+  .chip{display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:800;letter-spacing:.07em;
+        text-transform:uppercase;padding:2px 5px;border-radius:5px;background:#eef2f7;color:#5b7186}
+  .chip.live{background:rgba(14,165,183,.14);color:#0a7c8c}
+  .chip.warn{background:rgba(245,158,11,.18);color:#9a6206}
+  .chip.off{background:#eef1f4;color:#a3b0bd}
+  .chip.armed{background:rgba(37,99,235,.16);color:#1c4fc4}
+  .chip.f1{background:rgba(229,72,77,.15);color:#b43135}
+  .chip.f2{background:rgba(124,58,237,.14);color:#5b2bb0}
+  .chip.f3{background:rgba(13,148,136,.15);color:#0a6b62}
+  .ic{width:13px;height:13px;flex:0 0 auto;fill:currentColor}
+  .ic.st{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ---------- turn + pulse (top left) ---------- */
+  .p-turn{left:18px;top:16px;width:404px;height:94px;display:flex}
+  .p-turn .col{flex:1;min-width:0}
+  .p-turn .sub,.p-view .sub{font-size:8.2px;line-height:1.28}
+  .tl{display:flex;align-items:flex-end;gap:5px;margin-top:1px}
+  .tn{font-size:23px;font-weight:800;line-height:1;color:#132a3f;letter-spacing:-.02em}
+  .to{font-size:11px;font-weight:700;color:#7e91a6;padding-bottom:2px}
+  .track{display:flex;gap:2px;margin-top:7px}
+  .track i{flex:1;height:7px;border-radius:2px;background:#e3e9f0}
+  .track i.on{background:linear-gradient(180deg,#4f9cf0,#2f6fed)}
+  .track i.pulse{box-shadow:inset 0 0 0 1.5px rgba(245,158,11,.95);background:#fdf0d8}
+  .track i.pulse.on{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+  .track i.now{box-shadow:inset 0 0 0 1.5px #132a3f}
+  .pl{display:flex;align-items:flex-end;gap:5px}
+  .pn{font-size:23px;font-weight:800;line-height:1;color:#b45309;letter-spacing:-.02em}
+  .pu{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9a6a1f;padding-bottom:3px}
+  .pl .chip{margin-left:auto;margin-bottom:3px}
+  .meter{position:relative;height:7px;border-radius:3px;background:#e6ebf1;margin-top:7px;overflow:hidden}
+  .meter i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#fbbf24,#f97316)}
+  .meter b{position:absolute;top:0;bottom:0;width:2px;background:rgba(19,42,63,.55)}
+
+  /* ---------- viewer + day cycle (top right) ---------- */
+  .p-view{left:858px;top:16px;width:404px;height:94px;display:flex}
+  .p-view .col{flex:1;min-width:0}
+  .seg{display:flex;margin-top:5px;background:#eaeff5;border-radius:8px;padding:2px;gap:2px}
+  .seg span{flex:1;text-align:center;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+            padding:3px 0;border-radius:6px;color:#8093a8}
+  .seg .on{background:#fff;color:#1b3a57;box-shadow:0 1px 3px rgba(16,42,66,.18)}
+  .seg .on.ag{color:#0d7f8f}
+  .dayline{display:flex;align-items:center;gap:5px;margin-top:5px}
+  .dayline b{font-size:12.5px;font-weight:800;color:#132a3f;letter-spacing:-.01em}
+  .dayline .t{font-size:9px;font-weight:700;color:#8395a8;margin-left:auto}
+  .daybar{position:relative;height:8px;border-radius:4px;margin-top:6px;overflow:hidden;
+    background:linear-gradient(90deg,#1e3a5f 0%,#3f6f9c 14%,#f3b57a 30%,#8ec9f0 48%,#cfe8fa 58%,#f4b183 78%,#8a5a7a 92%,#23324a 100%)}
+  .daybar i{position:absolute;top:-3px;width:3px;height:14px;border-radius:2px;background:#fff;box-shadow:0 0 0 1.5px rgba(19,42,63,.55)}
+  .daybar u{position:absolute;top:0;bottom:0;left:0;width:56%;background:rgba(255,255,255,.16)}
+
+  /* ---------- ticket log ---------- */
+  .p-tickets{left:18px;top:118px;width:272px;height:192px}
+  .tix{display:flex;align-items:center;gap:6px;height:30px;border-top:1px solid rgba(30,55,80,.09)}
+  .tix:first-of-type{border-top:0}
+  .tix .t{font-size:9.5px;font-weight:800;color:#7b8fa5;width:17px}
+  .tix .f{font-size:8px;font-weight:800;letter-spacing:.05em;padding:2px 4px;border-radius:4px;color:#fff}
+  .f1b{background:#e5484d}.f2b{background:#7c3aed}.f3b{background:#0d9488}
+  .tix .tx{font-size:10.5px;font-weight:650;color:#1b3145;flex:1;min-width:0;white-space:nowrap;overflow:hidden}
+  .tix .who{font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9dacbd}
+  .tix.concealed{background:
+      repeating-linear-gradient(135deg,rgba(124,58,237,.09) 0 5px,rgba(124,58,237,0) 5px 10px);
+      border-radius:7px;padding:0 5px;margin:0 -5px}
+  .tix.concealed .tx{color:#6b4bb0;font-style:italic;letter-spacing:.02em}
+  .tix.concealed .lock{color:#7c3aed}
+
+  /* ---------- probability ---------- */
+  .p-prob{left:18px;top:316px;width:272px;height:156px}
+  .prow{display:flex;align-items:center;gap:7px;height:25px}
+  .prow .st{font-size:10px;font-weight:800;color:#2c4256;width:24px}
+  .prow .bar{flex:1;height:9px;border-radius:5px;background:#e9eef4;overflow:hidden}
+  .prow .bar i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .prow.top .bar i{background:linear-gradient(90deg,#fb923c,#ea580c)}
+  .prow .pc{font-size:10.5px;font-weight:800;color:#8a5a08;width:30px;text-align:right}
+  .prow .lk{font-size:7.5px;font-weight:800;letter-spacing:.06em;color:#c2410c}
+
+  /* ---------- selected character ---------- */
+  .p-char{left:18px;top:478px;width:272px;height:152px}
+  .crow{display:flex;align-items:center;gap:9px}
+  .port{width:34px;height:34px;border-radius:9px;background:linear-gradient(180deg,#e8f7fa,#d3eef4);
+        display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 1px 0 #fff inset}
+  .cname{font-size:14px;font-weight:800;color:#10263a;letter-spacing:-.01em;line-height:1.1}
+  .crole{font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#0d8fa3}
+  .stats{display:flex;gap:6px;margin-top:8px}
+  .stat{flex:1;background:#f1f5f9;border-radius:8px;padding:4px 6px}
+  .stat u{display:block;font-size:7.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+          color:#8b9cb0;text-decoration:none}
+  .stat b{font-size:11.5px;font-weight:800;color:#1d3549}
+  .mission{display:flex;gap:6px;align-items:flex-start;margin-top:8px;background:rgba(13,148,136,.09);
+           border-radius:8px;padding:5px 7px}
+  .mission .ic{color:#0d9488;margin-top:1px}
+  .mission div{font-size:8.5px;line-height:1.3;color:#2f5c58}
+  .mission b{color:#0a534c}
+
+  /* ---------- minimap ---------- */
+  .p-mini{left:990px;top:118px;width:272px;height:208px}
+  .p-mini svg{display:block;width:248px;height:139.5px;border-radius:8px;box-shadow:0 1px 0 #fff inset}
+  .foot{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:7.5px;font-weight:700;
+        letter-spacing:.05em;text-transform:uppercase;color:#8296ab}
+  .foot i{display:inline-block;width:6px;height:6px;border-radius:3px;margin-right:3px;vertical-align:1px}
+  .foot .sp{margin-left:auto;color:#8296ab}
+
+  /* ---------- legend ---------- */
+  .p-legend{left:990px;top:332px;width:272px;height:142px}
+  .lrow{display:flex;align-items:center;gap:8px;height:21px}
+  .lrow svg{flex:0 0 34px;height:10px;overflow:visible}
+  .lrow .nm{font-size:9.5px;font-weight:750;color:#233a4e;flex:1;white-space:nowrap}
+  .lrow.off{opacity:.5}
+  .lrow .chip{font-size:7.5px;padding:1.5px 4px}
+
+  /* ---------- legal moves ---------- */
+  .p-moves{left:990px;top:480px;width:272px;height:150px}
+  .mrow{display:flex;align-items:center;gap:7px;height:23px;border-top:1px solid rgba(30,55,80,.08)}
+  .mrow:first-of-type{border-top:0}
+  .mrow .mi{width:14px;height:14px;flex:0 0 auto;color:#3c556b}
+  .mrow .mn{font-size:9.5px;font-weight:750;color:#22384c;width:44px}
+  .mrow .md{font-size:9px;font-weight:700;color:#0f6f7e;flex:1;white-space:nowrap}
+  .mrow .md.go{color:#146b7a}
+  .mrow.off{opacity:.45}
+  .mrow.off .mn,.mrow.off .md{color:#8797a7}
+
+  /* ---------- action bar ---------- */
+  .p-actions{left:18px;top:638px;width:1244px;height:68px;display:flex;align-items:center;gap:9px;padding:7px 12px}
+  .glab{width:80px;flex:0 0 auto}
+  .glab b{display:block;font-size:8px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#7c8fa4;line-height:1.25}
+  .glab u{display:block;font-size:7px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#b6c2cf;text-decoration:none;margin-top:2px}
+  .glab.act b{color:#1d4ed8}
+  .glab.act u{color:#7f9de0}
+  .btn{flex:1;min-width:0;height:52px;border-radius:11px;background:linear-gradient(180deg,#fbfdff,#eef3f8);
+       box-shadow:0 1px 0 #fff inset,0 0 0 1px rgba(30,60,90,.08);display:flex;align-items:center;gap:8px;padding:0 10px}
+  .btn .bi{width:22px;height:22px;flex:0 0 auto;color:#42607c}
+  .btn .bt{min-width:0}
+  .btn .bt b{display:block;font-size:10px;font-weight:800;color:#1c3348;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btn .bt u{display:block;font-size:7.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+             color:#93a4b6;text-decoration:none;margin-top:2px}
+  .btn.dim{opacity:.52}
+  .btn.armed{background:linear-gradient(180deg,#eaf1ff,#dbe7ff);box-shadow:0 0 0 2px #2563eb,0 6px 14px rgba(37,99,235,.25);}
+  .btn.armed .bi{color:#1d4ed8}
+  .btn.armed .bt b{color:#12306b}
+  .btn.armed .bt u{color:#3b6bd6}
+  .sep{width:1px;height:44px;background:rgba(30,60,90,.13);flex:0 0 auto}
+
+  /* ---------- svg map type + motion ---------- */
+  svg.city text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  .fig{animation:bob 2.7s ease-in-out infinite}
+  .fig.d1{animation-delay:.45s}.fig.d2{animation-delay:.9s}.fig.d3{animation-delay:1.35s}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.8px)}}
+  .reveal{transform-box:fill-box;transform-origin:center;animation:reveal 2.9s ease-out infinite}
+  .reveal.d2{animation-delay:1.45s}
+  @keyframes reveal{0%{transform:scale(.42);opacity:.9}65%{opacity:.22}100%{transform:scale(3.5);opacity:0}}
+  .halo{transform-box:fill-box;transform-origin:center;animation:halo 3.2s ease-in-out infinite}
+  @keyframes halo{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.12);opacity:.82}}
+  .march{animation:march 2.6s linear infinite}
+  .march.slow{animation-duration:4.4s}
+  @keyframes march{to{stroke-dashoffset:-56}}
+  .shimmer{animation:shimmer 9s linear infinite}
+  @keyframes shimmer{to{stroke-dashoffset:-600}}
+  .car{animation:run 17s linear infinite}
+  @keyframes run{
+    0%{transform:translate(0,0);opacity:0}
+    8%{opacity:.95}
+    90%{opacity:.95}
+    100%{transform:translate(300px,30px);opacity:0}
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- ==========================================================
+       CITY CANVAS — 1600x1000 world units, viewBox 0 0 1280 720
+       The ground plane + buildings live in one tilted <g>:
+         matrix(0.8 0 0 0.6553 0 36)  ==  scale 0.8 then rotateX(35°)
+       Everything the player must READ (network, stations, numbers,
+       character icons, labels) is drawn in the flat overlay layers
+       below, positioned by projecting ground points, so it stays
+       upright and undistorted.
+       ========================================================== -->
+  <svg class="city" id="city" viewBox="0 0 1280 720" width="1280" height="720" role="img"
+       aria-label="Yard-Meridian city, flat vector 2.5D tilt, midday">
+    <defs>
+      <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9fd0ee"/>
+        <stop offset="55%" stop-color="#c8e5f6"/>
+        <stop offset="100%" stop-color="#e6f3fb"/>
+      </linearGradient>
+      <linearGradient id="hazeG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#dcf0fb" stop-opacity=".8"/>
+        <stop offset="45%" stop-color="#e4f2fa" stop-opacity=".38"/>
+        <stop offset="100%" stop-color="#eaf4fa" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="sunG" cx="16%" cy="2%" r="58%">
+        <stop offset="0" stop-color="#fff6dc" stop-opacity=".85"/>
+        <stop offset="38%" stop-color="#fff2d2" stop-opacity=".22"/>
+        <stop offset="100%" stop-color="#fff2d2" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="sunDisc" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#fff8e2"/>
+        <stop offset="62%" stop-color="#fff3cd"/>
+        <stop offset="100%" stop-color="#ffe9ad" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="fgG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#dfe3d7"/>
+        <stop offset="100%" stop-color="#c9cfc2"/>
+      </linearGradient>
+      <!-- ground texture: pale plots so the ground reads as paving, not empty paper -->
+      <pattern id="plotTex" width="34" height="29" patternUnits="userSpaceOnUse">
+        <rect x="2" y="2" width="14" height="11" rx="1.5" fill="#d7dcc8" opacity=".6"/>
+        <rect x="19" y="9" width="12" height="9" rx="1.5" fill="#d1d7c1" opacity=".5"/>
+        <rect x="7" y="17" width="11" height="9" rx="1.5" fill="#dadfcc" opacity=".5"/>
+        <rect x="22" y="21" width="9" height="7" rx="1.5" fill="#d4d9c5" opacity=".55"/>
+      </pattern>
+    </defs>
+
+    <!-- sky + sun (behind the tilted ground) -->
+    <rect x="0" y="0" width="1280" height="720" fill="url(#skyG)"/>
+    <circle cx="694" cy="27" r="24" fill="url(#sunDisc)"/>
+    <circle cx="694" cy="27" r="8.5" fill="#fff8e4"/>
+
+    <!-- LAYER 1 — tilted ground: land, park, river, bridges, streets, shadows -->
+    <g id="ground" transform="matrix(0.8 0 0 0.655322 0 36)"></g>
+
+    <!-- LAYER 2 — buildings, painted back-to-front so tall blocks occlude what is behind.
+         Same ground-plane tilt as layer 1: every block stands on its own tilted footprint
+         and its walls rise straight up the screen. -->
+    <g id="bld" transform="matrix(0.8 0 0 0.655322 0 36)"></g>
+
+    <!-- atmosphere over the far city -->
+    <rect x="0" y="34" width="1280" height="86" fill="url(#hazeG)"/>
+    <rect x="0" y="0" width="1280" height="720" fill="url(#sunG)"/>
+
+    <!-- LAYER 3 — network overlay (subdued infrastructure + A1 legal moves) -->
+    <g id="net"></g>
+
+    <!-- LAYER 4 — stations, numbers, intel shading -->
+    <g id="stn"></g>
+
+    <!-- LAYER 5 — characters (upright, idle-animated) -->
+    <g id="chr"></g>
+
+    <!-- map furniture -->
+    <g id="furn"></g>
+
+    <!-- foreground ledge, keeps the canvas inside 1280x720 -->
+    <g id="fground"></g>
+  </svg>
+
+  <!-- ==========================================================
+       HUD — modern floating panels over the map
+       ========================================================== -->
+  <div class="hud">
+
+    <!-- turn counter + reveal pulse -->
+    <section class="card p-turn">
+      <div class="col">
+        <div class="cap">Turn</div>
+        <div class="tl"><span class="tn">6</span><span class="to">/ 24</span></div>
+        <div class="track" id="track"></div>
+      </div>
+      <div class="vr"></div>
+      <div class="col">
+        <div class="cap">Reveal pulse</div>
+        <div class="pl"><span class="pn">2</span><span class="pu">turns</span><span class="chip warn">Next T8</span></div>
+        <div class="meter"><i style="width:62%"></i><b style="left:37.5%"></b><b style="left:62.5%"></b></div>
+        <div class="sub" style="margin-top:5px">Last fired <b>T3</b> · pulse reveals every hidden fugitive</div>
+      </div>
+    </section>
+
+    <!-- viewer + day cycle -->
+    <section class="card p-view">
+      <div class="col">
+        <div class="cap">Viewing as</div>
+        <div class="seg"><span class="on ag">Agent</span><span>Fugitive</span></div>
+        <div class="sub" style="margin-top:5px">Fugitive view shows your own icon and hides this spread</div>
+      </div>
+      <div class="vr"></div>
+      <div class="col">
+        <div class="cap">Day cycle</div>
+        <div class="dayline">
+          <svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.3"/><path d="M8 1v1.7M8 13.3V15M1 8h1.7M13.3 8H15M3.1 3.1l1.2 1.2M11.7 11.7 12.9 12.9M12.9 3.1l-1.2 1.2M4.3 11.7 3.1 12.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <b>Midday</b><span class="t">13:20</span>
+        </div>
+        <div class="daybar"><u></u><i style="left:56%"></i></div>
+        <div class="sub" style="margin-top:5px">Dusk in 9 turns · sun north-west, shadows fall south-east</div>
+      </div>
+    </section>
+
+    <!-- ticket log -->
+    <section class="card p-tickets">
+      <div class="hd"><span class="cap">Ticket log</span><span class="meta">Newest first</span></div>
+      <div class="tix"><span class="t">T6</span><span class="f f1b">F1</span><span class="tx">Bus ticket</span><span class="who">Vulture</span></div>
+      <div class="tix concealed"><span class="t">T6</span><span class="f f2b">F2</span><span class="tx">Unknown Transport</span><span class="lock"><svg class="ic" viewBox="0 0 16 16" style="width:11px;height:11px"><rect x="3.2" y="6.8" width="9.6" height="7.2" rx="1.5"/><path d="M5.6 6.8V5.1a2.4 2.4 0 0 1 4.8 0v1.7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span></div>
+      <div class="tix"><span class="t">T5</span><span class="f f3b">F3</span><span class="tx">Taxi ticket</span><span class="who">Magpie</span></div>
+      <div class="tix"><span class="t">T5</span><span class="f f1b">F1</span><span class="tx">Taxi ticket</span><span class="who">Vulture</span></div>
+      <div class="tix"><span class="t">T4</span><span class="f f3b">F3</span><span class="tx">Metro ticket</span><span class="who">Magpie</span></div>
+    </section>
+
+    <!-- probability spread -->
+    <section class="card p-prob">
+      <div class="hd"><span class="cap">Probability · F2 Kestrel</span><span class="meta">Hidden since T3</span></div>
+      <div class="prow top"><span class="st">102</span><span class="bar"><i style="width:100%"></i></span><span class="pc">40%</span><span class="lk">LAST KNOWN</span></div>
+      <div class="prow"><span class="st">111</span><span class="bar"><i style="width:62%"></i></span><span class="pc">25%</span></div>
+      <div class="prow"><span class="st">103</span><span class="bar"><i style="width:50%"></i></span><span class="pc">20%</span></div>
+      <div class="prow"><span class="st">105</span><span class="bar"><i style="width:37%"></i></span><span class="pc">15%</span></div>
+      <div class="sub" style="margin-top:6px">Shading on the map is drawn from these weights.</div>
+    </section>
+
+    <!-- selected character -->
+    <section class="card p-char">
+      <div class="crow">
+        <div class="port">
+          <svg viewBox="0 0 24 24" style="width:22px;height:22px" aria-hidden="true">
+            <ellipse cx="12" cy="21" rx="7" ry="2.6" fill="#0d8fa3" opacity=".25"/>
+            <path d="M9 15.5h2.2V20H9zM12.8 15.5H15V20h-2.2z" fill="#20415a"/>
+            <path d="M7.6 8.2q1.6-2.2 4.4-2.2t4.4 2.2l1.2 8.2q-5.6 2-11.2 0z" fill="#0fb5c9"/>
+            <circle cx="12" cy="5.6" r="3.5" fill="#f2c9a2"/>
+            <path d="M8.5 4.6a3.5 3.5 0 0 1 7 0z" fill="#20415a"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cname">“Falcon”</div>
+          <div class="crole">Agent · selected · A1</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><u>Stamina</u><b>3 / 4</b></div>
+        <div class="stat"><u>Tickets</u><b>2 taxi</b></div>
+        <div class="stat"><u>Tickets</u><b>1 bus</b></div>
+      </div>
+      <div class="mission">
+        <svg class="ic st" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.4"/><path d="M10.4 10.4 14 14"/></svg>
+        <div><b>Mission · locate Kestrel.</b> F2 last known at 102, hidden since T3. F3 Magpie carries heavy contraband near 112.</div>
+      </div>
+    </section>
+
+    <!-- minimap -->
+    <section class="card p-mini">
+      <div class="hd"><span class="cap">City overview</span><span class="meta">Sector 7 / 24 · 618 stations</span></div>
+      <svg viewBox="0 0 250 141" aria-label="Whole-city minimap with current sector">
+        <defs>
+          <clipPath id="miniClip"><rect x="0" y="0" width="250" height="141" rx="8"/></clipPath>
+        </defs>
+        <g clip-path="url(#miniClip)">
+          <rect x="0" y="0" width="250" height="141" fill="#e6ece7"/>
+          <path d="M0 76C40 70 92 62 132 52 168 43 214 40 250 38" fill="none" stroke="#79c0e0" stroke-width="6"/>
+          <path d="M0 76C40 70 92 62 132 52 168 43 214 40 250 38" fill="none" stroke="#a8dcf0" stroke-width="2"/>
+          <g stroke="#f4f6f2" stroke-width="1.5" fill="none">
+            <path d="M0 30h250M0 108h250M38 0v141M96 0v141M164 0v141M214 0v141"/>
+            <path d="M0 8 250 128M0 60 210 141M52 0 250 96"/>
+          </g>
+          <rect x="26" y="41" width="30" height="21" rx="4" fill="#9ed08f"/>
+          <circle cx="123" cy="93" r="7" fill="#d7dde3" stroke="#b6bfc7"/>
+          <g id="minidots"></g>
+          <rect x="12" y="22" width="127" height="81" rx="4" fill="rgba(37,99,235,.08)" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="4 3"/>
+          <g stroke="#1e293b" stroke-width="1.6">
+            <path d="M12 22h9M12 22v9M139 22h-9M139 22v9M12 103h9M12 103v-9M139 103h-9M139 103v-9"/>
+          </g>
+          <circle cx="63" cy="63" r="2.6" fill="#0fb5c9" stroke="#fff" stroke-width="1.2"/>
+          <text x="70" y="66" font-size="6.5" font-weight="800" fill="#0b6b7a">YOU · 113</text>
+          <text x="16" y="34" font-size="6.5" font-weight="800" fill="#26394b" letter-spacing=".08em">SECTOR 7</text>
+          <g font-size="6" font-weight="700" fill="#7b8b9c" letter-spacing=".06em">
+            <text x="152" y="18">DOCKLANDS</text>
+            <text x="180" y="132">SOUTH MILLS</text>
+            <text x="4" y="122">HOLLOWAY</text>
+          </g>
+        </g>
+      </svg>
+      <div class="foot">
+        <span><i style="background:#2f6fed"></i>Agents 62</span>
+        <span><i style="background:#e5484d"></i>Fugitives 38</span>
+        <span class="sp">100 players · wider network</span>
+      </div>
+    </section>
+
+    <!-- transport legend -->
+    <section class="card p-legend">
+      <div class="hd"><span class="cap">Transport</span><span class="meta">Line styles</span></div>
+      <div class="lrow"><svg viewBox="0 0 34 10"><path d="M1 5h32" stroke="#22303c" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/></svg><span class="nm">On foot</span><span class="chip">Free</span></div>
+      <div class="lrow"><svg viewBox="0 0 34 10"><path d="M1 5h32" stroke="#b45309" stroke-opacity=".3" stroke-width="5.5" stroke-linecap="round"/><path d="M1 5h32" stroke="#f59e0b" stroke-width="3.4" stroke-linecap="round"/></svg><span class="nm">Taxi</span><span class="chip warn">2 tickets</span></div>
+      <div class="lrow"><svg viewBox="0 0 34 10"><path d="M1 5h32" stroke="#fff" stroke-opacity=".85" stroke-width="6" stroke-linecap="round"/><path d="M1 5h32" stroke="#2563eb" stroke-width="3.6" stroke-dasharray="7 4" stroke-linecap="round"/></svg><span class="nm">Bus</span><span class="chip warn">1 ticket</span></div>
+      <div class="lrow off"><svg viewBox="0 0 34 10"><path d="M1 5h32" stroke="#fff" stroke-opacity=".8" stroke-width="6" stroke-linecap="round"/><path d="M1 5h32" stroke="#0e7490" stroke-width="3.2" stroke-dasharray="9 3" stroke-linecap="round"/><path d="M1 5h32" stroke="#e6f6f9" stroke-width="1.2" stroke-dasharray="9 3"/></svg><span class="nm">Metro</span><span class="chip off">Terminal only</span></div>
+      <div class="lrow"><svg viewBox="0 0 34 10"><path d="M1 5h32" stroke="#7c3aed" stroke-width="3" stroke-dasharray="8 3 2 3" stroke-linecap="round"/></svg><span class="nm">Alleyway / special</span><span class="chip off">Secret</span></div>
+    </section>
+
+    <!-- legal moves for the selected character -->
+    <section class="card p-moves">
+      <div class="hd"><span class="cap">Move · A1 at 113</span><span class="meta">Riverside hub</span></div>
+      <div class="mrow">
+        <svg class="ic mi" viewBox="0 0 16 16"><path d="M4.7 2.5c.9 0 1.5.8 1.5 1.9 0 1.3-.5 2.1-.4 3.4.1 1.3-1.4 1.6-2.2 1.1-.8-.5-1-1.6-.9-2.7.1-1.4.2-2 .6-2.8.3-.6.8-.9 1.4-.9z"/><path d="M11 7.1c.9 0 1.5.8 1.5 1.9 0 1.3-.5 2.1-.4 3.4.1 1.3-1.4 1.6-2.2 1.1-.8-.5-1-1.6-.9-2.7.1-1.4.2-2 .6-2.8.3-.6.8-.9 1.4-.9z"/></svg>
+        <span class="mn">On foot</span><span class="md go">112 · 114</span><span class="chip">Free</span>
+      </div>
+      <div class="mrow">
+        <svg class="ic mi" viewBox="0 0 16 16"><path d="M2.4 9.4h11.2l-1-3.1a1.5 1.5 0 0 0-1.4-1H4.8a1.5 1.5 0 0 0-1.4 1z"/><rect x="1.6" y="9.4" width="12.8" height="3.1" rx="1.1"/><rect x="6.1" y="2.6" width="3.8" height="1.6" rx=".5"/><circle cx="4.7" cy="13.1" r="1.3"/><circle cx="11.3" cy="13.1" r="1.3"/></svg>
+        <span class="mn">Taxi</span><span class="md go">117 · 115</span><span class="chip warn">2 left</span>
+      </div>
+      <div class="mrow">
+        <svg class="ic mi" viewBox="0 0 16 16"><rect x="2.6" y="1.6" width="10.8" height="11" rx="2.1"/><rect x="4.3" y="3.6" width="7.4" height="3.2" rx=".8" fill="#fff" opacity=".8"/><circle cx="5.1" cy="14" r="1.2"/><circle cx="10.9" cy="14" r="1.2"/></svg>
+        <span class="mn">Bus</span><span class="md go">104 · 103</span><span class="chip warn">1 left</span>
+      </div>
+      <div class="mrow off">
+        <svg class="ic mi st" viewBox="0 0 16 16"><rect x="3.2" y="2" width="9.6" height="9.4" rx="2.2"/><rect x="4.9" y="3.8" width="6.2" height="2.8" rx=".7"/><path d="M5.4 12.4 3.9 15M10.6 12.4 12.1 15"/></svg>
+        <span class="mn">Metro</span><span class="md">not on a terminal</span><span class="chip off">Locked</span>
+      </div>
+      <div class="mrow off">
+        <svg class="ic mi st" viewBox="0 0 16 16"><path d="M3.4 1.8v12.4M12.6 1.8v12.4"/><path d="M6.6 5.6 10.2 8l-3.6 2.4z"/></svg>
+        <span class="mn">Alleyway</span><span class="md">no secret link here</span><span class="chip off">Locked</span>
+      </div>
+    </section>
+
+    <!-- action bar -->
+    <section class="card p-actions">
+      <div class="glab"><b>Fugitive gadgets</b><u>Read-only here</u></div>
+      <div class="btn dim">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2"/><circle cx="8" cy="8" r="5.2" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".65"/><circle cx="8" cy="8" r="7.6" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".32"/></svg>
+        <span class="bt"><b>Decoy Ping</b><u>2 turn cooldown</u></span>
+      </div>
+      <div class="btn dim">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.4" y="3.2" width="13.2" height="9.6" rx="1.7"/><circle cx="5.2" cy="7.2" r="1.7" fill="#fff" opacity=".85"/><path d="M8.6 6h4M8.6 8.2h4M3.2 10.8h9.6" stroke="#fff" stroke-width="1" opacity=".75" fill="none"/></svg>
+        <span class="bt"><b>Counterfeit Identity</b><u>1 use · 3 turns</u></span>
+      </div>
+      <div class="btn dim">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.7 1 3.3 9.1h3.3l-.9 5.9 6.9-8.6H8.8z"/></svg>
+        <span class="bt"><b>Alleyway Sprint</b><u>Needs a secret link</u></span>
+      </div>
+      <div class="sep"></div>
+      <div class="glab act"><b>Agent skills</b><u>Your faction</u></div>
+      <div class="btn">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.4" y="6.1" width="13.2" height="3.3" rx="1"/><rect x="4.1" y="9.4" width="1.7" height="4.2" rx=".5"/><rect x="10.2" y="9.4" width="1.7" height="4.2" rx=".5"/><path d="M3.9 6.1 6.2 9.4M7.8 6.1l2.3 3.3M11.7 6.1l2.3 3.3" stroke="#fff" stroke-width=".9" opacity=".75" fill="none"/></svg>
+        <span class="bt"><b>Targeted Roadblock</b><u>1 use · seals 1 street</u></span>
+      </div>
+      <div class="btn armed">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 8l4.4-3.3A6 6 0 0 1 8 14z" opacity=".9"/><circle cx="8" cy="8" r="1.5"/></svg>
+        <span class="bt"><b>Sensor Sweep</b><u>Armed · resolves this turn</u></span>
+      </div>
+      <div class="btn">
+        <svg class="bi" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.4 12 7.4H9.4v7.2H6.6V7.4H4z"/></svg>
+        <span class="bt"><b>Rapid Deployment</b><u>2 uses · move +2 nodes</u></span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ==========================================================
+     1 · PROJECTION
+     Ground plane:  scale 0.8, then rotateX(35deg)
+        stageX = 0.8 * x                    (footprint x)
+        stageY = 0.8*cos35 * y + 36         (footprint y, squashed)
+     A vertical rise of H stage pixels is a world-y offset of
+        H / (0.8*cos35) = H * UP
+     so building walls rise straight up on screen while their
+     footprint stays on the tilted ground.
+     ========================================================== */
+  var S = 0.8,
+      TILT = 35 * Math.PI / 180,
+      COS = Math.cos(TILT),
+      SIN = Math.sin(TILT),
+      TAN = Math.tan(TILT),
+      SC = S * COS,            /* 0.655322 */
+      TY = 36,
+      UP = 1 / SC;             /* world-y units per stage px of height */
+
+  var f = function (n) { return Math.round(n * 100) / 100; };
+  var sx = function (x) { return f(S * x); };
+  var sy = function (y) { return f(SC * y + TY); };
+  var sp = function (p) { return sx(p[0]) + " " + sy(p[1]); };
+  var poly = function (pts) {
+    var d = "M " + sp(pts[0]);
+    for (var i = 1; i < pts.length; i++) d += " L " + sp(pts[i]);
+    return d;
+  };
+  /* world-space polyline (for the tilted layer) */
+  var wpoly = function (pts) {
+    var d = "M " + f(pts[0][0]) + " " + f(pts[0][1]);
+    for (var i = 1; i < pts.length; i++) d += " L " + f(pts[i][0]) + " " + f(pts[i][1]);
+    return d;
+  };
+  /* smooth (Catmull-Rom -> cubic) path, world or stage via mapper */
+  var smoothWith = function (pts, m) {
+    var d = "M " + m(pts[0]);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || pts[i + 1];
+      var c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      var c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += " C " + m(c1) + " " + m(c2) + " " + m(p2);
+    }
+    return d;
+  };
+  var wsmooth = function (pts) { return smoothWith(pts, function (p) { return f(p[0]) + " " + f(p[1]); }); };
+  var ssmooth = function (pts) { return smoothWith(pts, sp); };
+
+  /* deterministic pseudo-random so the city is stable */
+  var seed = 0x2f6e2b1;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function rr(a, b) { return a + (b - a) * rnd(); }
+  function pick(arr) { return arr[Math.floor(rnd() * arr.length) % arr.length]; }
+  function shade(hex, amt) {
+    var n = parseInt(hex.slice(1), 16),
+        r = Math.max(0, Math.min(255, (n >> 16) + amt)),
+        g = Math.max(0, Math.min(255, ((n >> 8) & 255) + amt)),
+        b = Math.max(0, Math.min(255, (n & 255) + amt));
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+
+  /* ==========================================================
+     2 · CITY DATA (identical across the four round-02 mockups)
+     ========================================================== */
+  var ST = {
+    "101": [210, 120, "street"], "102": [400, 95, "street"], "103": [560, 150, "hub"],
+    "104": [700, 250, "hub"],    "105": [860, 120, "street"], "106": [1010, 190, "street"],
+    "107": [1180, 470, "terminal"], "108": [1330, 330, "street"], "109": [1400, 150, "street"],
+    "110": [120, 380, "hub"],    "111": [330, 300, "street"], "112": [520, 430, "street"],
+    "113": [650, 520, "hub"],    "114": [900, 420, "street"], "115": [1050, 560, "street"],
+    "116": [300, 600, "street"], "117": [470, 700, "hub"],    "118": [620, 820, "street"],
+    "119": [790, 900, "street"], "120": [960, 760, "street"], "121": [1120, 880, "street"],
+    "122": [1290, 700, "hub"],   "123": [1430, 820, "street"], "124": [860, 640, "terminal"]
+  };
+  var P = {};
+  for (var k in ST) P[k] = { x: ST[k][0], y: ST[k][1], cls: ST[k][2], sx: sx(ST[k][0]), sy: sy(ST[k][1]) };
+
+  /* street mesh: stations + waypoints; also the on-foot network */
+  var EDGES = [
+    ["101","102",[],"st"], ["101","111",[],"st"], ["101","110",[[160,250]],"st"],
+    ["102","103",[],"st"], ["102","105",[[620,106]],"st"], ["103","104",[],"st"],
+    ["104","105",[],"st"], ["105","106",[],"st"], ["106","107",[[1090,300]],"mn"],
+    ["107","108",[[1270,392]],"mn"], ["108","109",[[1380,238]],"st"],
+    ["110","111",[],"st"], ["110","116",[[200,492]],"st"], ["111","112",[],"st"],
+    ["111","116",[[330,452]],"st"], ["103","112",[[540,292]],"st"], ["104","113",[[680,382]],"st"],
+    ["112","113",[],"st"], ["113","114",[[780,470]],"mn"], ["113","115",[[860,540]],"mn"],
+    ["114","115",[[980,478]],"st"], ["114","106",[[952,300]],"st"],
+    ["113","116",[[480,560]],"st"],
+    ["112","117",[[430,520],[424,570],[420,700]],"br"],       /* bridge 1 · x≈420 */
+    ["115","122",[[1080,566],[1080,690],[1180,700]],"br"],    /* bridge 2 · x≈1080 */
+    ["115","120",[[1080,566],[1080,690],[1030,716]],"br"],
+    ["117","118",[[540,780]],"st"], ["118","119",[[700,882]],"st"], ["119","120",[[890,842]],"st"],
+    ["120","121",[[1030,832]],"st"], ["121","122",[[1220,800]],"st"], ["122","123",[[1360,760]],"st"],
+    ["123","121",[[1290,878]],"st"], ["120","124",[[906,700]],"st"], ["117","124",[[660,730]],"st"],
+    ["124","122",[[1060,660]],"st"], ["124","119",[[836,760]],"st"]
+  ];
+  function edgePts(e) {
+    var a = P[e[0]], b = P[e[1]], mid = e[2] || [], out = [[a.x, a.y]];
+    for (var i = 0; i < mid.length; i++) out.push(mid[i]);
+    out.push([b.x, b.y]);
+    return out;
+  }
+  /* decorative streets that are not part of the travel network */
+  var EXTRA = [
+    [[1400,150],[1500,196],[1548,300]],
+    [[1180,470],[1250,540]],
+    [[210,120],[128,74]],
+    [[520,430],[560,340],[604,262]],
+    [[900,420],[1010,436],[1050,520]],
+    [[700,250],[790,300],[860,340]],
+    [[470,700],[520,800],[560,900]],
+    [[1120,880],[1180,960]],
+    [[330,300],[300,220]],
+    [[960,760],[1050,700]]
+  ];
+
+  /* ==========================================================
+     3 · OCCUPANCY GRID — buildings avoid streets, water, park, landmarks
+     ========================================================== */
+  var GS = 8, GW = Math.ceil(1600 / GS), GH = Math.ceil(1000 / GS);
+  var occ = new Uint8Array(GW * GH);
+  function segDist(px, py, ax, ay, bx, by) {
+    var vx = bx - ax, vy = by - ay, wx = px - ax, wy = py - ay;
+    var L = vx * vx + vy * vy;
+    var t = L > 0 ? (wx * vx + wy * vy) / L : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    var dx = px - (ax + t * vx), dy = py - (ay + t * vy);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function markPolyline(pts, r) {
+    for (var i = 0; i < pts.length - 1; i++) {
+      var ax = pts[i][0], ay = pts[i][1], bx = pts[i + 1][0], by = pts[i + 1][1];
+      var x0 = Math.max(0, Math.floor((Math.min(ax, bx) - r) / GS)),
+          x1 = Math.min(GW - 1, Math.ceil((Math.max(ax, bx) + r) / GS)),
+          y0 = Math.max(0, Math.floor((Math.min(ay, by) - r) / GS)),
+          y1 = Math.min(GH - 1, Math.ceil((Math.max(ay, by) + r) / GS));
+      for (var gy = y0; gy <= y1; gy++) for (var gx = x0; gx <= x1; gx++) {
+        if (segDist(gx * GS + GS / 2, gy * GS + GS / 2, ax, ay, bx, by) <= r) occ[gy * GW + gx] = 1;
+      }
+    }
+  }
+  function markRect(x, y, w, h, pad) {
+    pad = pad || 0;
+    var x0 = Math.max(0, Math.floor((x - pad) / GS)), x1 = Math.min(GW - 1, Math.ceil((x + w + pad) / GS)),
+        y0 = Math.max(0, Math.floor((y - pad) / GS)), y1 = Math.min(GH - 1, Math.ceil((y + h + pad) / GS));
+    for (var gy = y0; gy <= y1; gy++) for (var gx = x0; gx <= x1; gx++) occ[gy * GW + gx] = 1;
+  }
+  function markDisc(cx, cy, r) { markRect(cx - r, cy - r, 2 * r, 2 * r, 0); }
+  function rectFree(x, y, w, h) {
+    var x0 = Math.max(0, Math.floor(x / GS)), x1 = Math.min(GW - 1, Math.floor((x + w) / GS)),
+        y0 = Math.max(0, Math.floor(y / GS)), y1 = Math.min(GH - 1, Math.floor((y + h) / GS));
+    for (var gy = y0; gy <= y1; gy++) for (var gx = x0; gx <= x1; gx++) if (occ[gy * GW + gx]) return false;
+    return true;
+  }
+  function occupy(x, y, w, h, pad) { markRect(x, y, w, h, pad); }
+
+  var RIVER = [[0,722],[200,690],[400,650],[560,610],[720,590],[860,576],[1000,610],[1120,628],[1240,640],[1360,640],[1480,602],[1600,566]];
+  var PARK = [150, 180, 370, 250];
+  var CATHEDRAL = [622, 172, 126, 56];
+  var CENTRAL = [1105, 385, 190, 80];
+  var SOUTHTERM = [890, 632, 130, 68];
+  var STADIUM = [1430, 880, 112, 82];
+
+  /* riverside band */
+  markPolyline(RIVER, 56);
+  markRect(PARK[0], PARK[1], PARK[2], PARK[3], 4);
+  markRect(CATHEDRAL[0] - 6, CATHEDRAL[1] - 4, CATHEDRAL[2] + 12, CATHEDRAL[3] + 10, 0);
+  markRect(CENTRAL[0] - 4, CENTRAL[1] - 4, CENTRAL[2] + 8, CENTRAL[3] + 22, 0);
+  markRect(SOUTHTERM[0] - 4, SOUTHTERM[1] - 4, SOUTHTERM[2] + 8, SOUTHTERM[3] + 8, 0);
+  markRect(STADIUM[0] - STADIUM[2] - 6, STADIUM[1] - STADIUM[3] - 6, 2 * STADIUM[2] + 12, 2 * STADIUM[3] + 12, 0);
+  for (var kk in P) markDisc(P[kk].x, P[kk].y, 21);
+  for (var i2 = 0; i2 < EDGES.length; i2++) markPolyline(edgePts(EDGES[i2]), (EDGES[i2][3] === "mn" ? 15 : 11) + 4);
+  for (var i3 = 0; i3 < EXTRA.length; i3++) markPolyline(EXTRA[i3], 15);
+
+  /* ==========================================================
+     4 · BUILDINGS — flat-vector blocks with extruded facades
+     ========================================================== */
+  /* warm terracotta / ochre / slate rooftops against pale plaster walls —
+     the value jump between roof and near wall is what makes the tilt read */
+  var ROOFS = ["#d9825c","#c96f4e","#dfa45f","#b8563c","#7f909c","#6e8494","#9aa8b4","#dfc07f","#c2a184","#cdbfae","#a8896f","#d9a06e","#7d8b96","#c98f5f","#b3663f","#8f7f6e"];
+  var WALLS = ["#f7e2c6","#f3d8b6","#f0e8da","#f6dbc8","#efcfba","#e5ecf1","#dce5eb","#eef2f5","#f7ebd0","#ebd8ba","#f0e7de","#e3d8c8","#f5dec6","#e8ded0","#f0d3c0","#dfe3e8","#ead9c0","#e7dccb"];
+  var blds = [], yards = [];
+
+  /* Wall height is tied to footprint depth: the roof face stays the dominant
+     plane (like GTA 1/2 / SimCity) while the near facade still carries windows.
+     k is wall-height / roof-depth in stage pixels. */
+  function place(bx, by, bw, bd, kLo, kHi, pad) {
+    if (bx < 3 || by < 8 || bx + bw > 1597 || by + bd > 997) return false;
+    if (!rectFree(bx, by, bw, bd)) return false;
+    occupy(bx, by, bw, bd, pad);
+    var base = SC * bd, k = rr(kLo, kHi);
+    var hs = Math.max(8, Math.min(base * k, SC * (by + bd) + TY - 44));
+    var ri = Math.floor(rnd() * ROOFS.length);
+    var roll = rnd();
+    var kind = roll < 0.26 ? "hip" : (roll < 0.46 ? "gable" : "flat");
+    blds.push({
+      x: bx, y: by, w: bw, d: bd, hs: hs, y1: by + bd,
+      roof: ROOFS[ri], wall: WALLS[ri % WALLS.length], kind: kind,
+      seedR: rnd(), seedR2: rnd(), seedR3: rnd()
+    });
+    return true;
+  }
+
+  /* pass 1 — city blocks */
+  for (var gy2 = 22; gy2 < 978; gy2 += 25) {
+    for (var gx2 = 12; gx2 < 1584; gx2 += 26) {
+      if (rnd() < 0.09) continue;
+      var bw = rr(26, 54), bd = rr(22, 42), kLo = 0.78, kHi = 1.3;
+      var r0 = rnd();
+      if (r0 < 0.14) { bw = rr(52, 84); bd = rr(34, 58); }           /* deep blocks */
+      else if (r0 < 0.2) { bw = rr(48, 70); bd = rr(36, 52); kLo = 0.7; kHi = 1.1; } /* warehouses */
+      var roll2 = rnd();
+      if (roll2 > 0.55 && roll2 < 0.84) { kLo = 1.3; kHi = 1.75; }   /* 4-7 storeys */
+      else if (roll2 >= 0.84 && roll2 < 0.96) { kLo = 1.75; kHi = 2.4; }
+      else if (roll2 >= 0.96) { kLo = 2.4; kHi = 3.6; }              /* towers */
+      place(Math.round(gx2 + rr(-6, 6)), Math.round(gy2 + rr(-5, 5)), bw, bd, kLo, kHi, 3);
+    }
+  }
+  /* pass 2 — infill: narrow back-street buildings that fill the leftover gaps */
+  for (var gy3 = 18; gy3 < 982; gy3 += 14) {
+    for (var gx3 = 8; gx3 < 1590; gx3 += 13) {
+      if (rnd() < 0.32) continue;
+      place(Math.round(gx3 + rr(-3, 3)), Math.round(gy3 + rr(-3, 3)),
+            rr(15, 30), rr(13, 25), 0.65, 1.15, 2);
+    }
+  }
+  /* pass 3 — yards, courtyards and small gardens between the blocks */
+  for (var gy4 = 16; gy4 < 984; gy4 += 16) {
+    for (var gx4 = 8; gx4 < 1592; gx4 += 15) {
+      if (rnd() < 0.45) continue;
+      var yw = rr(11, 22), yd = rr(10, 19);
+      var yx = Math.round(gx4 + rr(-3, 3)), yy = Math.round(gy4 + rr(-3, 3));
+      if (yx < 2 || yy < 6 || yx + yw > 1598 || yy + yd > 996) continue;
+      if (!rectFree(yx, yy, yw, yd)) continue;
+      occupy(yx, yy, yw, yd, 1);
+      yards.push({ x: yx, y: yy, w: yw, d: yd, k: rnd() });
+    }
+  }
+  function yardStr(y) {
+    var k = y.k;
+    if (k < 0.42) {                               /* green courtyard + bushes */
+      return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="2" fill="#a9d79c"/>' +
+             '<circle cx="' + f(y.x + y.w * 0.32) + '" cy="' + f(y.y + y.d * 0.42) + '" r="' + f(Math.min(y.w, y.d) * 0.26) + '" fill="#7cbb72"/>' +
+             '<circle cx="' + f(y.x + y.w * 0.7) + '" cy="' + f(y.y + y.d * 0.66) + '" r="' + f(Math.min(y.w, y.d) * 0.2) + '" fill="#8ecb83"/>';
+    }
+    if (k < 0.74) {                               /* paved yard */
+      return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#d3d7c5"/>' +
+             '<rect x="' + f(y.x + 1.5) + '" y="' + f(y.y + 1.5) + '" width="' + f(y.w - 3) + '" height="' + f(y.d - 3) + '" fill="none" stroke="#c2c8b4" stroke-width="1"/>';
+    }
+    if (k < 0.88) {                               /* parked cars */
+      return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#cfd3c2"/>' +
+             '<rect x="' + f(y.x + 2) + '" y="' + f(y.y + 2) + '" width="6" height="3.4" rx="1.2" fill="#b0b8bd"/>' +
+             '<rect x="' + f(y.x + 10) + '" y="' + f(y.y + 2) + '" width="6" height="3.4" rx="1.2" fill="#a8b0b6"/>';
+    }
+    return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#d8d3c1"/>'; /* gravel */
+  }
+
+  /* ---------- drawing helpers ---------- */
+  function shadowStr(x, y, w, d, hs) {
+    var dx = 5 + 0.19 * hs, dy = 4 + 0.14 * hs;
+    return '<rect x="' + f(x + dx) + '" y="' + f(y + dy) + '" width="' + f(w) + '" height="' + f(d) +
+           '" fill="#3d5a66" opacity=".2"/>' +
+           '<rect x="' + f(x + 2) + '" y="' + f(y + 2) + '" width="' + f(w) + '" height="' + f(d) +
+           '" fill="#3d5a66" opacity=".12"/>';
+  }
+  function windowsStr(b, ny, lift) {
+    var out = "", pitchX = 13, pitchY = 14.5, ww = 8, wh = 9;
+    var cols = Math.max(1, Math.floor((b.w - 5) / pitchX));
+    var stepX = (b.w - 3) / cols;
+    var plinth = Math.min(lift * 0.3, 9);
+    var base = ny - plinth - 3;
+    var rows = Math.floor((lift - plinth - 6) / pitchY);
+    if (rows < 1 || b.w < 18) return "";
+    var glass = b.seedR < 0.34 ? "#5f96b8" : (b.seedR < 0.7 ? "#74a9c8" : "#93c1d8");
+    for (var r = 0; r < rows; r++) {
+      var wy = base - (r + 1) * pitchY + 2;
+      if (wy < ny - lift + 2.5) break;
+      for (var c = 0; c < cols; c++) {
+        var wx = b.x + 1.5 + c * stepX + (stepX - ww) / 2;
+        out += '<rect x="' + f(wx) + '" y="' + f(wy) + '" width="' + ww + '" height="' + wh + '" rx="1" fill="' + glass + '"/>';
+      }
+    }
+    return out;
+  }
+  function roofDetailStr(b, ry, lift) {
+    var out = "";
+    /* parapet / roof edge */
+    out += '<rect x="' + f(b.x + 1.4) + '" y="' + f(ry + 1.4) + '" width="' + f(b.w - 2.8) + '" height="' + f(b.d - 2.8) +
+           '" fill="none" stroke="' + shade(b.roof, -26) + '" stroke-opacity=".45" stroke-width="1.6"/>';
+    /* chimneys */
+    var n = 1 + Math.floor(b.seedR2 * 3);
+    for (var i = 0; i < n; i++) {
+      var cx = b.x + 5 + ((b.seedR3 * 7 + i * 0.37) % 1) * Math.max(4, b.w - 12);
+      var cy = ry + 4 + (((b.seedR * 5 + i * 0.53) % 1) * Math.max(2, b.d - 10));
+      var cw = 5.4, ch = 9 + b.seedR3 * 6;
+      out += '<rect x="' + f(cx) + '" y="' + f(cy - ch) + '" width="' + cw + '" height="' + f(ch + 3) + '" fill="#c08a6b"/>' +
+             '<rect x="' + f(cx - 0.8) + '" y="' + f(cy - ch - 2) + '" width="' + f(cw + 1.6) + '" height="3" fill="#a9724f"/>';
+    }
+    /* roof clutter */
+    if (b.w > 34 && b.d > 28) {
+      out += '<rect x="' + f(b.x + b.w - 17) + '" y="' + f(ry + 5) + '" width="7" height="5" rx="1" fill="#c3ccd2"/>' +
+             '<rect x="' + f(b.x + b.w - 15) + '" y="' + f(ry + 10) + '" width="3" height="3" fill="#aeb8bf"/>';
+    }
+    /* small roof garden */
+    if (b.seedR > 0.74 && b.w > 30 && b.d > 26) {
+      out += '<rect x="' + f(b.x + 5) + '" y="' + f(ry + b.d - 15) + '" width="' + f(Math.min(16, b.w - 10)) + '" height="9" rx="2" fill="#8ec47f"/>';
+    }
+    return out;
+  }
+  function buildingStr(b) {
+    var lift = b.hs * UP, ny = b.y + b.d, out = "";
+    var plinth = Math.min(lift * 0.3, 9);
+    /* gable / hip roof: the visible near slope, drawn above the wall top */
+    var roofRise = 0;
+    if (b.kind === "hip" && lift > 12) roofRise = Math.min(b.d * TAN * 0.55, 16);
+    if (b.kind === "gable" && lift > 12) roofRise = Math.min(b.d * TAN * 0.65, 20);
+    var wallTop = ny - lift;
+    /* wall (near face, facing the viewer) */
+    out += '<rect x="' + f(b.x) + '" y="' + f(wallTop) + '" width="' + f(b.w) + '" height="' + f(lift) + '" fill="' + b.wall + '"/>';
+    out += windowsStr(b, ny, lift);
+    /* plinth + door */
+    out += '<rect x="' + f(b.x) + '" y="' + f(ny - plinth) + '" width="' + f(b.w) + '" height="' + f(plinth) + '" fill="' + shade(b.wall, -24) + '"/>';
+    if (b.w > 26 && b.seedR2 > 0.45) {
+      var dxd = b.x + 4 + b.seedR3 * (b.w - 14);
+      out += '<rect x="' + f(dxd) + '" y="' + f(ny - plinth * 0.78) + '" width="6" height="' + f(plinth * 0.78) + '" rx="1" fill="#8a6a52"/>';
+    }
+    /* wall / roof junction: dark cornice + a lit cap */
+    out += '<rect x="' + f(b.x) + '" y="' + f(wallTop) + '" width="' + f(b.w) + '" height="2.6" fill="' + shade(b.roof, -34) + '" opacity=".85"/>';
+    out += '<rect x="' + f(b.x) + '" y="' + f(wallTop + 2.6) + '" width="' + f(b.w) + '" height="1.4" fill="#ffffff" opacity=".35"/>';
+    /* shopfront awning on some street-level facades */
+    if (b.seedR2 < 0.22 && b.w > 26 && plinth > 5) {
+      out += '<rect x="' + f(b.x + 1) + '" y="' + f(ny - plinth - 4.5) + '" width="' + f(b.w - 2) + '" height="4.5" rx="1.4" fill="' +
+             (b.seedR3 < 0.5 ? "#c85a52" : "#3f7f8c") + '"/>';
+    }
+    /* roof face (footprint lifted) */
+    out += '<rect x="' + f(b.x) + '" y="' + f(b.y - lift) + '" width="' + f(b.w) + '" height="' + f(b.d) + '" fill="' + b.roof + '"/>';
+    /* sunlit far edge of the roof */
+    out += '<rect x="' + f(b.x) + '" y="' + f(b.y - lift) + '" width="' + f(b.w) + '" height="2.4" fill="' + shade(b.roof, 26) + '" opacity=".7"/>';
+    if (roofRise > 0) {
+      out += '<rect x="' + f(b.x) + '" y="' + f(wallTop - roofRise) + '" width="' + f(b.w) + '" height="' + f(roofRise) + '" fill="' + shade(b.roof, -14) + '"/>' +
+             '<rect x="' + f(b.x) + '" y="' + f(wallTop - roofRise) + '" width="' + f(b.w) + '" height="2" fill="' + shade(b.roof, -40) + '"/>';
+    }
+    out += roofDetailStr(b, b.y - lift, lift);
+    return out;
+  }
+
+  /* ---------- landmarks, also extruded, sorted with the blocks ---------- */
+  function landmarkCathedral() {
+    var x = CATHEDRAL[0], y = CATHEDRAL[1], w = CATHEDRAL[2], d = CATHEDRAL[3];
+    var hs = 30, lift = hs * UP, ny = y + d, out = "";
+    var wallTop = ny - lift;
+    /* nave wall with tall arched windows */
+    out += '<rect x="' + f(x) + '" y="' + f(wallTop) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#f2e7d3"/>';
+    for (var c = 0; c < 6; c++) {
+      var wx = x + 11 + c * 18;
+      out += '<rect x="' + f(wx) + '" y="' + f(wallTop + 5) + '" width="7" height="' + f(lift - 11) + '" rx="3.5" fill="#6d9ec0"/>';
+    }
+    out += '<rect x="' + f(x) + '" y="' + f(ny - 5) + '" width="' + f(w) + '" height="5" fill="#ded0b8"/>';
+    /* buttresses along the near wall */
+    for (var b2 = 0; b2 < 5; b2++) {
+      out += '<rect x="' + f(x + 20 + b2 * 22) + '" y="' + f(ny - lift - 6) + '" width="4" height="' + f(lift + 6) + '" fill="#e6d9c1"/>';
+    }
+    /* pitched slate roof: lifted footprint + ridge rise */
+    var ridge = 13;
+    out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#63737f"/>';
+    out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="2.4" fill="#8194a0"/>';
+    out += '<rect x="' + f(x + 4) + '" y="' + f(y - lift - ridge) + '" width="' + f(w - 8) + '" height="' + f(ridge + 2) + '" fill="#6f808c"/>';
+    out += '<rect x="' + f(x + 4) + '" y="' + f(y - lift - ridge) + '" width="' + f(w - 8) + '" height="2" fill="#8b9da8"/>';
+    /* two facade towers with spires */
+    var towers = [[x - 9, 26], [x + w - 17, 26]];
+    for (var t = 0; t < 2; t++) {
+      var tx = towers[t][0], tw = towers[t][1], td = 38, ths = 58, tl = ths * UP, tny = y + td;
+      out += '<rect x="' + f(tx) + '" y="' + f(tny - tl) + '" width="' + f(tw) + '" height="' + f(tl) + '" fill="#f6efe2"/>';
+      out += '<rect x="' + f(tx + 6) + '" y="' + f(tny - tl + 10) + '" width="7" height="13" rx="3.5" fill="#6d9ec0"/>';
+      out += '<rect x="' + f(tx) + '" y="' + f(tny - 4) + '" width="' + f(tw) + '" height="4" fill="#e2d5bd"/>';
+      out += '<rect x="' + f(tx) + '" y="' + f(y - tl) + '" width="' + f(tw) + '" height="' + f(td) + '" fill="#5c6c78"/>';
+      var top = y - tl;
+      out += '<polygon points="' + f(tx) + ',' + f(top) + ' ' + f(tx + tw) + ',' + f(top) + ' ' + f(tx + tw / 2) + ',' + f(top - 38) +
+             '" fill="#54626e"/><rect x="' + f(tx + tw / 2 - 0.9) + '" y="' + f(top - 47) + '" width="1.8" height="11" fill="#e8c46a"/>';
+    }
+    /* crossing tower */
+    out += '<rect x="' + f(x + w / 2 - 7) + '" y="' + f(y - lift - ridge - 26) + '" width="14" height="' + f(30) + '" fill="#f6efe2"/>' +
+           '<polygon points="' + f(x + w / 2 - 9) + ',' + f(y - lift - ridge - 26) + ' ' + f(x + w / 2 + 9) + ',' + f(y - lift - ridge - 26) + ' ' + f(x + w / 2) + ',' + f(y - lift - ridge - 52) + '" fill="#54626e"/>';
+    return { y1: ny + 30, s: out };
+  }
+  function landmarkCentral() {
+    var x = CENTRAL[0], y = CENTRAL[1], w = CENTRAL[2], d = CENTRAL[3];
+    var hs = 40, lift = hs * UP, ny = y + d, out = "";
+    out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#e6ecf1"/>';
+    for (var c = 0; c < 8; c++) out += '<rect x="' + f(x + 10 + c * 23) + '" y="' + f(ny - lift + 11) + '" width="11" height="15" rx="2" fill="#7fb0cd"/>';
+    out += '<rect x="' + f(x + w / 2 - 22) + '" y="' + f(ny - lift - 16) + '" width="44" height="18" rx="4" fill="#dfe6ec"/>';
+    out += '<rect x="' + f(x) + '" y="' + f(ny - 10) + '" width="' + f(w) + '" height="10" fill="#d6dde3"/>';
+    out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#8b9aa6"/>';
+    /* barrel roof over the shed */
+    out += '<rect x="' + f(x + 30) + '" y="' + f(y - lift) + '" width="' + f(w - 60) + '" height="' + f(d) + '" fill="#a7b6c1"/>';
+    out += '<rect x="' + f(x + 30) + '" y="' + f(y - lift) + '" width="' + f(w - 60) + '" height="9" fill="#c4d0d9"/>';
+    /* wings */
+    out += '<rect x="' + f(x - 34) + '" y="' + f(y - 22 - 26 * UP) + '" width="34" height="' + f(22 + 26 * UP) + '" fill="#eef2f5"/>' +
+           '<rect x="' + f(x - 34) + '" y="' + f(y - 22 - 26 * UP) + '" width="34" height="22" fill="#9dacb7"/>' +
+           '<rect x="' + f(x + w) + '" y="' + f(y - 22 - 26 * UP) + '" width="34" height="' + f(22 + 26 * UP) + '" fill="#eef2f5"/>' +
+           '<rect x="' + f(x + w) + '" y="' + f(y - 22 - 26 * UP) + '" width="34" height="22" fill="#9dacb7"/>';
+    /* clock */
+    out += '<circle cx="' + f(x + w / 2) + '" cy="' + f(ny - lift + 26) + '" r="7" fill="#f6f1e4"/>';
+    return { y1: ny + 24, s: out };
+  }
+  function landmarkSouth() {
+    var x = SOUTHTERM[0], y = SOUTHTERM[1], w = SOUTHTERM[2], d = SOUTHTERM[3];
+    var hs = 26, lift = hs * UP, ny = y + d, out = "";
+    out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#eae4d8"/>';
+    for (var c = 0; c < 5; c++) out += '<rect x="' + f(x + 9 + c * 24) + '" y="' + f(ny - lift + 8) + '" width="10" height="11" rx="2" fill="#7fb0cd"/>';
+    out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#8794a0"/>';
+    out += '<rect x="' + f(x + 16) + '" y="' + f(y - lift) + '" width="' + f(w - 32) + '" height="' + f(d) + '" fill="#9fadb8"/>';
+    out += '<rect x="' + f(x + 16) + '" y="' + f(y - lift) + '" width="' + f(w - 32) + '" height="7" fill="#bcc8d1"/>';
+    /* platform canopy */
+    out += '<rect x="' + f(x - 26) + '" y="' + f(y + 6 - 14 * UP) + '" width="26" height="' + f(20 + 14 * UP) + '" fill="#dfe6ea"/>' +
+           '<rect x="' + f(x - 26) + '" y="' + f(y + 6 - 14 * UP) + '" width="26" height="18" fill="#6f7e8a"/>';
+    return { y1: ny + 16, s: out };
+  }
+  function landmarkStadium() {
+    var cx = STADIUM[0], cy = STADIUM[1], rx = STADIUM[2], ry = STADIUM[3];
+    var lift = 30 * UP, out = "";
+    out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy) + '" rx="' + rx + '" ry="' + ry + '" fill="#c3ccd4"/>';
+    out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + rx + '" ry="' + ry + '" fill="#9fb0bd"/>';
+    out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 22) + '" ry="' + (ry - 17) + '" fill="#b8c6d1"/>';
+    out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 40) + '" ry="' + (ry - 31) + '" fill="#7cb96f"/>';
+    out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 66) + '" ry="' + (ry - 51) + '" fill="none" stroke="#f2f5f3" stroke-width="1.6"/>';
+    for (var i = 0; i < 4; i++) {
+      var ax = cx + (i < 2 ? -1 : 1) * (rx - 12), ay = cy - lift + (i % 2 === 0 ? -1 : 1) * (ry - 12);
+      out += '<rect x="' + f(ax - 2) + '" y="' + f(ay - 26) + '" width="4" height="26" fill="#8b98a3"/>' +
+             '<rect x="' + f(ax - 9) + '" y="' + f(ay - 34) + '" width="18" height="9" rx="2" fill="#e9eef2"/>';
+    }
+    return { y1: cy + ry, s: out };
+  }
+
+  var items = [];
+  for (var bi = 0; bi < blds.length; bi++) {
+    var bb = blds[bi];
+    items.push({ y1: bb.y1, s: buildingStr(bb) });
+  }
+  var lms = [landmarkCathedral(), landmarkCentral(), landmarkSouth(), landmarkStadium()];
+  for (var li = 0; li < lms.length; li++) items.push({ y1: lms[li].y1, s: lms[li].s });
+  items.sort(function (a, b) { return a.y1 - b.y1; });
+
+  /* ==========================================================
+     5 · GROUND LAYER (tilted): terrain, water, streets, shadows
+     ========================================================== */
+  var G = [];
+
+  /* land */
+  G.push('<rect x="0" y="0" width="1600" height="1000" fill="#dee3d2"/>');
+  G.push('<rect x="0" y="0" width="1600" height="1000" fill="url(#plotTex)"/>');
+  for (var yi = 0; yi < yards.length; yi++) G.push(yardStr(yards[yi]));
+
+  /* --- park --- */
+  G.push('<rect x="' + PARK[0] + '" y="' + PARK[1] + '" width="' + PARK[2] + '" height="' + PARK[3] + '" rx="26" fill="#7cbb78"/>');
+  G.push('<rect x="' + (PARK[0] + 9) + '" y="' + (PARK[1] + 9) + '" width="' + (PARK[2] - 18) + '" height="' + (PARK[3] - 18) + '" rx="20" fill="#93cf8c"/>');
+  G.push('<ellipse cx="252" cy="342" rx="60" ry="39" fill="#63bcd8"/>');
+  G.push('<ellipse cx="252" cy="342" rx="60" ry="39" fill="none" stroke="#d8e9e4" stroke-width="4"/>');
+  G.push('<ellipse cx="238" cy="334" rx="26" ry="15" fill="#96d8ea" opacity=".7"/>');
+  /* park paths */
+  G.push('<path d="' + wsmooth([[160,300],[230,268],[318,262],[400,236],[500,206]]) + '" fill="none" stroke="#e6d9b4" stroke-width="13" stroke-linecap="round"/>');
+  G.push('<path d="' + wsmooth([[186,420],[232,372],[300,340],[330,300],[356,250],[402,196]]) + '" fill="none" stroke="#e6d9b4" stroke-width="11" stroke-linecap="round"/>');
+  G.push('<path d="' + wsmooth([[330,300],[392,332],[452,392],[500,418]]) + '" fill="none" stroke="#e6d9b4" stroke-width="11" stroke-linecap="round"/>');
+  G.push('<path d="' + wsmooth([[500,206],[506,300],[500,418]]) + '" fill="none" stroke="#e6d9b4" stroke-width="10" stroke-linecap="round"/>');
+
+  /* --- river --- */
+  var riverPath = wsmooth(RIVER);
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#8fa6a4" stroke-width="104" stroke-linecap="round"/>');
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#dbe2d6" stroke-width="96" stroke-linecap="round"/>');
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#5cb0d6" stroke-width="88" stroke-linecap="round"/>');
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#7cc4e4" stroke-width="52" stroke-linecap="round"/>');
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#e2f4fd" stroke-width="2.4" stroke-dasharray="34 54" class="shimmer" opacity=".85"/>');
+  G.push('<path d="' + riverPath + '" fill="none" stroke="#5aa9cd" stroke-width="3" stroke-dasharray="70 120" opacity=".35"/>');
+
+  /* --- bridges --- */
+  function riverYAt(x) {
+    for (var i = 0; i < RIVER.length - 1; i++) {
+      if (x >= RIVER[i][0] && x <= RIVER[i + 1][0]) {
+        var t = (x - RIVER[i][0]) / (RIVER[i + 1][0] - RIVER[i][0]);
+        return RIVER[i][1] + t * (RIVER[i + 1][1] - RIVER[i][1]);
+      }
+    }
+    return 640;
+  }
+  function bridgeStr(bx) {
+    var by = riverYAt(bx), w = 32, y0 = by - 68, y1 = by + 68;
+    return '<rect x="' + f(bx - w / 2 - 3) + '" y="' + f(y0 - 2) + '" width="' + (w + 6) + '" height="' + f(y1 - y0 + 4) + '" rx="3" fill="#9aa5ad"/>' +
+           '<rect x="' + f(bx - w / 2) + '" y="' + f(y0) + '" width="' + w + '" height="' + f(y1 - y0) + '" fill="#c2cbd1"/>' +
+           '<rect x="' + f(bx - w / 2 + 3) + '" y="' + f(y0) + '" width="' + (w - 6) + '" height="' + f(y1 - y0) + '" fill="#aeb8bf"/>' +
+           '<rect x="' + f(bx - w / 2) + '" y="' + f(y0) + '" width="3" height="' + f(y1 - y0) + '" fill="#f2f5f6"/>' +
+           '<rect x="' + f(bx + w / 2 - 3) + '" y="' + f(y0) + '" width="3" height="' + f(y1 - y0) + '" fill="#f2f5f6"/>' +
+           '<rect x="' + f(bx - w / 2 + 2) + '" y="' + f(by - 3) + '" width="' + (w - 4) + '" height="2" fill="#f2f5f6" opacity=".8"/>' +
+           '<rect x="' + f(bx - w / 2 + 2) + '" y="' + f(by + 3) + '" width="' + (w - 4) + '" height="2" fill="#f2f5f6" opacity=".8"/>';
+  }
+  G.push(bridgeStr(420));
+  G.push(bridgeStr(1080));
+
+  /* --- plazas --- */
+  G.push('<rect x="596" y="156" width="204" height="172" rx="16" fill="#ddd6c4"/>');
+  G.push('<rect x="608" y="166" width="180" height="152" rx="12" fill="#e6dfcd"/>');
+  G.push('<rect x="1085" y="380" width="230" height="140" rx="14" fill="#d9ded9"/>');
+  G.push('<rect x="1096" y="388" width="208" height="124" rx="10" fill="#e5e8e2"/>');
+  G.push('<rect x="820" y="612" width="150" height="96" rx="12" fill="#dadcd4"/>');
+  G.push('<rect x="1240" y="200" width="120" height="90" rx="10" fill="#dcdfd7"/>');   /* market square */
+
+  /* --- streets: pavements, asphalt, markings --- */
+  var allStreets = EDGES.map(function (e) { return { pts: edgePts(e), kind: e[3] }; })
+    .concat(EXTRA.map(function (p) { return { pts: p, kind: "st" }; }));
+  var si;
+  for (si = 0; si < allStreets.length; si++) {
+    var w1 = allStreets[si].kind === "mn" || allStreets[si].kind === "br" ? 30 : 21;
+    G.push('<path d="' + wpoly(allStreets[si].pts) + '" fill="none" stroke="#e3e5d4" stroke-width="' + (w1 + 8) + '" stroke-linejoin="round" stroke-linecap="round"/>');
+  }
+  for (si = 0; si < allStreets.length; si++) {
+    var w2 = allStreets[si].kind === "mn" || allStreets[si].kind === "br" ? 30 : 21;
+    G.push('<path d="' + wpoly(allStreets[si].pts) + '" fill="none" stroke="' + (allStreets[si].kind === "mn" || allStreets[si].kind === "br" ? "#8e99a2" : "#9ba5ad") + '" stroke-width="' + w2 + '" stroke-linejoin="round" stroke-linecap="round"/>');
+  }
+  for (si = 0; si < allStreets.length; si++) {
+    if (allStreets[si].kind === "mn" || allStreets[si].kind === "br") {
+      G.push('<path d="' + wpoly(allStreets[si].pts) + '" fill="none" stroke="#eef2f3" stroke-width="1.6" stroke-dasharray="11 13" opacity=".75"/>');
+    }
+  }
+  /* rail viaduct (flavour) from Central Station heading north-east */
+  G.push('<path d="' + wsmooth([[1295,420],[1370,360],[1440,300],[1520,250]]) + '" fill="none" stroke="#bdb9ad" stroke-width="22" stroke-linecap="round"/>');
+  G.push('<path d="' + wsmooth([[1295,420],[1370,360],[1440,300],[1520,250]]) + '" fill="none" stroke="#8f8b80" stroke-width="2" stroke-dasharray="6 6"/>');
+  /* rail from the South Terminal */
+  G.push('<path d="' + wsmooth([[1010,676],[1110,720],[1210,790],[1300,860]]) + '" fill="none" stroke="#bdb9ad" stroke-width="18" stroke-linecap="round"/>');
+  G.push('<path d="' + wsmooth([[1010,676],[1110,720],[1210,790],[1300,860]]) + '" fill="none" stroke="#8f8b80" stroke-width="2" stroke-dasharray="6 6"/>');
+
+  /* --- ground details: trees, gardens, quay steps --- */
+  function treeStr(x, y, r) {
+    return '<ellipse cx="' + f(x + 3) + '" cy="' + f(y + 3) + '" rx="' + f(r * 0.95) + '" ry="' + f(r * 0.6) + '" fill="#4f7a55" opacity=".18"/>' +
+           '<rect x="' + f(x - 1.3) + '" y="' + f(y - r - 6) + '" width="2.6" height="' + f(r + 8) + '" fill="#8a6a52"/>' +
+           '<circle cx="' + f(x) + '" cy="' + f(y - r - 6) + '" r="' + f(r) + '" fill="#6fb46a"/>' +
+           '<circle cx="' + f(x - r * 0.35) + '" cy="' + f(y - r - 8 - r * 0.3) + '" r="' + f(r * 0.6) + '" fill="#86c77f"/>';
+  }
+  var ti;
+  for (ti = 0; ti < 46; ti++) {
+    var tx = rr(PARK[0] + 12, PARK[0] + PARK[2] - 12), ty = rr(PARK[1] + 12, PARK[1] + PARK[3] - 12);
+    var dp = Math.sqrt(Math.pow(tx - 252, 2) + Math.pow(ty - 342, 2));
+    if (dp < 72) continue;
+    G.push(treeStr(tx, ty, rr(9, 15)));
+  }
+  var streetTrees = [[560,300],[600,320],[160,300],[200,320],[1180,560],[1150,600],[740,340],[770,300],[430,470],[900,470],[560,700],[620,660],[1260,760],[1330,740]];
+  for (ti = 0; ti < streetTrees.length; ti++) G.push(treeStr(streetTrees[ti][0], streetTrees[ti][1], rr(7, 11)));
+
+  /* allotments (flavour) */
+  G.push('<rect x="380" y="762" width="140" height="118" rx="8" fill="#dcd9c6"/>');
+  for (var ay = 0; ay < 4; ay++) for (var ax = 0; ax < 4; ax++) {
+    G.push('<rect x="' + (392 + ax * 32) + '" y="' + (774 + ay * 26) + '" width="24" height="18" rx="3" fill="' + (rnd() < 0.5 ? "#9ccf87" : "#b6d79a") + '"/>');
+  }
+  /* dock piers on the north bank */
+  G.push('<rect x="690" y="556" width="58" height="14" rx="3" fill="#c9b391"/>');
+  G.push('<rect x="700" y="570" width="10" height="22" fill="#b9a382"/>');
+  G.push('<rect x="726" y="570" width="10" height="22" fill="#b9a382"/>');
+  G.push('<rect x="1156" y="592" width="52" height="12" rx="3" fill="#c9b391"/>');
+
+  /* --- building shadows, cast south-east from a north-west sun --- */
+  for (var sj = 0; sj < blds.length; sj++) {
+    var sb = blds[sj];
+    G.push(shadowStr(sb.x, sb.y, sb.w, sb.d, sb.hs));
+  }
+  G.push(shadowStr(CATHEDRAL[0] - 8, CATHEDRAL[1], CATHEDRAL[2] + 16, CATHEDRAL[3], 84));
+  G.push(shadowStr(CENTRAL[0] - 34, CENTRAL[1], CENTRAL[2] + 68, CENTRAL[3], 40));
+  G.push(shadowStr(SOUTHTERM[0] - 26, SOUTHTERM[1], SOUTHTERM[2] + 52, SOUTHTERM[3], 26));
+  G.push('<ellipse cx="' + (STADIUM[0] + 14) + '" cy="' + (STADIUM[1] + 10) + '" rx="' + (STADIUM[2] + 6) + '" ry="' + (STADIUM[3] + 4) + '" fill="#5d7a70" opacity=".16"/>');
+
+  /* one moving car (deliberately sparse ambient actor, desaturated, unringed) */
+  G.push('<g transform="translate(700,534)"><g class="car">' +
+    '<rect x="-9" y="-4.5" width="18" height="9" rx="2.4" fill="#aab3b9"/>' +
+    '<rect x="-4" y="-8.5" width="10" height="5" rx="1.6" fill="#98a2a9"/>' +
+    '<rect x="-2.6" y="-8" width="7" height="4" rx="1" fill="#cfe3ee"/>' +
+    '<circle cx="-5" cy="4.6" r="1.9" fill="#6d757b"/><circle cx="5" cy="4.6" r="1.9" fill="#6d757b"/>' +
+    '</g></g>');
+
+  /* ==========================================================
+     6 · NETWORK OVERLAY (flat layer, upright)
+     Permanent infrastructure is subdued; A1's legal moves are bright.
+     ========================================================== */
+  var N = [];
+  /* metro (terminal ↔ terminal, crosses the river as a long jump) */
+  var metro1 = [[1180,470],[1080,520],[980,578],[900,620],[860,640]];
+  var metro2 = [[1180,470],[1232,560],[1290,700]];
+  N.push('<path d="' + ssmooth(metro1) + '" fill="none" stroke="#ffffff" stroke-opacity=".8" stroke-width="7" stroke-linecap="round"/>');
+  N.push('<path d="' + ssmooth(metro1) + '" fill="none" stroke="#0e7490" stroke-opacity=".3" stroke-width="4.4" stroke-linecap="round"/>');
+  N.push('<path d="' + ssmooth(metro1) + '" fill="none" stroke="#e8f7fa" stroke-opacity=".8" stroke-width="1.6" stroke-dasharray="9 5"/>');
+  N.push('<path d="' + ssmooth(metro2) + '" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="6" stroke-linecap="round"/>');
+  N.push('<path d="' + ssmooth(metro2) + '" fill="none" stroke="#0e7490" stroke-opacity=".24" stroke-width="3.8" stroke-linecap="round"/>');
+  /* bus corridors */
+  var bus1 = [[120,380],[300,270],[450,190],[560,150],[700,250],[900,330],[1060,400],[1180,470]];
+  var bus2 = [[470,700],[660,730],[860,640],[1050,660],[1290,700]];
+  var bus3 = [[120,380],[330,430],[500,470],[650,520]];
+  var bus4 = [[700,250],[680,382],[650,520],[560,570],[450,590],[424,600],[420,700],[470,700]];
+  [bus1, bus2, bus3, bus4].forEach(function (b) {
+    N.push('<path d="' + ssmooth(b) + '" fill="none" stroke="#ffffff" stroke-opacity=".72" stroke-width="7" stroke-linecap="round"/>');
+    N.push('<path d="' + ssmooth(b) + '" fill="none" stroke="#2563eb" stroke-opacity=".26" stroke-width="4" stroke-dasharray="15 8" stroke-linecap="round"/>');
+  });
+  /* secret links */
+  var alleys = [[[470,700],[700,730],[960,760]], [[860,120],[940,140],[1010,190]]];
+  alleys.forEach(function (a) {
+    N.push('<path d="' + ssmooth(a) + '" fill="none" stroke="#ffffff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>');
+    N.push('<path d="' + ssmooth(a) + '" fill="none" stroke="#7c3aed" stroke-opacity=".55" stroke-width="2.8" stroke-dasharray="9 4 2 4" stroke-linecap="round"/>');
+  });
+
+  /* ---------- A1 legal moves (the only bright route lines) ---------- */
+  var MOVES = [
+    { mode: "foot", to: ["112", "114"], col: "#22303c", cls: "march", dash: "1.5 7", w: 3.4, cap: "foot", label: "ON FOOT" },
+    { mode: "taxi", to: ["117", "115"], col: "#f59e0b", cls: "march", dash: "0", w: 5, cap: "taxi", label: "TAXI" },
+    { mode: "bus",  to: ["104", "103"], col: "#2563eb", cls: "march", dash: "14 8", w: 5, cap: "bus", label: "BUS" },
+    { mode: "alley", to: [], col: "#7c3aed", cls: "march", dash: "8 4 2 4", w: 3.6, cap: "alley", label: "ALLEY", off: true },
+    { mode: "metro", to: [], col: "#0e7490", cls: "", dash: "10 6", w: 4, cap: "metro", label: "METRO", off: true }
+  ];
+  var ROUTES = {
+    "112": { mode: "foot", pts: [[650,520],[560,466],[520,430]] },
+    "114": { mode: "foot", pts: [[650,520],[780,470],[900,420]] },
+    "117": { mode: "taxi", pts: [[650,520],[520,560],[440,556],[424,570],[420,700],[470,700]] },
+    "115": { mode: "taxi", pts: [[650,520],[860,540],[1050,560]] },
+    "104": { mode: "bus",  pts: [[650,520],[680,382],[700,250]] },
+    "103": { mode: "bus",  pts: [[650,520],[680,382],[700,250],[620,190],[560,150]] }
+  };
+  var reachable = [];
+  MOVES.forEach(function (m) {
+    m.to.forEach(function (to) {
+      var r = ROUTES[to];
+      if (!r) return;
+      var d = ssmooth(r.pts);
+      N.push('<path d="' + d + '" fill="none" stroke="#ffffff" stroke-opacity=".8" stroke-width="' + (m.w + 3.4) + '" stroke-linecap="round"/>');
+      N.push('<path d="' + d + '" fill="none" stroke="' + m.col + '" stroke-width="' + m.w + '" stroke-linecap="round" stroke-dasharray="' + m.dash + '" class="' + m.cls + '"/>');
+      if (m.mode === "taxi") {
+        N.push('<path d="' + d + '" fill="none" stroke="#fff7e6" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 24" class="march slow"/>');
+      }
+      reachable.push({ id: to, mode: m.mode, col: m.col });
+    });
+  });
+  /* reachable halos sit just under the station markers */
+  reachable.forEach(function (r) {
+    var p = P[r.id];
+    N.push('<circle cx="' + p.sx + '" cy="' + p.sy + '" r="19" fill="none" stroke="' + r.col + '" stroke-opacity=".85" stroke-width="2.4"/>');
+    N.push('<circle cx="' + p.sx + '" cy="' + p.sy + '" r="19" fill="' + r.col + '" fill-opacity=".1"/>');
+    N.push('<circle cx="' + p.sx + '" cy="' + p.sy + '" r="24" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.2"/>');
+  });
+
+  /* ==========================================================
+     7 · STATIONS — numbers stay upright (flat layer, projected)
+     ========================================================== */
+  var CH = [];
+  /* probability shading for F2 (drawn under the markers) */
+  var PROB = [["102", 0.40, 34], ["111", 0.25, 28], ["103", 0.20, 26], ["105", 0.15, 24]];
+  PROB.forEach(function (pr) {
+    var p = P[pr[0]], r = pr[2];
+    CH.push('<circle cx="' + p.sx + '" cy="' + p.sy + '" r="' + r + '" fill="#f59e0b" fill-opacity="' + f(0.08 + 0.16 * pr[1]) + '"/>');
+    CH.push('<circle cx="' + p.sx + '" cy="' + p.sy + '" r="' + r + '" fill="none" stroke="#c2740a" stroke-opacity=".5" stroke-width="1.4" stroke-dasharray="4 4"/>');
+  });
+  /* labels for the spread */
+  var probLabels = [["102", 40, 22, 19], ["111", 25, -20, 30], ["103", 20, 24, 19], ["105", 15, 24, 19]];
+  probLabels.forEach(function (pl) {
+    var p = P[pl[0]];
+    CH.push('<g transform="translate(' + f(p.sx + pl[2]) + ',' + f(p.sy + pl[3]) + ')">' +
+      '<rect x="-13" y="-7" width="26" height="14" rx="4" fill="#ffffff" fill-opacity=".9"/>' +
+      '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="800" fill="#b45309">' + pl[1] + '%</text></g>');
+  });
+
+  var stnMarkers = "";
+  for (var id in P) {
+    var p = P[id], cls = p.cls, num = id;
+    var isSel = (id === "113");
+    if (cls === "terminal") {
+      stnMarkers += '<g transform="translate(' + p.sx + ',' + p.sy + ')">' +
+        (isSel ? '<circle r="19" fill="#0fb5c9" fill-opacity=".16"/>' : '') +
+        '<rect x="-15" y="-13" width="30" height="26" rx="8" fill="#12314a"/>' +
+        '<rect x="-15" y="-13" width="30" height="26" rx="8" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity=".85"/>' +
+        '<text x="0" y="0.5" text-anchor="middle" dominant-baseline="central" font-size="11.5" font-weight="800" fill="#ffffff">' + num + '</text>' +
+        '<g transform="translate(11,-11)"><circle r="7" fill="#ffffff"/><rect x="-3.4" y="-3.6" width="6.8" height="7" rx="1.6" fill="#0e7490"/><rect x="-2.4" y="-2.6" width="4.8" height="2.4" rx=".6" fill="#ffffff"/></g>' +
+        '<g transform="translate(-11,-11)"><circle r="7" fill="#ffffff"/><rect x="-3.8" y="-3.2" width="7.6" height="6.6" rx="1.6" fill="#2563eb"/><rect x="-2.6" y="-2.2" width="5.2" height="2" rx=".6" fill="#ffffff"/></g>' +
+        '</g>';
+    } else if (cls === "hub") {
+      stnMarkers += '<g transform="translate(' + p.sx + ',' + p.sy + ')">' +
+        (isSel ? '<circle r="19" fill="#0fb5c9" fill-opacity=".16"/>' : '') +
+        '<rect x="-12.5" y="-12.5" width="25" height="25" rx="8" fill="#2563eb"/>' +
+        '<rect x="-12.5" y="-12.5" width="25" height="25" rx="8" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity=".8"/>' +
+        '<text x="0" y="0.5" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="800" fill="#ffffff">' + num + '</text>' +
+        '<g transform="translate(10.5,-10.5)"><circle r="6.4" fill="#ffffff"/><rect x="-3.4" y="-2.9" width="6.8" height="5.8" rx="1.4" fill="#2563eb"/><rect x="-2.4" y="-2" width="4.8" height="1.8" rx=".5" fill="#ffffff"/></g>' +
+        '</g>';
+    } else {
+      stnMarkers += '<g transform="translate(' + p.sx + ',' + p.sy + ')">' +
+        '<circle r="11" fill="#ffffff"/>' +
+        '<circle r="11" fill="none" stroke="#2b415a" stroke-width="1.7"/>' +
+        '<text x="0" y="0.5" text-anchor="middle" dominant-baseline="central" font-size="9.8" font-weight="800" fill="#1b2f42">' + num + '</text>' +
+        '</g>';
+    }
+  }
+  CH.push(stnMarkers);
+  /* terminal / hub callouts (upright text) */
+  function tag(x, y, txt, col, bg) {
+    return '<g transform="translate(' + f(x) + ',' + f(y) + ')">' +
+      '<rect x="0" y="-8" width="' + (txt.length * 5.6 + 12) + '" height="16" rx="5" fill="' + bg + '" fill-opacity=".92"/>' +
+      '<text x="6" y="0" dominant-baseline="central" font-size="8.5" font-weight="800" letter-spacing=".08em" fill="' + col + '">' + txt + '</text></g>';
+  }
+  CH.push(tag(P["107"].sx - 92, P["107"].sy + 24, "CENTRAL STATION", "#12314a", "#ffffff"));
+  CH.push(tag(P["124"].sx + 20, P["124"].sy + 2, "SOUTH TERMINAL", "#12314a", "#ffffff"));
+  CH.push(tag(P["104"].sx + 18, P["104"].sy + 20, "CATHEDRAL SQUARE", "#6b5410", "#ffffff"));
+  CH.push(tag(P["110"].sx + 16, P["110"].sy + 18, "PARK GATE", "#2f6b3c", "#ffffff"));
+
+  /* ==========================================================
+     8 · CHARACTERS — upright icons, base ring on the ground
+     ========================================================== */
+  var CHR = [];
+  function figureStr(col, hair, ghost) {
+    var body = ghost ? 'fill="#ccd6dd" stroke="#3f4d59" stroke-width="1.4" stroke-dasharray="3 2.5"' : 'fill="' + col + '"';
+    var leg = ghost ? 'fill="#b9c5ce"' : 'fill="#2b3a4a"';
+    var head = ghost ? 'fill="#dbe3e9" stroke="#3f4d59" stroke-width="1.4"' : 'fill="#f0c9a2"';
+    return '<rect x="-4.4" y="-15" width="3.4" height="15" rx="1.6" ' + leg + '/>' +
+           '<rect x="1" y="-15" width="3.4" height="15" rx="1.6" ' + leg + '/>' +
+           '<path d="M-6.6,-31 q1.6,-4.4 6.6,-4.4 q5,0 6.6,4.4 l1.4,17.4 q-8,2.6 -16,0 z" ' + body + '/>' +
+           '<circle cx="0" cy="-35.2" r="4.7" ' + head + '/>' +
+           (ghost ? '' : '<path d="M-4.7,-36.6 a4.7,4.7 0 0 1 9.4,0 z" fill="' + hair + '"/>');
+  }
+  var CHARS = [
+    { id: "A1", x: 650, y: 520, kind: "you", dir: "up", name: "A1 FALCON", tag: "SELECTED", col: "#0fb5c9", hair: "#123047", cls: "fig" },
+    { id: "A2", x: 1180, y: 470, kind: "agent", dir: "up", name: "A2", col: "#2f6fed", hair: "#123047", cls: "fig d1" },
+    { id: "A3", x: 960, y: 760, kind: "agent", dir: "up", name: "A3", col: "#2f6fed", hair: "#3a2b1f", cls: "fig d2" },
+    { id: "F1", x: 700, y: 250, kind: "fug", dir: "up", name: "F1 VULTURE", tag: "REVEALED THIS TURN", col: "#e5484d", hair: "#3a2b1f", cls: "fig d3", reveal: true },
+    { id: "F2", x: 400, y: 95, kind: "ghost", dir: "down", name: "F2 KESTREL", tag: "LAST KNOWN · T3", col: "#8d9aa8", hair: "#8d9aa8", cls: "fig d1", lx: 34, ly: 6 },
+    { id: "F3", x: 520, y: 430, kind: "ghost", dir: "down", name: "F3 MAGPIE", tag: "BELIEVED · CONTRABAND", col: "#8d9aa8", hair: "#8d9aa8", cls: "fig d2", dx: -26, dy: 18, lx: -14, contraband: true }
+  ];
+  CHARS.forEach(function (c) {
+    var px0 = sx(c.x) + (c.dx || 0), py0 = sy(c.y) + (c.dy || 0);
+    var ringCol = c.kind === "ghost" ? "#8d9aa8" : c.col;
+    var g = ['<g transform="translate(' + f(px0) + ',' + f(py0) + ')">'];
+    /* character shadow on the tilted ground */
+    g.push('<ellipse cx="4" cy="4" rx="14" ry="7" fill="#33475c" opacity=".18"/>');
+    /* distinct coloured base ring (players only) */
+    if (c.kind === "ghost") {
+      g.push('<ellipse rx="15" ry="12.3" fill="none" stroke="' + ringCol + '" stroke-opacity=".85" stroke-width="2.2" stroke-dasharray="4 4"/>');
+      g.push('<ellipse rx="15" ry="12.3" fill="#8d9aa8" fill-opacity=".1"/>');
+      g.push('<ellipse rx="22" ry="18" fill="none" stroke="#8d9aa8" stroke-opacity=".45" stroke-width="1.4" stroke-dasharray="2 6"/>');
+    } else {
+      g.push('<ellipse rx="15" ry="12.3" fill="' + ringCol + '" fill-opacity=".22"/>');
+      g.push('<ellipse rx="15" ry="12.3" fill="none" stroke="' + ringCol + '" stroke-width="3.2"/>');
+      g.push('<ellipse rx="15" ry="12.3" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="1.1"/>');
+    }
+    if (c.kind === "you") {
+      g.push('<ellipse rx="22" ry="18" fill="none" stroke="#0fb5c9" stroke-width="2.2" class="halo"/>');
+    }
+    if (c.reveal) {
+      g.push('<circle r="13" fill="none" stroke="#e5484d" stroke-width="3" class="reveal"/>');
+      g.push('<circle r="13" fill="none" stroke="#ff9068" stroke-width="2" class="reveal d2"/>');
+      g.push('<circle r="9" fill="#ffd9c9" fill-opacity=".55"/>');
+    }
+    /* upright figure, idle bob (offset below the ring for "down" markers) */
+    var figShift = c.dir === "down" ? 51 : 0;
+    g.push('<g transform="translate(0,' + figShift + ')"><g class="' + c.cls + '">' + figureStr(c.col, c.hair, c.kind === "ghost") + '</g></g>');
+    if (c.contraband) {
+      g.push('<g transform="translate(-15,' + (figShift - 34) + ')"><rect x="-7" y="-6.5" width="14" height="13" rx="2.4" fill="#f59e0b"/>' +
+             '<path d="M-7,-1.5h14M0,-6.5v13" stroke="#7c4a04" stroke-width="1.2"/></g>');
+    }
+    g.push('</g>');
+    /* label, kept upright and clear of the marker number */
+    var lx = px0 + (c.lx || 0), ly = py0 + (c.dir === "down" ? 67 : -56) + (c.ly || 0);
+    if (c.kind === "you") {
+      g.push('<g transform="translate(' + f(lx) + ',' + f(ly) + ')">' +
+        '<rect x="-46" y="-9" width="92" height="18" rx="6" fill="#0d3b46" fill-opacity=".92"/>' +
+        '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="9.5" font-weight="800" letter-spacing=".06em" fill="#eafcff">' + c.name + '</text></g>');
+      g.push('<g transform="translate(' + f(lx) + ',' + f(ly - 14) + ')">' +
+        '<rect x="-33" y="-7" width="66" height="14" rx="5" fill="#0fb5c9"/>' +
+        '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="800" letter-spacing=".1em" fill="#04303a">' + c.tag + '</text></g>');
+    } else {
+      var lift2 = c.kind === "you" ? 6 : 0;
+      var tw = c.name.length * 5.7 + (c.tag ? 8 : 12);
+      g.push('<g transform="translate(' + f(lx) + ',' + f(ly) + ')">' +
+        '<rect x="' + f(-tw / 2) + '" y="-8.5" width="' + f(tw) + '" height="17" rx="5.5" fill="' + (c.kind === "fug" ? "#7f1d21" : (c.kind === "ghost" ? "#4a5763" : "#17407f")) + '" fill-opacity=".92"/>' +
+        '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="8.8" font-weight="800" letter-spacing=".06em" fill="#ffffff">' + c.name + '</text></g>');
+      if (c.tag) {
+        var tagY = c.dir === "down" ? ly + 15 : ly - 15;
+        g.push('<g transform="translate(' + f(lx) + ',' + f(tagY) + ')">' +
+          '<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="7.6" font-weight="800" letter-spacing=".08em" fill="' + (c.kind === "fug" ? "#b43135" : "#5b6773") + '" stroke="#ffffff" stroke-width="2.8" paint-order="stroke">' + c.tag + '</text></g>');
+      }
+    }
+    CHR.push(g.join(""));
+  });
+
+  /* ==========================================================
+     9 · MAP FURNITURE (compass, district label)
+     ========================================================== */
+  var FU = [];
+  FU.push('<g transform="translate(324,540)">' +
+    '<circle r="17" fill="#ffffff" fill-opacity=".82"/><circle r="17" fill="none" stroke="#93a3b4" stroke-width="1.2"/>' +
+    '<path d="M0,-11 4,3 0,0.4 -4,3z" fill="#1e3d5c"/><path d="M0,0.4 4,3 0,11 -4,3z" fill="#b7c3ce"/>' +
+    '<text x="0" y="-20" text-anchor="middle" font-size="8.5" font-weight="800" fill="#31465d">N</text></g>');
+  FU.push('<text x="350" y="544" font-size="9" font-weight="800" letter-spacing=".14em" fill="#41586e" stroke="#ffffff" stroke-width="3" stroke-opacity=".85" paint-order="stroke">YARD-MERIDIAN · CATHEDRAL QUARTER</text>');
+  /* foreground ledge so the tilted ground ends inside the frame */
+  FU.push('<rect x="0" y="690" width="1280" height="30" fill="url(#fgG)"/>');
+  FU.push('<rect x="0" y="689" width="1280" height="2" fill="#b6bcae" fill-opacity=".8"/>');
+
+  /* ==========================================================
+     10 · INJECT
+     ========================================================== */
+  document.getElementById("ground").innerHTML = G.join("");
+  document.getElementById("bld").innerHTML = items.map(function (it) { return it.s; }).join("");
+  document.getElementById("net").innerHTML = N.join("");
+  document.getElementById("stn").innerHTML = CH.join("");
+  document.getElementById("chr").innerHTML = CHR.join("");
+  document.getElementById("furn").innerHTML = FU.join("");
+
+  /* minimap player dots (~100 players across the wider city) */
+  var dots = [];
+  for (var d = 0; d < 100; d++) {
+    var mx = rr(4, 246), my = rr(6, 136);
+    var fug = rnd() < 0.38;
+    dots.push('<circle cx="' + f(mx) + '" cy="' + f(my) + '" r="' + f(fug ? 1.5 : 1.3) + '" fill="' + (fug ? "#e5484d" : "#2f6fed") + '" fill-opacity="' + f(rr(0.45, 0.95)) + '"/>');
+  }
+  document.getElementById("minidots").innerHTML = dots.join("");
+
+  /* turn track: 24 turns, pulses on 3 / 8 / 13 / 18 / 23 */
+  var track = [];
+  for (var t = 1; t <= 24; t++) {
+    var cls2 = [];
+    if (t <= 6) cls2.push("on");
+    if ([3, 8, 13, 18, 23].indexOf(t) >= 0) cls2.push("pulse");
+    if (t === 6) cls2.push("now");
+    track.push('<i class="' + cls2.join(" ") + '"></i>');
+  }
+  document.getElementById("track").innerHTML = track.join("");
+})();
+</script>
+</body>
+</html>

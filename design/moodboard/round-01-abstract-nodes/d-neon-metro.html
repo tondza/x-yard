@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>X-Yard — Art Direction D: Neon Metro / Cyberpunk</title>
+<style>
+  /* ============================================================
+     X-YARD · ART DIRECTION D — "NEON METRO / CYBERPUNK"
+     Single file, no external resources. Renders offline from file://
+     ============================================================ */
+  :root{
+    --bg-deep:#0b0a1f;
+    --bg-panel:#141033;
+    --cyan:#22e0ff;
+    --magenta:#ff2fd0;
+    --lime:#b6ff3c;
+    --amber:#ffa62b;
+    --taxi:#a9b4ff;
+    --gold:#ffd166;
+    --ice:#eaf2ff;
+    --ink:#eaeaff;
+    --muted:#9c9ad6;
+    --f1:#ff2fd0;
+    --f2:#22e0ff;
+    --f3:#b6ff3c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    margin:0;
+    background:#05040e;
+    color:var(--ink);
+    font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; align-items:center; justify-content:center; min-height:100vh;
+  }
+
+  /* ---------- fixed stage ---------- */
+  .stage{
+    position:relative;
+    width:1280px; height:720px; overflow:hidden;
+    padding:16px; display:flex; flex-direction:column; gap:10px;
+    background:
+      radial-gradient(900px 520px at 16% -12%, rgba(93,52,255,.40), transparent 65%),
+      radial-gradient(760px 520px at 108% 6%, rgba(255,47,208,.22), transparent 62%),
+      radial-gradient(720px 460px at 62% 118%, rgba(34,224,255,.16), transparent 60%),
+      linear-gradient(155deg,#141033 0%, #0d0b26 46%, #0b0a1f 100%);
+  }
+  .stage:after{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:60;
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 3px);
+    mix-blend-mode:overlay; opacity:.5;
+  }
+  .vignette{position:absolute; inset:0; pointer-events:none; z-index:59;
+    box-shadow:inset 0 0 160px rgba(4,2,14,.72), inset 0 0 40px rgba(4,2,14,.5);}
+
+  /* ---------- generic glass panel ---------- */
+  .panel{
+    position:relative; border-radius:20px; overflow:hidden;
+    background:linear-gradient(160deg, rgba(46,36,110,.60), rgba(13,11,38,.90));
+    border:1px solid rgba(140,120,255,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 18px 40px rgba(0,0,0,.5);
+    backdrop-filter:blur(14px) saturate(1.15);
+  }
+  .accent{position:absolute; top:0; left:16px; right:16px; height:2px; border-radius:0 0 3px 3px;
+    background:linear-gradient(90deg, rgba(255,47,208,.95), rgba(34,224,255,.85) 45%, rgba(182,255,60,.55) 70%, rgba(255,255,255,0));
+    opacity:.85; z-index:3;}
+
+  /* ---------- header / HUD ---------- */
+  .hud{height:56px; display:flex; align-items:stretch; gap:12px; flex:0 0 56px;}
+  .brand{
+    display:flex; align-items:center; gap:11px; padding:0 18px 0 13px; border-radius:16px;
+    background:linear-gradient(140deg, rgba(58,32,150,.8), rgba(19,15,50,.92));
+    border:1px solid rgba(160,120,255,.32);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.1), 0 0 26px rgba(120,60,255,.28);
+    position:relative;
+  }
+  .brand:after{content:""; position:absolute; left:12px; right:12px; top:0; height:2px;
+    background:linear-gradient(90deg,var(--magenta),var(--cyan),var(--lime)); border-radius:2px;}
+  .mark{filter:drop-shadow(0 0 7px rgba(34,224,255,.85));}
+  .wordmark{
+    font-size:21px; font-weight:900; letter-spacing:.17em; line-height:1;
+    background:linear-gradient(94deg,#ffffff,#cdf6ff 38%,#ffb9f1);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 20px rgba(34,224,255,.45);
+  }
+  .brandsub{margin-top:3px; font-size:8.5px; font-weight:800; letter-spacing:.24em; text-transform:uppercase; color:#a9a3e8;}
+
+  .chips{display:flex; gap:10px; align-items:stretch; flex:1 1 auto; min-width:0;}
+  .chip{
+    display:flex; flex-direction:column; justify-content:center; gap:4px;
+    padding:0 14px; border-radius:16px; white-space:nowrap; min-width:0; overflow:hidden;
+    background:linear-gradient(150deg, rgba(40,32,94,.62), rgba(14,11,40,.86));
+    border:1px solid rgba(130,120,230,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .k{font-size:8.5px; letter-spacing:.22em; text-transform:uppercase; font-weight:800; color:#9895d4;}
+  .v{font-size:16px; font-weight:900; letter-spacing:.04em; line-height:1; white-space:nowrap;}
+  .v small{font-size:11px; font-weight:800; color:var(--muted); letter-spacing:0;}
+  .v.cy{color:#a9f2ff; text-shadow:0 0 14px rgba(34,224,255,.7);}
+  .v.mg{color:#ffc2ef; text-shadow:0 0 14px rgba(255,47,208,.7);}
+  .ticks{display:flex; gap:2px; margin-top:1px;}
+  .ticks i{width:3px; height:7px; border-radius:1px; background:rgba(255,255,255,.15);}
+  .ticks i.on{background:linear-gradient(180deg,#7df3ff,#22e0ff); box-shadow:0 0 8px rgba(34,224,255,.85);}
+  .ticks i.at{background:var(--magenta); box-shadow:0 0 10px var(--magenta);}
+  .pulsebars{display:flex; align-items:flex-end; gap:3px; height:14px;}
+  .pulsebars i{width:4px; border-radius:2px; background:linear-gradient(180deg,#ff8ce6,#ff2fd0); box-shadow:0 0 9px rgba(255,47,208,.7);}
+  .pulsebars i:nth-child(1){height:5px; opacity:.45}
+  .pulsebars i:nth-child(2){height:8px; opacity:.6}
+  .pulsebars i:nth-child(3){height:11px; opacity:.8}
+  .pulsebars i:nth-child(4){height:14px}
+  .minigauge{width:96px; height:5px; border-radius:3px; background:rgba(255,255,255,.10); overflow:hidden; margin-top:1px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+  .minigauge i{display:block; height:100%; width:38%; border-radius:3px;
+    background:linear-gradient(90deg,#7b5cff,#22e0ff); box-shadow:0 0 12px rgba(34,224,255,.8);}
+
+  .faction{display:flex; align-items:stretch; border-radius:16px; overflow:hidden;
+    border:1px solid rgba(130,120,230,.26); background:rgba(9,8,26,.7); flex:0 0 auto;}
+  .fbtn{display:flex; flex-direction:column; justify-content:center; gap:3px; padding:0 15px;}
+  .fbtn .fk{font-size:8.5px; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:#8d8ac9;}
+  .fbtn .fv{font-size:12.5px; font-weight:900; letter-spacing:.06em; color:#c9c7f2; display:flex; align-items:center; gap:7px;}
+  .fbtn.on{background:linear-gradient(150deg, rgba(255,47,208,.30), rgba(112,18,86,.42));
+    box-shadow:inset 0 0 0 1px rgba(255,47,208,.6), inset 0 1px 0 rgba(255,255,255,.12), 0 0 30px rgba(255,47,208,.4);}
+  .fbtn.on .fv{color:#ffd9f5; text-shadow:0 0 14px rgba(255,47,208,.85);}
+  .fbtn.on .fk{color:#ff9fe6;}
+  .swatchdot{width:8px; height:8px; border-radius:2px; transform:rotate(45deg); flex:0 0 auto;}
+  .swatchdot.mg{background:var(--magenta); box-shadow:0 0 10px var(--magenta);}
+  .swatchdot.cy{background:var(--cyan); box-shadow:0 0 10px var(--cyan);}
+
+  /* ---------- main row ---------- */
+  .main{flex:1 1 auto; display:flex; gap:12px; min-height:0;}
+
+  /* map panel */
+  .mappanel{flex:0 0 684px; display:flex; flex-direction:column; padding:12px;}
+  .phead{display:flex; align-items:center; gap:9px; height:28px; flex:0 0 28px;}
+  .phead h1,.phead h2{margin:0; font-size:10.5px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#dedbff; white-space:nowrap;}
+  .pdot{width:7px; height:7px; border-radius:50%; background:var(--c,#22e0ff); box-shadow:0 0 12px var(--c,#22e0ff); flex:0 0 auto;}
+  .phead .spacer{flex:1 1 auto;}
+  .pmeta{font-size:8.5px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#8b88c6; white-space:nowrap;}
+
+  .legend{display:flex; align-items:center; gap:11px;}
+  .lg{display:flex; align-items:center; gap:5px; font-size:8.5px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; color:#bdb9ec; white-space:nowrap;}
+  .sw{display:inline-block; width:22px; height:3px; border-radius:2px;}
+  .sw.taxi{height:2px; background:var(--taxi); box-shadow:0 0 7px rgba(169,180,255,.6);}
+  .sw.bus{height:3px; background:var(--lime); box-shadow:0 0 9px rgba(182,255,60,.8);}
+  .sw.metro{height:5px; border-radius:3px; background:var(--magenta); box-shadow:0 0 11px rgba(255,47,208,.85);
+    border-top:1px solid #ffd9f5; border-bottom:1px solid #ffd9f5;}
+  .sw.special{height:3px; background:repeating-linear-gradient(90deg,var(--amber) 0 5px, rgba(0,0,0,0) 5px 9px);
+    box-shadow:0 0 9px rgba(255,166,43,.7);}
+
+  .mapwrap{position:relative; flex:1 1 auto; border-radius:14px; overflow:hidden; margin-top:6px;
+    background:#0b0a1f; border:1px solid rgba(126,140,255,.16);
+    box-shadow:inset 0 0 80px rgba(80,40,190,.35), inset 0 0 0 1px rgba(255,255,255,.03);}
+  .grid{display:block; width:100%; height:100%;}
+  .mapkey{position:absolute; left:10px; bottom:10px; display:flex; align-items:center; gap:13px;
+    padding:6px 12px 6px 10px; border-radius:999px;
+    background:linear-gradient(120deg, rgba(12,10,34,.86), rgba(24,18,60,.78));
+    border:1px solid rgba(140,130,255,.24);
+    box-shadow:0 8px 22px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);}
+  .kitem{display:flex; align-items:center; gap:6px; font-size:7.5px; font-weight:800; letter-spacing:.12em;
+    text-transform:uppercase; color:#c8c4f2; white-space:nowrap;}
+  .kswatch{width:9px; height:9px; border-radius:50%; flex:0 0 auto;}
+  .krev{background:radial-gradient(circle at 35% 30%,#ffb8f0,#ff2fd0); box-shadow:0 0 10px var(--magenta);}
+  .kghost{border:1.5px dashed #22e0ff; box-shadow:0 0 9px rgba(34,224,255,.8), inset 0 0 4px rgba(34,224,255,.5);}
+  .khalo{background:radial-gradient(circle, rgba(34,224,255,.95) 8%, rgba(34,224,255,.35) 45%, rgba(34,224,255,0) 72%);}
+  .kfog{background:radial-gradient(circle, #05040f 42%, rgba(150,150,255,.30) 68%, rgba(0,0,0,0) 78%);
+    box-shadow:inset 0 0 0 1px rgba(190,190,255,.25);}
+
+  /* ---------- right rail ---------- */
+  .rail{flex:1 1 auto; display:flex; flex-direction:column; gap:10px; min-width:0;}
+  .card{padding:12px; display:flex; flex-direction:column;}
+  .card.tracker{flex:0 0 210px;}
+  .card.prob{flex:0 0 150px;}
+  .card.log{flex:1 1 auto; min-height:0;}
+  .phead .live{margin-left:auto; display:flex; align-items:center; gap:6px; font-size:8px; font-weight:800;
+    letter-spacing:.16em; text-transform:uppercase; color:#ffb3ec;}
+  .livedot{width:6px; height:6px; border-radius:50%; background:var(--magenta); box-shadow:0 0 10px var(--magenta);}
+
+  /* fugitive tracker */
+  .rows{display:flex; flex-direction:column; gap:6px; margin-top:8px; flex:0 0 auto;}
+  .frow{display:flex; align-items:center; gap:10px; flex:0 0 36px; min-height:36px; padding:0 10px 0 5px; border-radius:13px;
+    background:linear-gradient(120deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+    border:1px solid rgba(255,255,255,.06);}
+  .frow.r1{border-color:rgba(255,47,208,.34); box-shadow:inset 0 0 26px rgba(255,47,208,.16), 0 0 18px rgba(255,47,208,.13);}
+  .frow.r2{border-color:rgba(34,224,255,.26);}
+  .frow.r3{border-color:rgba(182,255,60,.24);}
+  .fid{width:26px; height:26px; flex:0 0 26px; display:grid; place-items:center;
+    font-size:10.5px; font-weight:900; letter-spacing:.02em; color:#0b0a1f;
+    clip-path:polygon(26% 2%,74% 2%,100% 50%,74% 98%,26% 98%,0 50%);}
+  .fid.f1{background:linear-gradient(150deg,#ffd3f3,#ff2fd0); filter:drop-shadow(0 0 9px rgba(255,47,208,.85));}
+  .fid.f2{background:linear-gradient(150deg,#c8f7ff,#22e0ff); filter:drop-shadow(0 0 8px rgba(34,224,255,.6));}
+  .fid.f3{background:linear-gradient(150deg,#e6ffc0,#b6ff3c); filter:drop-shadow(0 0 8px rgba(182,255,60,.55));}
+  .fmeta{flex:1 1 auto; min-width:0;}
+  .fname{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:900; letter-spacing:.05em; line-height:1.15;
+    white-space:nowrap; overflow:hidden;}
+  .fsub{font-size:9.5px; font-weight:600; letter-spacing:.05em; color:#9d9ad6; margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tag{font-size:7px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; padding:2px 5px; border-radius:999px; white-space:nowrap;}
+  .tag.rev{color:#ffd9f5; background:rgba(255,47,208,.22); box-shadow:inset 0 0 0 1px rgba(255,47,208,.65), 0 0 14px rgba(255,47,208,.3);}
+  .tag.hid{color:#b7b3ee; background:rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+  .tag.heavy{color:#ffe0ae; background:rgba(255,166,43,.18); box-shadow:inset 0 0 0 1px rgba(255,166,43,.6);}
+  .fwhen{font-size:9px; font-weight:900; letter-spacing:.1em; color:#8e8bca;}
+  .fwhen.hot{color:#ffb3ec; text-shadow:0 0 12px rgba(255,47,208,.8);}
+  .agentsline{display:flex; align-items:center; gap:8px; margin-top:6px; padding-top:6px; flex:0 0 auto;
+    border-top:1px solid rgba(255,255,255,.07); font-size:8.5px; font-weight:800; letter-spacing:.15em;
+    text-transform:uppercase; color:#9d9ad6;}
+  .adiamond{width:8px; height:8px; background:var(--ice); box-shadow:0 0 9px rgba(190,240,255,.9); transform:rotate(45deg);}
+  .agentsline b{color:#e6f4ff; font-weight:900;}
+
+  /* probability */
+  .prows{display:flex; flex-direction:column; gap:5px; margin-top:8px; flex:1 1 auto;}
+  .prow{display:flex; align-items:center; gap:9px; flex:1 1 0;}
+  .pnode{width:30px; height:17px; flex:0 0 30px; display:grid; place-items:center; border-radius:6px;
+    font-size:9px; font-weight:900; letter-spacing:.04em; color:#d7f8ff;
+    background:linear-gradient(150deg, rgba(34,224,255,.22), rgba(34,224,255,.06));
+    box-shadow:inset 0 0 0 1px rgba(34,224,255,.42), 0 0 12px rgba(34,224,255,.18);}
+  .ptrack{position:relative; flex:1 1 auto; height:9px; border-radius:999px; background:rgba(255,255,255,.07);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); overflow:hidden;}
+  .ptrack i{display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg,#7b5cff,#22e0ff 70%,#b6f6ff);
+    box-shadow:0 0 14px rgba(34,224,255,.75);}
+  .pval{width:34px; flex:0 0 34px; text-align:right; font-size:11px; font-weight:900; letter-spacing:.02em; color:#c9f4ff;}
+  .prow.p4 .ptrack i{background:linear-gradient(90deg,#4a3aa8,#7b8cff); box-shadow:0 0 10px rgba(123,140,255,.5);}
+  .prow.p3 .ptrack i{background:linear-gradient(90deg,#5a44c8,#5fc8ff); box-shadow:0 0 12px rgba(95,200,255,.55);}
+  .prow.p2 .ptrack i{background:linear-gradient(90deg,#6a4de0,#28d6ff); box-shadow:0 0 13px rgba(40,214,255,.65);}
+  .prow.p4 .pval{color:#a9a6e6;}
+  .prow.p1 .pval{color:#e6fbff; text-shadow:0 0 12px rgba(34,224,255,.9);}
+
+  /* ticket log */
+  .lrows{display:flex; flex-direction:column; gap:4px; margin-top:8px; flex:1 1 auto; min-height:0;}
+  .lrow{display:grid; grid-template-columns:36px 32px 1fr auto; align-items:center; gap:9px; flex:1 1 0;
+    padding:0 10px; border-radius:11px; background:rgba(255,255,255,.032); border:1px solid rgba(255,255,255,.055);}
+  .lrow:first-child{background:linear-gradient(100deg, rgba(255,47,208,.14), rgba(255,255,255,.03));
+    border-color:rgba(255,47,208,.3);}
+  .lturn{font-size:9.5px; font-weight:900; letter-spacing:.1em; color:#8e8bca;}
+  .lwho{font-size:9.5px; font-weight:900; letter-spacing:.06em; padding:3px 0; text-align:center; border-radius:6px;}
+  .lwho.f1{color:#ffd0f2; background:rgba(255,47,208,.16); box-shadow:inset 0 0 0 1px rgba(255,47,208,.45);}
+  .lwho.f2{color:#c9f6ff; background:rgba(34,224,255,.14); box-shadow:inset 0 0 0 1px rgba(34,224,255,.42);}
+  .lwho.f3{color:#e4ffbc; background:rgba(182,255,60,.14); box-shadow:inset 0 0 0 1px rgba(182,255,60,.42);}
+  .lmode{display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.05em; color:#e2e0ff;}
+  .lmode.unk{color:#9d9ad6; font-style:italic; font-weight:700;}
+  .ldot{width:9px; height:9px; border-radius:50%; flex:0 0 auto;}
+  .ldot.taxi{background:var(--taxi); box-shadow:0 0 9px rgba(169,180,255,.6);}
+  .ldot.bus{background:var(--lime); box-shadow:0 0 9px rgba(182,255,60,.75);}
+  .ldot.metro{background:var(--magenta); box-shadow:0 0 10px rgba(255,47,208,.85);}
+  .ldot.unk{background:transparent; box-shadow:inset 0 0 0 1.5px #6e6aa8;}
+  .lbadge{font-size:7.5px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:#ffb3ec;}
+  .lbadge.dim{color:#7c79b6;}
+
+  /* ---------- action bar ---------- */
+  .actionbar{flex:0 0 56px; display:flex; align-items:center; gap:12px; padding:0 14px;}
+  .abgroup{display:flex; flex-direction:column; gap:4px; flex:0 0 auto;}
+  .pillrow{display:flex; align-items:center; gap:8px;}
+  .ablabel{display:flex; align-items:center; gap:7px; font-size:8px; font-weight:900; letter-spacing:.2em;
+    text-transform:uppercase; white-space:nowrap; line-height:1;}
+  .ablabel.g{color:#ffa9e8;}
+  .ablabel.a{color:#a5eeff;}
+  .ablabel .abdot{width:6px; height:6px; border-radius:50%;}
+  .ablabel.g .abdot{background:var(--magenta); box-shadow:0 0 11px var(--magenta);}
+  .ablabel.a .abdot{background:var(--cyan); box-shadow:0 0 11px var(--cyan);}
+  .abdiv{width:1px; height:34px; flex:0 0 1px; background:linear-gradient(180deg, rgba(255,255,255,0), rgba(180,170,255,.35), rgba(255,255,255,0));}
+  .pill{display:flex; align-items:center; gap:9px; height:34px; padding:0 11px; border-radius:999px; flex:0 0 auto;
+    font:inherit; color:var(--ink); cursor:default; white-space:nowrap;
+    background:linear-gradient(160deg, rgba(48,38,112,.72), rgba(15,12,42,.88));
+    border:1px solid rgba(140,130,240,.26);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
+  .pill .glyph{position:relative; display:grid; place-items:center; width:13px; height:13px; flex:0 0 13px; opacity:.95;}
+  .pill .glyph .cost{position:absolute; top:-6px; right:-6px; font-size:7px; font-weight:900; font-style:normal;
+    letter-spacing:0; color:#cbc7f6; text-shadow:0 0 5px rgba(6,4,20,.95);}
+  .pill.g .glyph{color:#ff9ae8; filter:drop-shadow(0 0 6px rgba(255,47,208,.8));}
+  .pill.a .glyph{color:#8fe9ff; filter:drop-shadow(0 0 6px rgba(34,224,255,.8));}
+  .pname{font-size:11px; font-weight:800; letter-spacing:.04em; white-space:nowrap;}
+  .pill.on{
+    background:linear-gradient(110deg, rgba(255,47,208,.9), rgba(126,58,255,.9) 52%, rgba(34,224,255,.82));
+    border-color:rgba(255,200,245,.75);
+    box-shadow:0 0 0 1px rgba(255,255,255,.22) inset, 0 0 26px rgba(255,47,208,.6), 0 0 62px rgba(34,224,255,.28);}
+  .pill.on .pname{color:#fff; text-shadow:0 1px 6px rgba(60,0,50,.6);}
+  .pill.on .glyph{color:#fff; filter:drop-shadow(0 0 6px rgba(255,255,255,.9));}
+  .pill.on .glyph .cost{color:#2a0b2a; text-shadow:0 0 5px rgba(255,255,255,.5);}
+  .pill .hot{width:6px; height:6px; border-radius:50%; background:#fff; box-shadow:0 0 10px #fff; flex:0 0 6px;}
+  .abmeter{margin-left:auto; display:flex; align-items:center; gap:16px; padding-left:16px; flex:0 0 auto;
+    border-left:1px solid rgba(255,255,255,.1);}
+  .stat{display:flex; flex-direction:column; gap:3px;}
+  .stat .sk{font-size:7.5px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#8d8ac9; white-space:nowrap;}
+  .stat .sv{font-size:14px; font-weight:900; letter-spacing:.04em; line-height:1; white-space:nowrap;}
+  .stat .sv.cy{color:#a9f2ff; text-shadow:0 0 12px rgba(34,224,255,.7);}
+  .stat .sv.mg{color:#ffc2ef; text-shadow:0 0 12px rgba(255,47,208,.7);}
+
+  /* ---------- inline SVG map styles ---------- */
+  .grid text{font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;}
+  .nid{font-size:11px; font-weight:900; fill:#f2f4ff; letter-spacing:.02em;}
+  .nlabel{font-size:7px; font-weight:800; letter-spacing:1.7px; fill:rgba(206,210,255,.62);}
+  .nlabel.hub{fill:#ffdf9a;}
+  .nlabel.market{fill:#ffc078;}
+  .nlabel.term{fill:#cfe0ff;}
+  .chiptext{font-size:9.5px; font-weight:900; letter-spacing:1.1px;}
+  .badgetext{font-size:9px; font-weight:900; letter-spacing:.4px;}
+  .fogtext{font-size:7.5px; font-weight:800; letter-spacing:3.2px; fill:rgba(196,202,255,.30);}
+  .agentid{font-size:8.5px; font-weight:900; fill:#12102e; letter-spacing:.02em;}
+  .painthalo{paint-order:stroke; stroke:#0b0a1f; stroke-width:2.6px; stroke-linejoin:round;}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="vignette"></div>
+
+  <!-- ============ HUD ============ -->
+  <header class="hud">
+    <div class="brand">
+      <svg class="mark" width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="mk" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#22e0ff"/><stop offset="0.55" stop-color="#7b5cff"/><stop offset="1" stop-color="#ff2fd0"/>
+          </linearGradient>
+        </defs>
+        <path d="M20 2.5 34.5 11v18L20 37.5 5.5 29V11z" fill="none" stroke="url(#mk)" stroke-width="2.2"/>
+        <path d="M20 2.5 34.5 11v18L20 37.5 5.5 29V11z" fill="url(#mk)" opacity="0.14"/>
+        <path d="M13.5 14 26.5 26M26.5 14 13.5 26" stroke="url(#mk)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="wordmark">X&#8209;YARD</div>
+        <div class="brandsub">Neon Metro</div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip">
+        <span class="k">Turn</span>
+        <span class="v">6<small>/24</small></span>
+        <span class="ticks">
+          <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+          <i></i><i class="at"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i>
+        </span>
+      </div>
+      <div class="chip">
+        <span class="k">Next reveal pulse</span>
+        <span class="v mg">In 4 turns <small>· T8</small></span>
+        <span class="pulsebars"><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="chip">
+        <span class="k">Phase</span>
+        <span class="v">Hidden movement</span>
+        <span class="pmeta" style="letter-spacing:.13em">Pulse resolved T3</span>
+      </div>
+      <div class="chip">
+        <span class="k">Grid certainty</span>
+        <span class="v cy">38%</span>
+        <span class="minigauge"><i></i></span>
+      </div>
+    </div>
+
+    <div class="faction">
+      <div class="fbtn on">
+        <span class="fk">Yours</span>
+        <span class="fv"><i class="swatchdot mg"></i>Fugitives · 3</span>
+      </div>
+      <div class="fbtn">
+        <span class="fk">Opposition</span>
+        <span class="fv"><i class="swatchdot cy"></i>Agents · 3</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <!-- ---------- MAP ---------- -->
+    <section class="panel mappanel">
+      <div class="accent"></div>
+      <div class="phead">
+        <span class="pdot" style="--c:#22e0ff"></span>
+        <h1>Tactical grid — Sector 07</h1>
+        <span class="pmeta">640 × 480 · live</span>
+        <span class="spacer"></span>
+        <div class="legend">
+          <span class="lg"><i class="sw taxi"></i>Taxi</span>
+          <span class="lg"><i class="sw bus"></i>Bus</span>
+          <span class="lg"><i class="sw metro"></i>Metro</span>
+          <span class="lg"><i class="sw special"></i>Special</span>
+        </div>
+      </div>
+
+      <div class="mapwrap">
+        <svg class="grid" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet" role="img"
+             aria-label="Metro grid of sector 07 with hidden fugitive trails and probability halos">
+          <defs>
+            <linearGradient id="mapbg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#151240"/>
+              <stop offset="0.5" stop-color="#0e0c2b"/>
+              <stop offset="1" stop-color="#0a0820"/>
+            </linearGradient>
+            <radialGradient id="pool" cx="0.5" cy="0.44" r="0.72">
+              <stop offset="0" stop-color="#5b34ff" stop-opacity="0.42"/>
+              <stop offset="0.5" stop-color="#2c1a84" stop-opacity="0.18"/>
+              <stop offset="1" stop-color="#0b0a1f" stop-opacity="0"/>
+            </radialGradient>
+            <pattern id="grid20" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M20 0H0V20" fill="none" stroke="#9a9aff" stroke-opacity="0.075" stroke-width="0.6"/>
+            </pattern>
+            <pattern id="grid80" width="80" height="80" patternUnits="userSpaceOnUse">
+              <path d="M80 0H0V80" fill="none" stroke="#9fd8ff" stroke-opacity="0.10" stroke-width="0.8"/>
+            </pattern>
+            <radialGradient id="nodeFill" cx="0.34" cy="0.26" r="0.95">
+              <stop offset="0" stop-color="#463a95"/>
+              <stop offset="0.55" stop-color="#221a5e"/>
+              <stop offset="1" stop-color="#140f3c"/>
+            </radialGradient>
+            <radialGradient id="hubFill" cx="0.34" cy="0.26" r="0.95">
+              <stop offset="0" stop-color="#7a5a1e"/>
+              <stop offset="0.55" stop-color="#3a2a12"/>
+              <stop offset="1" stop-color="#241a10"/>
+            </radialGradient>
+            <radialGradient id="termFill" cx="0.34" cy="0.26" r="0.95">
+              <stop offset="0" stop-color="#5b6fb8"/>
+              <stop offset="0.55" stop-color="#252f6b"/>
+              <stop offset="1" stop-color="#161a45"/>
+            </radialGradient>
+            <radialGradient id="haloC">
+              <stop offset="0" stop-color="#22e0ff" stop-opacity="0.80"/>
+              <stop offset="0.42" stop-color="#22e0ff" stop-opacity="0.28"/>
+              <stop offset="1" stop-color="#22e0ff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="haloL">
+              <stop offset="0" stop-color="#b6ff3c" stop-opacity="0.62"/>
+              <stop offset="0.45" stop-color="#b6ff3c" stop-opacity="0.20"/>
+              <stop offset="1" stop-color="#b6ff3c" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="fog">
+              <stop offset="0" stop-color="#05040f" stop-opacity="0.94"/>
+              <stop offset="0.48" stop-color="#05040f" stop-opacity="0.66"/>
+              <stop offset="0.78" stop-color="#05040f" stop-opacity="0.28"/>
+              <stop offset="1" stop-color="#05040f" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="g1" x="-70%" y="-70%" width="240%" height="240%">
+              <feGaussianBlur stdDeviation="2.1" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="g2" x="-90%" y="-90%" width="280%" height="280%">
+              <feGaussianBlur stdDeviation="4.6" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="g3" x="-120%" y="-120%" width="340%" height="340%">
+              <feGaussianBlur stdDeviation="9" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <!-- base -->
+          <rect x="0" y="0" width="640" height="480" fill="url(#mapbg)"/>
+          <rect x="0" y="0" width="640" height="480" fill="url(#grid20)"/>
+          <rect x="0" y="0" width="640" height="480" fill="url(#grid80)"/>
+          <ellipse cx="320" cy="215" rx="330" ry="240" fill="url(#pool)"/>
+
+          <!-- ============ transit edges ============ -->
+          <g stroke-linecap="round">
+            <!-- casings -->
+            <g stroke="#0a0820" stroke-opacity="0.92">
+              <line x1="80" y1="80" x2="280" y2="60" stroke-width="3.6"/>
+              <line x1="280" y1="60" x2="480" y2="90" stroke-width="3.6"/>
+              <line x1="480" y1="90" x2="560" y2="240" stroke-width="3.6"/>
+              <line x1="560" y1="240" x2="420" y2="380" stroke-width="3.6"/>
+              <line x1="420" y1="380" x2="200" y2="400" stroke-width="3.6"/>
+              <line x1="200" y1="400" x2="60" y2="250" stroke-width="3.6"/>
+              <line x1="60" y1="250" x2="300" y2="220" stroke-width="3.6"/>
+              <line x1="300" y1="220" x2="80" y2="80" stroke-width="3.6"/>
+              <line x1="80" y1="80" x2="480" y2="90" stroke-width="3.6"/>
+              <line x1="280" y1="60" x2="560" y2="240" stroke-width="3.6"/>
+              <line x1="480" y1="90" x2="420" y2="380" stroke-width="3.6"/>
+              <line x1="560" y1="240" x2="200" y2="400" stroke-width="3.6"/>
+              <line x1="420" y1="380" x2="60" y2="250" stroke-width="3.6"/>
+              <line x1="200" y1="400" x2="300" y2="220" stroke-width="3.6"/>
+              <line x1="60" y1="250" x2="80" y2="80" stroke-width="3.6"/>
+              <line x1="300" y1="220" x2="280" y2="60" stroke-width="3.6"/>
+              <line x1="560" y1="240" x2="60" y2="250" stroke-width="5.4"/>
+              <line x1="559.6" y1="245" x2="299.6" y2="225" stroke-width="5.4"/>
+              <line x1="60" y1="250" x2="300" y2="220" stroke-width="5.4"/>
+              <line x1="560" y1="240" x2="300" y2="220" stroke-width="8"/>
+            </g>
+            <!-- taxi -->
+            <g stroke="#a9b4ff" stroke-opacity="0.42" stroke-width="1.3">
+              <line x1="80" y1="80" x2="280" y2="60"/>
+              <line x1="280" y1="60" x2="480" y2="90"/>
+              <line x1="480" y1="90" x2="560" y2="240"/>
+              <line x1="560" y1="240" x2="420" y2="380"/>
+              <line x1="420" y1="380" x2="200" y2="400"/>
+              <line x1="200" y1="400" x2="60" y2="250"/>
+              <line x1="60" y1="250" x2="300" y2="220"/>
+              <line x1="300" y1="220" x2="80" y2="80"/>
+              <line x1="80" y1="80" x2="480" y2="90"/>
+              <line x1="280" y1="60" x2="560" y2="240"/>
+              <line x1="480" y1="90" x2="420" y2="380"/>
+              <line x1="560" y1="240" x2="200" y2="400"/>
+              <line x1="420" y1="380" x2="60" y2="250"/>
+              <line x1="200" y1="400" x2="300" y2="220"/>
+              <line x1="60" y1="250" x2="80" y2="80"/>
+              <line x1="300" y1="220" x2="280" y2="60"/>
+            </g>
+            <!-- bus -->
+            <g stroke="#b6ff3c" stroke-opacity="0.85" stroke-width="2.4" filter="url(#g1)">
+              <line x1="560" y1="240" x2="60" y2="250"/>
+              <line x1="559.6" y1="245" x2="299.6" y2="225"/>
+              <line x1="60" y1="250" x2="300" y2="220"/>
+            </g>
+            <!-- metro (double-line transit look) -->
+            <g filter="url(#g2)">
+              <line x1="560" y1="240" x2="300" y2="220" stroke="#ff2fd0" stroke-width="3.6"/>
+              <line x1="560" y1="240" x2="300" y2="220" stroke="#ffd9f5" stroke-width="1.1" stroke-opacity="0.9"/>
+            </g>
+            <!-- special / alleyway -->
+            <line x1="194.8" y1="397.1" x2="294.8" y2="217.1" stroke="#ffa62b" stroke-width="2.1"
+                  stroke-dasharray="7 6" stroke-opacity="0.92" filter="url(#g1)"/>
+          </g>
+
+          <!-- ============ fog of war ============ -->
+          <g>
+            <circle cx="55" cy="452" r="205" fill="url(#fog)"/>
+            <circle cx="622" cy="34" r="176" fill="url(#fog)"/>
+            <circle cx="586" cy="452" r="152" fill="url(#fog)"/>
+            <circle cx="330" cy="486" r="120" fill="url(#fog)" opacity="0.7"/>
+            <text class="fogtext" x="76" y="450" text-anchor="middle">UNEXPLORED</text>
+            <text class="fogtext" x="590" y="46" text-anchor="middle">UNEXPLORED</text>
+          </g>
+
+          <!-- ============ ghost trails / probability spread ============ -->
+          <g>
+            <!-- F2 Kestrel: last fix s1 (T3) — concentric decaying ghost rings -->
+            <circle cx="80" cy="80" r="30" fill="url(#haloC)" opacity="0.32"/>
+            <circle cx="80" cy="80" r="22" fill="none" stroke="#22e0ff" stroke-width="1.6" stroke-dasharray="5 6" opacity="0.55"/>
+            <circle cx="80" cy="80" r="30" fill="none" stroke="#22e0ff" stroke-width="1.3" stroke-dasharray="5 8" opacity="0.30"/>
+            <circle cx="80" cy="80" r="38" fill="none" stroke="#22e0ff" stroke-width="1.1" stroke-dasharray="5 10" opacity="0.15"/>
+            <!-- F2 spread rays, opacity ∝ likelihood -->
+            <g stroke="#22e0ff" stroke-linecap="round" fill="none" filter="url(#g1)">
+              <line x1="101.9" y1="77.8" x2="248.2" y2="63.2" stroke-width="1.5" stroke-dasharray="4 7" opacity="0.55"/>
+              <line x1="102" y1="80.5" x2="448" y2="89.2" stroke-width="1.4" stroke-dasharray="4 8" opacity="0.38"/>
+              <line x1="98.6" y1="91.8" x2="273" y2="202.8" stroke-width="1.3" stroke-dasharray="4 8" opacity="0.30"/>
+              <line x1="87.7" y1="100.6" x2="188.8" y2="370" stroke-width="1.2" stroke-dasharray="4 9" opacity="0.22"/>
+            </g>
+            <!-- F1 Vulture: pre-pulse ghost dots fading back along the s3–s4 axis -->
+            <g fill="#ff2fd0" filter="url(#g1)">
+              <circle cx="502.4" cy="132" r="8" opacity="0.32"/>
+              <circle cx="524" cy="172.5" r="7" opacity="0.19"/>
+              <circle cx="545.6" cy="213" r="6" opacity="0.10"/>
+            </g>
+            <text class="nlabel painthalo" x="497" y="116" text-anchor="middle" fill="#ff9fe6">PRE-PULSE TRAIL</text>
+            <!-- F3 Magpie: believed-near envelope + fading approach along s3–s5 -->
+            <ellipse cx="420" cy="380" rx="54" ry="40" fill="url(#haloL)" opacity="0.5"/>
+            <ellipse cx="420" cy="380" rx="54" ry="40" fill="none" stroke="#b6ff3c" stroke-width="1.4"
+                     stroke-dasharray="6 7" opacity="0.55"/>
+            <g fill="#b6ff3c" filter="url(#g1)">
+              <circle cx="435" cy="307.5" r="9" opacity="0.36"/>
+              <circle cx="429" cy="336.5" r="8" opacity="0.22"/>
+              <circle cx="423" cy="365.5" r="7" opacity="0.12"/>
+            </g>
+          </g>
+
+          <!-- ============ probability halos (intensity ∝ likelihood) ============ -->
+          <g>
+            <circle cx="280" cy="60" r="48" fill="url(#haloC)" opacity="0.95" filter="url(#g3)"/>
+            <circle cx="280" cy="60" r="48" fill="none" stroke="#22e0ff" stroke-width="1.1" stroke-dasharray="3 6" opacity="0.55"/>
+            <circle cx="480" cy="90" r="40" fill="url(#haloC)" opacity="0.6" filter="url(#g3)"/>
+            <circle cx="480" cy="90" r="40" fill="none" stroke="#22e0ff" stroke-width="1" stroke-dasharray="3 7" opacity="0.4"/>
+            <circle cx="300" cy="220" r="35" fill="url(#haloC)" opacity="0.5" filter="url(#g3)"/>
+            <circle cx="300" cy="220" r="35" fill="none" stroke="#22e0ff" stroke-width="1" stroke-dasharray="3 7" opacity="0.34"/>
+            <circle cx="200" cy="400" r="30" fill="url(#haloC)" opacity="0.38" filter="url(#g3)"/>
+            <circle cx="200" cy="400" r="30" fill="none" stroke="#22e0ff" stroke-width="1" stroke-dasharray="3 8" opacity="0.26"/>
+          </g>
+
+          <!-- ============ nodes ============ -->
+          <g>
+            <!-- streets -->
+            <g filter="url(#g1)">
+              <circle cx="80" cy="80" r="14" fill="url(#nodeFill)" stroke="#9aa6ff" stroke-width="2"/>
+              <circle cx="280" cy="60" r="14" fill="url(#nodeFill)" stroke="#9aa6ff" stroke-width="2"/>
+              <circle cx="480" cy="90" r="14" fill="url(#nodeFill)" stroke="#9aa6ff" stroke-width="2"/>
+              <circle cx="420" cy="380" r="14" fill="url(#nodeFill)" stroke="#9aa6ff" stroke-width="2"/>
+              <circle cx="200" cy="400" r="14" fill="url(#nodeFill)" stroke="#ffb03a" stroke-width="2.2"/>
+            </g>
+            <!-- safe house hub -->
+            <circle cx="60" cy="250" r="23" fill="none" stroke="#ffd166" stroke-width="1" stroke-dasharray="3 5" opacity="0.6"/>
+            <circle cx="60" cy="250" r="18" fill="url(#hubFill)" stroke="#ffd166" stroke-width="2.4" filter="url(#g2)"/>
+            <path d="M60 240.5l6.6 3.8v7.6L60 259.7l-6.6-3.8v-7.6z" fill="none" stroke="#ffe6ab" stroke-width="1.4"/>
+            <!-- terminals -->
+            <circle cx="560" cy="240" r="23" fill="none" stroke="#cfe0ff" stroke-width="1" opacity="0.45"/>
+            <circle cx="560" cy="240" r="18" fill="url(#termFill)" stroke="#cfe0ff" stroke-width="2.4" filter="url(#g2)"/>
+            <circle cx="300" cy="220" r="23" fill="none" stroke="#cfe0ff" stroke-width="1" opacity="0.45"/>
+            <circle cx="300" cy="220" r="18" fill="url(#termFill)" stroke="#cfe0ff" stroke-width="2.4" filter="url(#g2)"/>
+            <!-- ids -->
+            <g text-anchor="middle">
+              <text class="nid" x="80" y="84">s1</text>
+              <text class="nid" x="280" y="64">s2</text>
+              <text class="nid" x="480" y="94">s3</text>
+              <text class="nid" x="560" y="244">s4</text>
+              <text class="nid" x="420" y="384">s5</text>
+              <text class="nid" x="200" y="404">s6</text>
+              <text class="nid" x="60" y="254">s7</text>
+              <text class="nid" x="300" y="224">s8</text>
+            </g>
+            <!-- class labels -->
+            <g text-anchor="middle" class="painthalo">
+              <text class="nlabel" x="80" y="108">STREET</text>
+              <text class="nlabel" x="280" y="88">STREET</text>
+              <text class="nlabel" x="480" y="119">STREET</text>
+              <text class="nlabel term" x="560" y="272">TERMINAL</text>
+              <text class="nlabel" x="420" y="408">STREET</text>
+              <text class="nlabel market" x="200" y="428">BLACK MARKET</text>
+              <text class="nlabel hub" x="60" y="286">SAFE HOUSE</text>
+              <text class="nlabel term" x="300" y="252">TERMINAL</text>
+            </g>
+          </g>
+
+          <!-- ============ agents (always visible) ============ -->
+          <g>
+            <g transform="translate(39.5,229.5) rotate(45)">
+              <rect x="-11.5" y="-11.5" width="23" height="23" rx="6.5" fill="#eef4ff" stroke="#9fe9ff" stroke-width="1.6" filter="url(#g2)"/>
+            </g>
+            <text class="agentid painthalo" x="39.5" y="233" text-anchor="middle">A1</text>
+            <g transform="translate(580.5,219.5) rotate(45)">
+              <rect x="-11.5" y="-11.5" width="23" height="23" rx="6.5" fill="#eef4ff" stroke="#9fe9ff" stroke-width="1.6" filter="url(#g2)"/>
+            </g>
+            <text class="agentid painthalo" x="580.5" y="223" text-anchor="middle">A2</text>
+            <g transform="translate(279.5,199.5) rotate(45)">
+              <rect x="-11.5" y="-11.5" width="23" height="23" rx="6.5" fill="#eef4ff" stroke="#9fe9ff" stroke-width="1.6" filter="url(#g2)"/>
+            </g>
+            <text class="agentid painthalo" x="279.5" y="203" text-anchor="middle">A3</text>
+          </g>
+
+          <!-- ============ fugitive markers ============ -->
+          <g>
+            <!-- F1 revealed at s3 -->
+            <circle cx="480" cy="90" r="54" fill="none" stroke="#ff2fd0" stroke-width="1.2" stroke-dasharray="4 9" opacity="0.30"/>
+            <circle cx="480" cy="90" r="34" fill="none" stroke="#ff2fd0" stroke-width="1.1" stroke-dasharray="4 7" opacity="0.6"/>
+            <circle cx="480" cy="90" r="25" fill="none" stroke="#ff2fd0" stroke-width="3" filter="url(#g2)"/>
+            <circle cx="480" cy="90" r="25" fill="none" stroke="#ffd9f5" stroke-width="1" opacity="0.9"/>
+          </g>
+
+          <!-- ============ callouts & probability badges ============ -->
+          <g>
+            <!-- F1 -->
+            <rect x="375" y="22" width="210" height="20" rx="10" fill="rgba(30,6,30,0.9)" stroke="rgba(255,47,208,0.8)" stroke-width="1.3"/>
+            <text class="chiptext" x="480" y="36" text-anchor="middle" fill="#ffd6f4">F1 VULTURE — REVEALED · T6</text>
+            <!-- F2 -->
+            <rect x="57" y="16" width="186" height="20" rx="10" fill="rgba(5,22,32,0.9)" stroke="rgba(34,224,255,0.72)" stroke-width="1.3"/>
+            <text class="chiptext" x="150" y="30" text-anchor="middle" fill="#c9f6ff">F2 KESTREL · LAST FIX T3</text>
+            <!-- F3 -->
+            <rect x="300" y="414" width="260" height="20" rx="10" fill="rgba(20,28,6,0.9)" stroke="rgba(182,255,60,0.7)" stroke-width="1.3"/>
+            <text class="chiptext" x="430" y="428" text-anchor="middle" fill="#e4ffbc">F3 MAGPIE · HEAVY CARGO · NEAR s5</text>
+            <!-- F2 probability badges -->
+            <rect x="301" y="33" width="46" height="18" rx="9" fill="rgba(4,20,30,0.92)" stroke="rgba(34,224,255,0.75)" stroke-width="1.2"/>
+            <text class="badgetext" x="324" y="46" text-anchor="middle" fill="#d9faff">40%</text>
+            <rect x="502" y="58" width="46" height="18" rx="9" fill="rgba(4,20,30,0.92)" stroke="rgba(34,224,255,0.6)" stroke-width="1.2"/>
+            <text class="badgetext" x="525" y="71" text-anchor="middle" fill="#d9faff">25%</text>
+            <rect x="329" y="227" width="46" height="18" rx="9" fill="rgba(4,20,30,0.92)" stroke="rgba(34,224,255,0.55)" stroke-width="1.2"/>
+            <text class="badgetext" x="352" y="240" text-anchor="middle" fill="#cdeeff">20%</text>
+            <rect x="160" y="346" width="46" height="18" rx="9" fill="rgba(4,20,30,0.92)" stroke="rgba(34,224,255,0.42)" stroke-width="1.2"/>
+            <text class="badgetext" x="183" y="359" text-anchor="middle" fill="#b9dfff">15%</text>
+          </g>
+        </svg>
+
+        <div class="mapkey">
+          <span class="kitem"><i class="kswatch krev"></i>Revealed</span>
+          <span class="kitem"><i class="kswatch kghost"></i>Ghost trail · fades</span>
+          <span class="kitem"><i class="kswatch khalo"></i>Probability halo</span>
+          <span class="kitem"><i class="kswatch kfog"></i>Fog of war</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- RIGHT RAIL ---------- -->
+    <aside class="rail">
+
+      <!-- tracker -->
+      <section class="panel card tracker">
+        <div class="accent"></div>
+        <div class="phead">
+          <span class="pdot" style="--c:#ff2fd0"></span>
+          <h2>Fugitive tracker</h2>
+          <span class="pmeta">3 live · 2 hidden</span>
+        </div>
+        <div class="rows">
+          <div class="frow r1">
+            <div class="fid f1">F1</div>
+            <div class="fmeta">
+              <div class="fname">Vulture <span class="tag rev">Revealed</span></div>
+              <div class="fsub">s3 · pulse landed this turn</div>
+            </div>
+            <div class="fwhen hot">T6</div>
+          </div>
+          <div class="frow r2">
+            <div class="fid f2">F2</div>
+            <div class="fmeta">
+              <div class="fname">Kestrel <span class="tag hid">Hidden</span></div>
+              <div class="fsub">Last fix s1 · 3 turns dark</div>
+            </div>
+            <div class="fwhen">T3</div>
+          </div>
+          <div class="frow r3">
+            <div class="fid f3">F3</div>
+            <div class="fmeta">
+              <div class="fname">Magpie <span class="tag hid">Hidden</span> <span class="tag heavy">Heavy cargo</span></div>
+              <div class="fsub">Believed near s5 · contraband load</div>
+            </div>
+            <div class="fwhen">—</div>
+          </div>
+        </div>
+        <div class="agentsline">
+          <span class="adiamond"></span>Agents visible
+          <b>A1 · s7</b><b>A2 · s4</b><b>A3 · s8</b>
+        </div>
+      </section>
+
+      <!-- probability -->
+      <section class="panel card prob">
+        <div class="accent"></div>
+        <div class="phead">
+          <span class="pdot" style="--c:#22e0ff"></span>
+          <h2>Probability field</h2>
+          <span class="pmeta">F2 Kestrel · 4 ticks dark</span>
+        </div>
+        <div class="prows">
+          <div class="prow p1">
+            <span class="pnode">s2</span>
+            <span class="ptrack"><i style="width:40%"></i></span>
+            <span class="pval">40%</span>
+          </div>
+          <div class="prow p2">
+            <span class="pnode">s3</span>
+            <span class="ptrack"><i style="width:25%"></i></span>
+            <span class="pval">25%</span>
+          </div>
+          <div class="prow p3">
+            <span class="pnode">s8</span>
+            <span class="ptrack"><i style="width:20%"></i></span>
+            <span class="pval">20%</span>
+          </div>
+          <div class="prow p4">
+            <span class="pnode">s6</span>
+            <span class="ptrack"><i style="width:15%"></i></span>
+            <span class="pval">15%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ticket log -->
+      <section class="panel card log">
+        <div class="accent"></div>
+        <div class="phead">
+          <span class="pdot" style="--c:#b6ff3c"></span>
+          <h2>Ticket log</h2>
+          <span class="live"><i class="livedot"></i>Live · newest first</span>
+        </div>
+        <div class="lrows">
+          <div class="lrow">
+            <span class="lturn">T6</span><span class="lwho f1">F1</span>
+            <span class="lmode"><i class="ldot bus"></i>Bus ticket</span>
+            <span class="lbadge">new</span>
+          </div>
+          <div class="lrow">
+            <span class="lturn">T6</span><span class="lwho f2">F2</span>
+            <span class="lmode unk"><i class="ldot unk"></i>Unknown transport</span>
+            <span class="lbadge dim">sensor gap</span>
+          </div>
+          <div class="lrow">
+            <span class="lturn">T5</span><span class="lwho f3">F3</span>
+            <span class="lmode"><i class="ldot taxi"></i>Taxi ticket</span>
+            <span class="lbadge dim">2 turns ago</span>
+          </div>
+          <div class="lrow">
+            <span class="lturn">T5</span><span class="lwho f1">F1</span>
+            <span class="lmode"><i class="ldot taxi"></i>Taxi ticket</span>
+            <span class="lbadge dim">2 turns ago</span>
+          </div>
+          <div class="lrow">
+            <span class="lturn">T4</span><span class="lwho f3">F3</span>
+            <span class="lmode"><i class="ldot metro"></i>Metro ticket</span>
+            <span class="lbadge dim">3 turns ago</span>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- ============ ACTION BAR ============ -->
+  <footer class="panel actionbar">
+    <div class="accent"></div>
+
+    <div class="abgroup">
+      <span class="ablabel g"><i class="abdot"></i>Fugitive gadgets</span>
+      <div class="pillrow">
+        <button class="pill g on">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <circle cx="8" cy="8" r="2.3"/><path d="M3.7 3.7a6.1 6.1 0 0 0 0 8.6M12.3 3.7a6.1 6.1 0 0 1 0 8.6"/></svg><i class="cost">2</i></span>
+          <span class="pname">Decoy Ping</span><span class="hot"></span>
+        </button>
+        <button class="pill g">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <rect x="1.8" y="2.4" width="8.6" height="8.6" rx="2"/><rect x="5.6" y="5.4" width="8.6" height="8.6" rx="2"/></svg><i class="cost">4</i></span>
+          <span class="pname">Counterfeit Identity</span>
+        </button>
+        <button class="pill g">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M2.4 8h9.2M8 4.4 11.6 8 8 11.6M2.4 4.6h3.4M2.4 11.4h3.4"/></svg><i class="cost">1</i></span>
+          <span class="pname">Alleyway Sprint</span>
+        </button>
+      </div>
+    </div>
+
+    <span class="abdiv"></span>
+
+    <div class="abgroup">
+      <span class="ablabel a"><i class="abdot"></i>Agent skills</span>
+      <div class="pillrow">
+        <button class="pill a">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <rect x="1.8" y="6.6" width="12.4" height="2.9" rx="1.4"/><path d="M8 1.8v3.4M8 10.8v3.4"/></svg><i class="cost">3</i></span>
+          <span class="pname">Targeted Roadblock</span>
+        </button>
+        <button class="pill a">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <circle cx="3.4" cy="12.6" r="1.5"/><path d="M3.4 8.4a4.2 4.2 0 0 1 4.2 4.2M3.4 4.2a8.4 8.4 0 0 1 8.4 8.4"/></svg><i class="cost">2</i></span>
+          <span class="pname">Sensor Sweep</span>
+        </button>
+        <button class="pill a">
+          <span class="glyph"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M2.6 3.6 7.4 8l-4.8 4.4M8.4 3.6 13.2 8l-4.8 4.4"/></svg><i class="cost">3</i></span>
+          <span class="pname">Rapid Deployment</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="abmeter">
+      <div class="stat">
+        <span class="sk">Command pts</span>
+        <span class="sv cy">7</span>
+      </div>
+      <div class="stat">
+        <span class="sk">Pulse clock</span>
+        <span class="sv mg">T8</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>

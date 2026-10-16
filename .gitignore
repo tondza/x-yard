@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# pnpm content-addressable store + cache.
+# These live inside the repo on purpose: in this sandboxed Codespace the
+# container's $HOME is read-only, so pnpm's default (~/.local/share/pnpm,
+# ~/.cache/pnpm) cannot be written. Redirecting the store into the workspace
+# also keeps it on the same filesystem as the projects, so pnpm can use hard
+# links instead of falling back to slow copies. See AGENT_RULES.md.
+.pnpm-store/
+.pnpm-cache/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+.vite/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+
+# Design-mockup screenshot tooling. Kept OUT of the pnpm workspace and the app
+# dependency graph on purpose: nothing here is needed to build, test, or run
+# X-Yard. See design/moodboard/README.md.
+.tools/
+.playwright-browsers/
+.chromium-libs/
+.apt/

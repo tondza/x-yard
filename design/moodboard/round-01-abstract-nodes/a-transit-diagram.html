@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, initial-scale=1">
+<title>X-Yard — Direction A: Transit Diagram</title>
+<style>
+  /* ============================================================
+     DIRECTION A — "TRANSIT DIAGRAM"
+     Swiss / International-typographic transit map crossed with a
+     clean data tool. Flat. No gradient, no shadow, no glow, no
+     texture. Colour is used only to encode transport mode; a
+     single amber hue encodes estimated (hidden) position.
+     ============================================================ */
+  :root{
+    --paper:#f7f8fa;
+    --surface:#ffffff;
+    --ink:#12161c;
+    --ink-2:#5a6473;
+    --ink-3:#8b95a3;
+    --rule:#e3e7ec;
+    --rule-2:#cdd3dc;
+    --field:#eef1f5;
+
+    /* transport modes — the only chromatic colour on the board */
+    --taxi:#8c96a4;
+    --bus:#2f6fd0;
+    --metro:#7b5cd6;
+    --special:#5a6473;
+
+    /* single-hue sequential ramp — estimated probability */
+    --h15:#fbe4c2;
+    --h20:#f6c684;
+    --h25:#e8a03a;
+    --h40:#b95c0a;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size:13px;
+    line-height:1.35;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .stage{
+    width:1280px;height:720px;overflow:hidden;
+    background:var(--paper);
+    display:flex;flex-direction:column;
+    position:relative;
+  }
+  .lbl{
+    font-size:10px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+  /* ---------------- HUD ---------------- */
+  .hud{
+    height:52px;flex:0 0 52px;min-height:0;
+    background:var(--surface);
+    border-bottom:1.5px solid var(--ink);
+    display:flex;align-items:center;
+    padding:0 20px;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-mark{width:13px;height:13px;background:var(--ink)}
+  .brand-name{font-size:15px;font-weight:700;letter-spacing:.18em;white-space:nowrap}
+  .brand-sub{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+  .vrule{width:1px;height:22px;background:var(--rule-2);margin:0 16px}
+  .hud-spacer{flex:1}
+
+  .turnblock{display:flex;align-items:baseline;gap:9px;white-space:nowrap}
+  .turnblock .lbl{margin-right:2px}
+  .turnval{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .turnval em{font-style:normal;color:var(--ink-3);font-weight:600}
+
+  .trackblock{width:262px;margin:0 22px 0 26px}
+  .trackcap{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+  .trackcap b{font-size:10px;font-weight:700;letter-spacing:.09em;color:var(--ink-2);white-space:nowrap}
+  .ticks{display:flex;gap:2px;height:14px;align-items:flex-end}
+  .ticks i{flex:1;height:6px;background:var(--rule);display:block}
+  .ticks i.done{background:var(--ink)}
+  .ticks i.next{height:14px;background:var(--ink)}
+  .pulseblock{display:flex;flex-direction:row;align-items:baseline;justify-content:flex-end;gap:9px;white-space:nowrap}
+  .pulseblock b{font-size:13px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+
+  /* ---------------- BOARD ---------------- */
+  .board{flex:0 0 578px;height:578px;min-height:0;display:flex;background:var(--paper)}
+
+  /* map panel */
+  .map{
+    width:760px;flex:0 0 760px;background:var(--surface);
+    border-right:1.5px solid var(--ink);
+    padding:14px 18px;display:flex;flex-direction:column;
+  }
+  .map-head{height:30px;flex:0 0 30px;display:flex;align-items:flex-start;justify-content:space-between}
+  .map-title{display:flex;align-items:baseline;gap:10px}
+  .map-title b{font-size:11.5px;font-weight:700;letter-spacing:.12em}
+  .map-title span{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .key{display:flex;align-items:center;gap:14px}
+  .keyitem{display:flex;align-items:center;gap:6px;font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--ink-2);white-space:nowrap}
+  .map-body{flex:1;min-height:0;display:flex;overflow:hidden}
+  .map-svg{width:100%;height:100%;display:block}
+  .map-foot{flex:0 0 36px;height:36px;display:flex;align-items:center;gap:12px;border-top:1px solid var(--rule);white-space:nowrap;overflow:hidden}
+  .map-foot .fitem{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .map-foot .lsw{width:24px;flex:0 0 24px}
+  .map-foot .lname{font-size:10px}
+  .map-foot .fnum{font-size:10px;font-weight:700;color:var(--ink-3);letter-spacing:.04em}
+
+  /* --- SVG map --- */
+  .edge-taxi{stroke:var(--taxi);stroke-width:1.5;stroke-linecap:round}
+  .edge-bus{stroke:var(--bus);stroke-width:3;stroke-linecap:round}
+  .edge-metro{stroke:var(--metro);stroke-width:4.5;stroke-linecap:round}
+  .edge-special{stroke:var(--special);stroke-width:2.5;stroke-dasharray:2 5;stroke-linecap:round}
+
+  .nd{stroke:var(--ink)}
+  .nd-street{fill:var(--surface);stroke-width:2}
+  .nd-terminal{fill:var(--surface);stroke-width:2.5}
+  .nd-hub{fill:var(--surface);stroke-width:2.5}
+  /* heat classes come after the node classes so the tint wins on fill */
+  .h15{fill:var(--h15)}
+  .h20{fill:var(--h20)}
+  .h25{fill:var(--h25)}
+  .h40{fill:var(--h40)}
+
+  .nid{font-size:9px;font-weight:700;fill:var(--ink);letter-spacing:.02em}
+  .nid-inv{fill:#ffffff}
+  .pct{font-size:12px;font-weight:700;fill:var(--ink);letter-spacing:-.01em}
+  .cap{font-size:8.5px;font-weight:600;fill:var(--ink-2);letter-spacing:.07em}
+  .cap-h{font-size:9.5px;font-weight:700;fill:var(--ink);letter-spacing:.09em}
+  .cap-inv{fill:#ffffff}
+
+  .ring-lastseen{fill:none;stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 3}
+  .ring-confirmed{fill:none;stroke:var(--ink);stroke-width:2.5}
+  .zone-belief{fill:none;stroke:var(--h40);stroke-width:1.5;stroke-dasharray:5 4}
+  .chip-ink{fill:var(--ink);stroke:none}
+  .chip-open{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+  .leader{stroke:var(--ink-2);stroke-width:1.5}
+  .chip-txt{font-size:8.5px;font-weight:700;fill:var(--ink);letter-spacing:.02em}
+  .chip-txt-inv{fill:#ffffff;stroke:none}
+  .callout{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+  .callout-txt{font-size:10.5px;font-weight:700;fill:var(--ink);letter-spacing:.06em}
+  .ramp-cell{stroke:none}
+
+  /* ---------------- RAIL ---------------- */
+  .rail{
+    flex:1;min-width:0;padding:14px 20px;overflow:hidden;
+    display:flex;flex-direction:column;gap:9px;
+  }
+  .panel{background:var(--surface);border:1px solid var(--rule-2);padding:11px 13px;flex:0 0 auto}
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:1px solid var(--rule);padding-bottom:5px;margin-bottom:7px;line-height:12px}
+  .panel-head .lbl{color:var(--ink)}
+  .panel-head .meta{font-size:9.5px;font-weight:600;letter-spacing:.09em;color:var(--ink-3);text-transform:uppercase;white-space:nowrap}
+
+  /* faction */
+  .seg{display:flex;border:1.5px solid var(--ink);height:30px}
+  .seg-cell{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+    font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
+  .seg-cell + .seg-cell{border-left:1.5px solid var(--ink)}
+  .seg-cell.on{background:var(--ink);color:#fff}
+  .g-fug{width:10px;height:10px;border-radius:50%;border:2px solid currentColor;display:block}
+  .g-fug-solid{width:10px;height:10px;border-radius:50%;background:var(--ink);display:block}
+  .g-agent{width:10px;height:10px;background:currentColor;display:block}
+  .subj{display:flex;align-items:center;gap:8px;height:17px}
+  .subj b{font-size:10px;font-weight:700;letter-spacing:.06em}
+  .subj .sname{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ink-2)}
+  .leader-dots{flex:1;border-bottom:1px dotted var(--rule-2);transform:translateY(-3px)}
+  .subj .sstat{font-size:9.5px;font-weight:600;letter-spacing:.07em;color:var(--ink-2)}
+  .subj .sstat.is-on{color:var(--ink);font-weight:700}
+  .subj-wrap{margin-top:7px}
+
+  /* ticket log */
+  .trow{display:flex;align-items:center;height:22px;gap:10px;border-bottom:1px solid var(--rule)}
+  .trow:last-child{border-bottom:0}
+  .tturn{width:22px;flex:0 0 22px;font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--ink-3)}
+  .twho{flex:0 0 118px;display:flex;align-items:baseline;gap:6px}
+  .twho b{font-size:10.5px;font-weight:700;letter-spacing:.05em}
+  .twho span{font-size:9.5px;font-weight:600;letter-spacing:.07em;color:var(--ink-2)}
+  .twhat{margin-left:auto;display:flex;align-items:center;gap:8px;
+    font-size:9.5px;font-weight:700;letter-spacing:.08em;color:var(--ink)}
+  .msw{width:14px;height:3px;display:block;background:var(--taxi)}
+  .msw.bus{background:var(--bus)}
+  .msw.metro{background:var(--metro)}
+  .msw.unknown{height:0;background:none;border-top:2px dotted var(--ink-3)}
+
+  /* probability */
+  .prow{display:flex;align-items:center;gap:10px;height:19px}
+  .pnode{width:26px;flex:0 0 26px;font-size:10.5px;font-weight:700;letter-spacing:.04em}
+  .ptrack{flex:1;height:8px;background:var(--field);position:relative}
+  .pfill{display:block;height:8px;background:var(--h20)}
+  .pfill.f40{background:var(--h40)}
+  .pfill.f25{background:var(--h25)}
+  .pfill.f15{background:var(--h15)}
+  .pval{width:38px;flex:0 0 38px;text-align:right;font-size:11.5px;font-weight:700;letter-spacing:-.01em}
+  .prob-note{display:flex;align-items:center;gap:8px;margin-top:6px;padding-top:5px;border-top:1px solid var(--rule)}
+  .prob-note p{margin:0;font-size:9.5px;font-weight:600;letter-spacing:.05em;color:var(--ink-2)}
+  .rampmini{display:flex;flex:0 0 auto}
+  .rampmini i{width:15px;height:9px;display:block}
+
+  /* legend */
+  .lrow{display:flex;align-items:center;height:15px;gap:10px}
+  .lsw{width:26px;flex:0 0 26px;height:10px;display:flex;align-items:center}
+  .lsw i{display:block;width:26px}
+  .lsw.taxi i{height:2px;background:var(--taxi)}
+  .lsw.bus i{height:3px;background:var(--bus)}
+  .lsw.metro i{height:4.5px;background:var(--metro)}
+  .lsw.special i{height:0;border-top:2.5px dotted var(--special)}
+  .lname{font-size:10.5px;font-weight:700;letter-spacing:.09em;white-space:nowrap}
+  .rail-note{margin:2px 2px 0;font-size:9.5px;font-weight:600;letter-spacing:.06em;line-height:1.6;color:var(--ink-3);text-transform:uppercase}
+  .lmeta{margin-left:auto;font-size:9.5px;font-weight:600;letter-spacing:.08em;color:var(--ink-3)}
+
+  /* ---------------- ACTION BAR ---------------- */
+  .actions{
+    flex:0 0 90px;height:90px;min-height:0;background:var(--surface);
+    border-top:1.5px solid var(--ink);
+    display:flex;align-items:center;padding:0 20px;
+  }
+  .agroup{flex:1;min-width:0}
+  .agroup-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+  .agroup-head .meta{font-size:9.5px;font-weight:600;letter-spacing:.09em;color:var(--ink-3);text-transform:uppercase}
+  .abtns{display:flex;gap:8px}
+  .btn{
+    flex:1;min-width:0;height:36px;display:flex;align-items:center;gap:6px;
+    padding:0 10px;background:var(--surface);color:var(--ink);
+    border:1.5px solid var(--rule-2);border-radius:2px;cursor:pointer;
+    font-family:inherit;font-size:11.5px;font-weight:600;letter-spacing:0;text-align:left;
+    white-space:nowrap;
+  }
+  .btn .meta{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--ink-3)}
+  .btn:hover{border-color:var(--ink)}
+  .btn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn.on .meta{color:rgba(255,255,255,.62)}
+  .btn.armed{border-width:2px;border-color:var(--ink);padding:0 11px}
+  .btn.armed::before{content:"";width:7px;height:7px;background:var(--ink);display:block;flex:0 0 7px}
+  .btn.off{color:var(--ink-3);border-color:var(--rule);cursor:default}
+  .btn.off .meta{color:var(--ink-3)}
+  .btn.off:hover{border-color:var(--rule)}
+  .actions .vrule{height:56px;background:var(--rule-2);margin:0 18px}
+  .donemark{font-size:9.5px;font-weight:600;letter-spacing:.09em;color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ================= HUD ================= -->
+  <header class="hud">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">X-YARD</span>
+    </div>
+    <span class="vrule"></span>
+    <span class="brand-sub">London Grid · Sector 2 · Hidden Movement</span>
+
+    <span class="hud-spacer"></span>
+
+    <div class="turnblock">
+      <span class="lbl">Turn</span>
+      <span class="turnval num">6<em> / 24</em></span>
+    </div>
+
+    <div class="trackblock">
+      <div class="trackcap">
+        <span class="lbl">Reveal pulse</span>
+        <b class="num">LAST T3 · NEXT T8</b>
+      </div>
+      <div class="ticks">
+        <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+        <i></i><i class="next"></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+
+    <div class="pulseblock">
+      <span class="lbl">Next pulse</span>
+      <b class="num">in 4 turns</b>
+    </div>
+  </header>
+
+  <!-- ================= BOARD ================= -->
+  <main class="board">
+
+    <!-- ---------- MAP ---------- -->
+    <section class="map">
+      <div class="map-head">
+        <div class="map-title">
+          <b>TICKET GRID</b>
+          <span>Sector 2 · 8 nodes · 21 links</span>
+        </div>
+        <div class="key">
+          <span class="keyitem">
+            <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.6" fill="#fff" stroke="#12161c" stroke-width="1.6"/></svg>
+            Street
+          </span>
+          <span class="keyitem">
+            <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="1.4" fill="#fff" stroke="#12161c" stroke-width="1.6"/></svg>
+            Terminal
+          </span>
+          <span class="keyitem">
+            <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.8" fill="#fff" stroke="#12161c" stroke-width="1.6"/><circle cx="6.5" cy="6.5" r="1.7" fill="#12161c"/></svg>
+            Hub
+          </span>
+        </div>
+      </div>
+
+      <div class="map-body">
+        <svg class="map-svg" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet" role="img"
+             aria-label="Transit diagram of the sector grid with agent positions and the estimated probability field for fugitive F2 Kestrel">
+
+          <!-- ---------- edges: taxi (base network) ---------- -->
+          <g>
+            <line class="edge-taxi" x1="80"  y1="80"  x2="280" y2="60"/>
+            <line class="edge-taxi" x1="280" y1="60"  x2="480" y2="90"/>
+            <line class="edge-taxi" x1="480" y1="90"  x2="560" y2="240"/>
+            <line class="edge-taxi" x1="560" y1="240" x2="420" y2="380"/>
+            <line class="edge-taxi" x1="420" y1="380" x2="200" y2="400"/>
+            <line class="edge-taxi" x1="200" y1="400" x2="60"  y2="250"/>
+            <line class="edge-taxi" x1="60"  y1="250" x2="300" y2="220"/>
+            <line class="edge-taxi" x1="300" y1="220" x2="80"  y2="80"/>
+            <line class="edge-taxi" x1="80"  y1="80"  x2="480" y2="90"/>
+            <line class="edge-taxi" x1="280" y1="60"  x2="560" y2="240"/>
+            <line class="edge-taxi" x1="480" y1="90"  x2="420" y2="380"/>
+            <line class="edge-taxi" x1="560" y1="240" x2="200" y2="400"/>
+            <line class="edge-taxi" x1="420" y1="380" x2="60"  y2="250"/>
+            <line class="edge-taxi" x1="200" y1="400" x2="300" y2="220"/>
+            <line class="edge-taxi" x1="60"  y1="250" x2="80"  y2="80"/>
+            <line class="edge-taxi" x1="300" y1="220" x2="280" y2="60"/>
+          </g>
+
+          <!-- ---------- bus ---------- -->
+          <g>
+            <line class="edge-bus" x1="560" y1="240" x2="60"   y2="250"/>
+            <line class="edge-bus" x1="560.3" y1="236" x2="300.3" y2="216"/>
+            <line class="edge-bus" x1="59.5" y1="245.5" x2="299.5" y2="215.5"/>
+          </g>
+
+          <!-- ---------- metro (shares the s4–s8 corridor with bus + taxi) ---------- -->
+          <g>
+            <line class="edge-metro" x1="559.7" y1="244" x2="299.7" y2="224"/>
+          </g>
+
+          <!-- ---------- special / alleyway ---------- -->
+          <g>
+            <line class="edge-special" x1="203.5" y1="401.9" x2="303.5" y2="221.9"/>
+          </g>
+
+          <!-- ---------- nodes ---------- -->
+          <g>
+            <!-- s1 street · F2 last known position -->
+            <circle class="ring-lastseen" cx="80" cy="80" r="18"/>
+            <circle class="nd nd-street" cx="80" cy="80" r="11"/>
+            <text class="nid" x="80" y="80" text-anchor="middle" dominant-baseline="central">s1</text>
+
+            <!-- s2 street · 40% -->
+            <circle class="nd nd-street h40" cx="280" cy="60" r="16.9"/>
+            <text class="nid nid-inv" x="280" y="60" text-anchor="middle" dominant-baseline="central">s2</text>
+            <text class="pct" x="280" y="26" text-anchor="middle">40%</text>
+
+            <!-- s3 street · 25% · F1 revealed here -->
+            <circle class="nd nd-street h25" cx="480" cy="90" r="14.5"/>
+            <text class="nid" x="480" y="90" text-anchor="middle" dominant-baseline="central">s3</text>
+            <text class="pct" x="516" y="95">25%</text>
+            <circle class="ring-confirmed" cx="480" cy="90" r="23"/>
+
+            <!-- s4 terminal · agent A2 -->
+            <rect class="nd nd-terminal" x="548" y="228" width="24" height="24" rx="4"/>
+            <text class="nid" x="560" y="240" text-anchor="middle" dominant-baseline="central">s4</text>
+
+            <!-- s5 street · F3 believed near -->
+            <circle class="nd nd-street" cx="420" cy="380" r="11"/>
+            <text class="nid" x="420" y="380" text-anchor="middle" dominant-baseline="central">s5</text>
+
+            <!-- s6 street · black market · 15% -->
+            <circle class="nd nd-street h15" cx="200" cy="400" r="12.9"/>
+            <text class="nid" x="200" y="400" text-anchor="middle" dominant-baseline="central">s6</text>
+            <text class="cap" x="178" y="404" text-anchor="end">BLACK MARKET</text>
+            <text class="pct" x="200" y="436" text-anchor="middle">15%</text>
+
+            <!-- s7 hub · safe house · agent A1 -->
+            <circle class="nd nd-hub" cx="60" cy="250" r="14"/>
+            <circle cx="60" cy="250" r="4.5" fill="#12161c"/>
+            <text class="nid" x="42" y="254" text-anchor="end">s7</text>
+            <text class="cap" x="60" y="312" text-anchor="middle">SAFE HOUSE</text>
+
+            <!-- s8 terminal · agent A3 · 20% -->
+            <rect class="nd nd-terminal h20" x="288" y="208" width="24" height="24" rx="4"/>
+            <text class="nid" x="300" y="220" text-anchor="middle" dominant-baseline="central">s8</text>
+            <text class="pct" x="334" y="206">20%</text>
+          </g>
+
+          <!-- ---------- agents (always visible) ---------- -->
+          <g>
+            <line class="leader" x1="60" y1="263" x2="60" y2="276"/>
+            <rect class="chip-ink" x="49" y="277" width="22" height="22" rx="2"/>
+            <text class="chip-txt chip-txt-inv" x="60" y="288" text-anchor="middle" dominant-baseline="central">A1</text>
+
+            <line class="leader" x1="574" y1="240" x2="588" y2="240"/>
+            <rect class="chip-ink" x="589" y="229" width="22" height="22" rx="2"/>
+            <text class="chip-txt chip-txt-inv" x="600" y="240" text-anchor="middle" dominant-baseline="central">A2</text>
+
+            <line class="leader" x1="300" y1="233" x2="300" y2="252"/>
+            <rect class="chip-ink" x="289" y="253" width="22" height="22" rx="2"/>
+            <text class="chip-txt chip-txt-inv" x="300" y="264" text-anchor="middle" dominant-baseline="central">A3</text>
+          </g>
+
+          <!-- ---------- fugitives ---------- -->
+          <g>
+            <!-- F1 Vulture — revealed this turn (confirmed = ink) -->
+            <line class="leader" x1="481" y1="41" x2="481" y2="66"/>
+            <rect class="callout" x="376" y="11" width="210" height="30" rx="2"/>
+            <circle class="chip-ink" cx="394" cy="26" r="9"/>
+            <text class="chip-txt chip-txt-inv" x="394" y="26" text-anchor="middle" dominant-baseline="central">F1</text>
+            <text class="callout-txt" x="410" y="26" dominant-baseline="central">VULTURE — REVEALED T6</text>
+
+            <!-- F2 Kestrel — hidden, last confirmed s1 / turn 3 -->
+            <circle class="chip-open" cx="34" cy="96" r="10"/>
+            <text class="chip-txt" x="34" y="96" text-anchor="middle" dominant-baseline="central">F2</text>
+            <text class="cap" x="34" y="122" text-anchor="middle">LAST SEEN</text>
+            <text class="cap" x="34" y="134" text-anchor="middle">S1, TURN 3</text>
+
+            <!-- F3 Magpie — hidden, heavy contraband, believed near s5 -->
+            <ellipse class="zone-belief" cx="420" cy="380" rx="46" ry="40"/>
+            <circle class="chip-open" cx="468" cy="356" r="10"/>
+            <text class="chip-txt" x="468" y="356" text-anchor="middle" dominant-baseline="central">F3</text>
+            <text class="cap cap-h" x="420" y="438" text-anchor="middle">F3 MAGPIE — BELIEVED NEAR S5</text>
+            <text class="cap" x="420" y="450" text-anchor="middle">HEAVY CONTRABAND · UNCONFIRMED</text>
+          </g>
+
+          <!-- ---------- in-map probability key ---------- -->
+          <g>
+            <text class="cap-h" x="16" y="22">PROBABILITY FIELD · F2 KESTREL</text>
+            <rect class="ramp-cell" x="16"    y="28" width="36" height="16" fill="#fbe4c2"/>
+            <rect class="ramp-cell" x="52"    y="28" width="36" height="16" fill="#f6c684"/>
+            <rect class="ramp-cell" x="88"    y="28" width="36" height="16" fill="#e8a03a"/>
+            <rect class="ramp-cell" x="124"   y="28" width="36" height="16" fill="#b95c0a"/>
+            <text class="cap" x="34"  y="40" text-anchor="middle" dominant-baseline="central">15%</text>
+            <text class="cap" x="70"  y="40" text-anchor="middle" dominant-baseline="central">20%</text>
+            <text class="cap" x="106" y="40" text-anchor="middle" dominant-baseline="central">25%</text>
+            <text class="cap cap-inv" x="142" y="40" text-anchor="middle" dominant-baseline="central">40%</text>
+            <text class="cap" x="16" y="56">AMBER = ESTIMATED · INK = CONFIRMED</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="map-foot">
+        <span class="lbl">Transport modes</span>
+        <span class="fitem"><span class="lsw taxi"><i></i></span><span class="lname">TAXI</span><span class="fnum num">16</span></span>
+        <span class="fitem"><span class="lsw bus"><i></i></span><span class="lname">BUS</span><span class="fnum num">3</span></span>
+        <span class="fitem"><span class="lsw metro"><i></i></span><span class="lname">METRO</span><span class="fnum num">1</span></span>
+        <span class="fitem"><span class="lsw special"><i></i></span><span class="lname">ALLEYWAY · SPECIAL</span><span class="fnum num">1</span></span>
+      </div>
+    </section>
+
+    <!-- ---------- RAIL ---------- -->
+    <aside class="rail">
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="lbl">Operative view</span>
+          <span class="meta num">Turn 6 of 24</span>
+        </div>
+        <div class="seg">
+          <span class="seg-cell on"><i class="g-fug"></i>Fugitive</span>
+          <span class="seg-cell"><i class="g-agent"></i>Agent</span>
+        </div>
+        <div class="subj-wrap">
+          <div class="subj">
+            <i class="g-fug-solid"></i><b>F1</b><span class="sname">VULTURE</span>
+            <span class="leader-dots"></span><span class="sstat is-on">REVEALED · s3</span>
+          </div>
+          <div class="subj">
+            <i class="g-fug"></i><b>F2</b><span class="sname">KESTREL</span>
+            <span class="leader-dots"></span><span class="sstat">HIDDEN · 4 NODES</span>
+          </div>
+          <div class="subj">
+            <i class="g-fug"></i><b>F3</b><span class="sname">MAGPIE</span>
+            <span class="leader-dots"></span><span class="sstat">HIDDEN · HEAVY</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="lbl">Ticket log</span>
+          <span class="meta">Newest first</span>
+        </div>
+        <div class="trow">
+          <span class="tturn num">T6</span>
+          <span class="twho"><b>F1</b><span>VULTURE</span></span>
+          <span class="twhat"><i class="msw bus"></i>BUS TICKET</span>
+        </div>
+        <div class="trow">
+          <span class="tturn num">T6</span>
+          <span class="twho"><b>F2</b><span>KESTREL</span></span>
+          <span class="twhat"><i class="msw unknown"></i>UNKNOWN TRANSPORT</span>
+        </div>
+        <div class="trow">
+          <span class="tturn num">T5</span>
+          <span class="twho"><b>F3</b><span>MAGPIE</span></span>
+          <span class="twhat"><i class="msw"></i>TAXI TICKET</span>
+        </div>
+        <div class="trow">
+          <span class="tturn num">T5</span>
+          <span class="twho"><b>F1</b><span>VULTURE</span></span>
+          <span class="twhat"><i class="msw"></i>TAXI TICKET</span>
+        </div>
+        <div class="trow">
+          <span class="tturn num">T4</span>
+          <span class="twho"><b>F3</b><span>MAGPIE</span></span>
+          <span class="twhat"><i class="msw metro"></i>METRO TICKET</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="lbl">Probability · F2 Kestrel</span>
+          <span class="meta num">4 nodes</span>
+        </div>
+        <div class="prow">
+          <span class="pnode">s2</span>
+          <span class="ptrack"><span class="pfill f40" style="width:100%"></span></span>
+          <span class="pval num">40%</span>
+        </div>
+        <div class="prow">
+          <span class="pnode">s3</span>
+          <span class="ptrack"><span class="pfill f25" style="width:62.5%"></span></span>
+          <span class="pval num">25%</span>
+        </div>
+        <div class="prow">
+          <span class="pnode">s8</span>
+          <span class="ptrack"><span class="pfill f20" style="width:50%"></span></span>
+          <span class="pval num">20%</span>
+        </div>
+        <div class="prow">
+          <span class="pnode">s6</span>
+          <span class="ptrack"><span class="pfill f15" style="width:37.5%"></span></span>
+          <span class="pval num">15%</span>
+        </div>
+        <div class="prob-note">
+          <span class="rampmini">
+            <i style="background:#fbe4c2"></i><i style="background:#f6c684"></i><i style="background:#e8a03a"></i><i style="background:#b95c0a"></i>
+          </span>
+          <p>Single-hue ramp · last confirmed s1, turn 3</p>
+        </div>
+      </section>
+
+      <p class="rail-note">
+        Sector 2 scan · 6 of 8 nodes observed<br>
+        1 roadblock active · 5 tickets logged this run
+      </p>
+
+    </aside>
+  </main>
+
+  <!-- ================= ACTION BAR ================= -->
+  <footer class="actions">
+    <div class="agroup">
+      <div class="agroup-head">
+        <span class="lbl">Fugitive gadgets</span>
+        <span class="meta">1 selected · 4 uses left</span>
+      </div>
+      <div class="abtns">
+        <button class="btn on" type="button">Decoy Ping<span class="meta num">×2</span></button>
+        <button class="btn" type="button">Counterfeit Identity<span class="meta num">×1</span></button>
+        <button class="btn" type="button">Alleyway Sprint<span class="meta num">×1</span></button>
+      </div>
+    </div>
+
+    <span class="vrule"></span>
+
+    <div class="agroup">
+      <div class="agroup-head">
+        <span class="lbl">Agent skills</span>
+        <span class="meta">3 available this turn</span>
+      </div>
+      <div class="abtns">
+        <button class="btn armed" type="button">Targeted Roadblock<span class="meta num">2 TP</span></button>
+        <button class="btn" type="button">Sensor Sweep<span class="meta num">3 TP</span></button>
+        <button class="btn off" type="button">Rapid Deployment<span class="meta num">USED T5</span></button>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

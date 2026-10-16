@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /* Apps are bundled by tsx/vite, never emitted by tsc. `noEmit` also lets us
+       import workspace TS sources directly (a `rootDir` here would reject
+       files pulled in from packages/). */
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}

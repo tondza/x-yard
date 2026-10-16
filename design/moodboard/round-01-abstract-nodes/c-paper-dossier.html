@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>X-Yard — Direction C: Paper Dossier / Investigation Board</title>
+<style>
+  /* ============================================================
+     X-YARD — ART DIRECTION C: PAPER DOSSIER / INVESTIGATION BOARD
+     Single file, offline, no external resources.
+     ============================================================ */
+
+  :root{
+    --paper:        #f2ead9;
+    --paper-2:      #e8dcc0;
+    --paper-3:      #ded0b0;
+    --board:        #b89670;
+    --board-dark:   #8f7150;
+    --card:         #f7f0e0;
+    --ink:          #2c271e;
+    --ink-soft:     #4a4234;
+    --ink-faint:    #6f6553;
+    --red:          #a8342b;
+    --red-soft:     #c15c4e;
+    --blue:         #3d5a86;
+    --blue-soft:    #6b86ac;
+    --sepia:        #8a6d3b;
+    --brass:        #b8892f;
+    --hair:         rgba(44,39,30,.22);
+    --hair-strong:  rgba(44,39,30,.42);
+    --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ background:#4b4238; }
+
+  body{
+    margin:0;
+    font-family:var(--serif);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .stage{
+    position:relative;
+    width:1280px;
+    height:720px;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,255,255,.62), transparent 55%),
+      radial-gradient(circle at 88% 96%, rgba(120,96,60,.22), transparent 55%),
+      linear-gradient(160deg, var(--paper) 0%, var(--paper-2) 62%, var(--paper-3) 100%);
+  }
+  /* paper grain: two offset dot lattices, no images */
+  .stage::before{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:.42;
+    background-image:
+      radial-gradient(rgba(58,48,32,.30) 0.5px, transparent 0.6px),
+      radial-gradient(rgba(255,252,240,.55) 0.5px, transparent 0.6px);
+    background-size:4px 4px, 7px 7px;
+    background-position:0 0, 2px 3px;
+  }
+  /* vignette + board shadow */
+  .stage::after{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none;
+    box-shadow:
+      inset 0 0 150px rgba(84,60,32,.30),
+      inset 0 0 26px rgba(84,60,32,.18);
+  }
+
+  .ui{ position:relative; z-index:3; display:grid; grid-template-rows:54px 430px 42px 34px; gap:10px; height:100%; padding:10px 22px; }
+
+  /* ---------------- generic card / note ---------------- */
+  .card{
+    position:relative;
+    background:
+      linear-gradient(178deg, rgba(255,253,246,.72), rgba(214,198,166,.22)),
+      var(--card);
+    border:1px solid var(--hair-strong);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.55) inset,
+      0 5px 12px rgba(70,50,26,.20),
+      0 1px 3px rgba(70,50,26,.16);
+  }
+  .card::after{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:.30;
+    background-image:radial-gradient(rgba(72,58,38,.34) 0.5px, transparent 0.6px);
+    background-size:3px 3px;
+  }
+  .card > *{ position:relative; z-index:1; }
+
+  .tape{
+    position:absolute; top:-9px; left:-16px;
+    width:68px; height:19px;
+    background:linear-gradient(180deg, rgba(232,222,190,.85), rgba(206,192,152,.78));
+    border-left:1px solid rgba(120,102,64,.35);
+    border-right:1px solid rgba(120,102,64,.35);
+    box-shadow:0 1px 2px rgba(70,50,26,.22);
+    transform:rotate(-5deg);
+    z-index:4;
+  }
+  .tape.right{ left:auto; right:-14px; transform:rotate(4deg); }
+
+  .pin{
+    position:absolute; width:14px; height:14px; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #e6b9ac 0%, #c05b4c 32%, #8d2f26 72%, #5d1d17 100%);
+    box-shadow:0 3px 4px rgba(60,40,20,.45), 0 0 0 1px rgba(90,40,30,.35);
+    z-index:6;
+  }
+  .pin::after{
+    content:"";
+    position:absolute; left:4px; top:3px; width:4px; height:3px;
+    border-radius:50%; background:rgba(255,235,225,.75);
+  }
+  .pin.brass{ background:radial-gradient(circle at 34% 30%, #f4dda3 0%, #d3a94a 34%, #9a7420 74%, #5f4610 100%); }
+
+  /* ---------------- header ---------------- */
+  .hdr{
+    position:relative;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:14px;
+    padding:0 14px;
+    min-width:0;
+    background:
+      linear-gradient(180deg, rgba(255,253,245,.70), rgba(222,208,178,.30)),
+      var(--paper-2);
+    border:1px solid var(--hair-strong);
+    box-shadow:0 4px 10px rgba(70,50,26,.18), 0 1px 0 rgba(255,255,255,.5) inset;
+  }
+  .hdr::after{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none; opacity:.30;
+    background-image:radial-gradient(rgba(72,58,38,.34) 0.5px, transparent 0.6px);
+    background-size:3px 3px;
+  }
+  .hdr > *{ position:relative; z-index:1; }
+
+  .brand{ display:flex; align-items:baseline; gap:10px; min-width:0; flex:0 1 auto; overflow:hidden; }
+  .brand .mark{
+    font-size:23px; font-weight:700; letter-spacing:.30em; text-transform:uppercase;
+    color:var(--ink);
+  }
+  .brand .divider{ width:1px; height:24px; background:var(--hair-strong); transform:rotate(8deg); }
+  .brand .sub{
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-faint); line-height:1.5;
+  }
+  .brand .sub b{ color:var(--red); font-weight:700; }
+
+  .hud{
+    display:flex; align-items:stretch; gap:0; min-width:0; flex:0 1 auto;
+    border:1px solid var(--hair-strong);
+    background:rgba(255,252,244,.52);
+    box-shadow:0 1px 2px rgba(70,50,26,.12) inset;
+  }
+  .hud .cell{ padding:5px 16px 6px; border-left:1px dashed var(--hair); text-align:center; }
+  .hud .cell:first-child{ border-left:0; }
+  .hud .k{
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .hud .v{ font-size:19px; font-weight:700; letter-spacing:.02em; line-height:1.15; }
+  .hud .v em{ font-style:normal; font-size:12px; color:var(--ink-faint); font-weight:400; }
+  .hud .v.alert{ color:var(--red); }
+  .hud .pulses{ display:flex; gap:4px; justify-content:center; margin-top:3px; }
+  .hud .pulses i{
+    width:9px; height:9px; border:1px solid var(--hair-strong); border-radius:50%;
+    background:rgba(255,255,255,.4); display:block;
+  }
+  .hud .pulses i.on{ background:var(--red); border-color:#7d241d; box-shadow:0 0 0 1px rgba(168,52,43,.18); }
+  .hud .pulses i.next{ border-color:var(--red); background:rgba(168,52,43,.18); }
+
+  .stamps{ display:flex; align-items:center; gap:10px; min-width:0; flex:none; justify-content:flex-end; }
+  .stamp{
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    letter-spacing:.20em; text-transform:uppercase;
+    padding:3px 9px 2px;
+    border:2px solid currentColor;
+    border-radius:2px;
+    transform:rotate(-5deg);
+    opacity:.80;
+    box-shadow:0 1px 0 rgba(255,255,255,.35) inset;
+    position:relative;
+  }
+  .stamp::after{
+    content:""; position:absolute; inset:2px;
+    border:1px solid currentColor; border-radius:1px; opacity:.55;
+  }
+  .stamp.red{ color:var(--red); }
+  .stamp.blue{ color:var(--blue); transform:rotate(4deg); }
+
+  /* ---------------- main ---------------- */
+  .main{ display:grid; grid-template-columns:minmax(0,830px) minmax(0,1fr); gap:16px; min-height:0; min-width:0; }
+
+  .mapwrap{ position:relative; display:flex; flex-direction:column; min-height:0; min-width:0; }
+  .mapframe{
+    position:relative;
+    flex:1; min-height:0;
+    background:
+      linear-gradient(170deg, rgba(255,252,243,.60), rgba(206,188,152,.34)),
+      var(--paper-2);
+    border:1px solid var(--hair-strong);
+    box-shadow:
+      0 3px 0 rgba(255,255,255,.42) inset,
+      0 8px 18px rgba(70,50,26,.24),
+      0 2px 5px rgba(70,50,26,.16);
+  }
+  .mapframe::after{
+    content:"";
+    position:absolute; inset:0; pointer-events:none; opacity:.34;
+    background-image:
+      radial-gradient(rgba(72,58,38,.34) 0.5px, transparent 0.6px),
+      radial-gradient(rgba(255,252,240,.6) 0.5px, transparent 0.6px);
+    background-size:3px 3px, 5px 5px;
+    background-position:0 0, 1px 2px;
+  }
+  .map-grid{
+    position:absolute; inset:0;
+    opacity:.30;
+    background-image:
+      linear-gradient(rgba(90,112,138,.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,112,138,.16) 1px, transparent 1px);
+    background-size:26px 26px;
+  }
+  #boardsvg{ position:relative; z-index:2; display:block; width:100%; height:100%; }
+
+  .mapplate{
+    position:absolute; left:12px; top:10px; z-index:5;
+    font-family:var(--mono); font-size:9px; letter-spacing:.15em; text-transform:uppercase;
+    color:var(--ink-faint);
+    background:rgba(247,240,224,.86);
+    border:1px solid var(--hair);
+    padding:4px 8px 3px;
+    box-shadow:0 2px 5px rgba(70,50,26,.18);
+  }
+  .mapplate b{ color:var(--ink); letter-spacing:.10em; }
+  .mapplate span{ display:block; margin-top:2px; }
+  .mapframe .pin.tl{ left:254px; top:8px; }
+  .mapframe .pin.tr{ right:14px; top:8px; }
+  .mapframe .pin.bl{ left:264px; bottom:-6px; }
+  .mapframe .pin.br{ right:16px; bottom:-6px; }
+  .scalebar{
+    position:absolute; right:16px; bottom:10px; z-index:5;
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .scalebar .bar{ display:flex; border:1px solid var(--hair-strong); }
+  .scalebar .bar i{ width:19px; height:7px; background:var(--ink-faint); display:block; }
+  .scalebar .bar i:nth-child(even){ background:transparent; }
+
+  .torn{
+    position:absolute; z-index:7;
+    right:22px; top:12px;
+    width:212px;
+    padding:10px 13px 10px 15px;
+    background:
+      linear-gradient(178deg, rgba(255,255,255,.5), rgba(206,188,150,.20)),
+      #f1e7cf;
+    border:1px solid rgba(120,100,64,.45);
+    box-shadow:0 8px 16px rgba(60,42,22,.30), 0 1px 0 rgba(255,255,255,.6) inset;
+    transform:rotate(1.6deg);
+    clip-path:polygon(0 4%,4% 0,17% 3%,31% 0,46% 3%,62% 0,78% 3%,92% 0,100% 5%,100% 95%,95% 100%,80% 97%,64% 100%,47% 97%,30% 100%,13% 97%,2% 100%,0 94%);
+  }
+  .torn .hand{
+    font-family:var(--serif); font-style:italic; font-size:12.5px; line-height:1.3;
+    color:#3b3a56;
+    text-shadow:0 1px 0 rgba(255,255,255,.5);
+  }
+  .torn .hand b{ font-style:normal; color:var(--red); }
+  .torn .sig{
+    margin-top:7px; display:flex; justify-content:space-between; align-items:flex-end;
+    font-family:var(--mono); font-size:7.5px; letter-spacing:.10em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .torn .ttape{
+    position:absolute; top:-9px; left:50%; margin-left:-30px;
+    width:60px; height:16px; transform:rotate(-3deg);
+    background:linear-gradient(180deg, rgba(238,229,199,.9), rgba(208,194,152,.8));
+    border-left:1px solid rgba(120,102,64,.35); border-right:1px solid rgba(120,102,64,.35);
+    box-shadow:0 1px 2px rgba(70,50,26,.25);
+  }
+
+  /* ---------------- sidebar ---------------- */
+  .side{
+    display:grid;
+    grid-template-rows:150px 152px minmax(0,1fr);
+    gap:11px;
+    min-height:0; min-width:0;
+  }
+  .side > .panel{ min-width:0; overflow:hidden; }
+  .side .label{
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.20em; text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .panel{ padding:9px 12px 10px 13px; min-height:0; display:flex; flex-direction:column; }
+  .panel .head{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:8px;
+    padding-bottom:3px; margin-bottom:5px;
+    border-bottom:1px solid var(--hair);
+  }
+  .panel .head h3{
+    margin:0; font-size:11.5px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; line-height:1.2;
+  }
+  .panel .head h3 small{ display:block; font-size:7.5px; letter-spacing:.12em; color:var(--ink-faint); font-family:var(--mono); font-weight:400; margin-top:1px; }
+
+  /* probability sheet */
+  .psheet .pright{ text-align:right; font-family:var(--mono); font-size:7.5px; letter-spacing:.10em; color:var(--ink-faint); white-space:nowrap; }
+  .prows{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .prow{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,122px); gap:8px; align-items:center; min-width:0; }
+  .prow .pname{ font-family:var(--mono); font-size:8.5px; letter-spacing:.04em; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .prow .pname b{ color:var(--ink); }
+  .prow .pzone{ display:grid; grid-template-columns:minmax(0,1fr) 30px; gap:6px; align-items:center; min-width:0; }
+  .prow .ptrack{
+    position:relative; height:11px; min-width:0;
+    border:1px solid var(--hair); background:rgba(255,255,255,.42);
+    background-image:repeating-linear-gradient(135deg, rgba(58,48,32,.13) 0 1px, transparent 1px 5px);
+  }
+  .prow .ptrack i{
+    position:absolute; left:0; top:0; bottom:0; display:block;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 1px, transparent 1px 4px),
+      #3f5480;
+    box-shadow:0 1px 0 rgba(0,0,0,.12) inset;
+  }
+  .prow .ptrack i.hi{ background-color:#8f3a30; }
+  .prow .pval{ font-family:var(--mono); font-size:9.5px; font-weight:700; text-align:right; }
+  .prow .pval.faint{ font-weight:400; color:var(--ink-faint); }
+  .pfoot{
+    margin-top:auto; padding-top:6px; border-top:1px dashed var(--hair);
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:7.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint);
+    white-space:nowrap;
+  }
+
+  /* ticket log */
+  .log{ overflow:hidden; }
+  .log ol{ list-style:none; margin:0; padding:0; }
+  .log li{
+    display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:6px; align-items:baseline;
+    padding:1px 0 1.5px; min-width:0;
+    border-bottom:1px dotted rgba(44,39,30,.24);
+  }
+  .log li:last-child{ border-bottom:0; }
+  .log .t{ font-family:var(--mono); font-size:9px; color:var(--ink-faint); }
+  .log .head .pright{ white-space:nowrap; line-height:1.35; }
+  .log .e{ font-family:var(--mono); font-size:9.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .log .e .who{ font-weight:700; }
+  .log .tk{
+    font-family:var(--mono); font-size:7.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:1px 4px 1px; border:1px solid currentColor; border-radius:2px; white-space:nowrap;
+  }
+  .tk.taxi{ color:#6d5a3a; }
+  .tk.bus{ color:var(--blue); }
+  .tk.metro{ color:var(--red); }
+  .tk.special{ color:#556b3f; }
+  .tk.unknown{ color:var(--red); border-style:dashed; background:rgba(168,52,43,.07); }
+  .tk.flag{
+    display:block; margin-top:1px; border:0; padding:0; color:var(--red); font-size:7px; letter-spacing:.10em;
+  }
+
+  /* evidence */
+  .ev{ display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+  .ev .list{ display:flex; flex-direction:column; gap:0; min-height:0; overflow:hidden; }
+  .evrow{
+    display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:7px; align-items:start;
+    padding-bottom:4px; margin-bottom:4px; border-bottom:1px dotted rgba(44,39,30,.22);
+  }
+  .evrow:last-child{ border-bottom:0; padding-bottom:0; margin-bottom:0; }
+  .evrow .no{ font-family:var(--mono); font-size:8px; color:var(--ink-faint); padding-top:1px; }
+  .evrow .txt{ font-size:10px; line-height:1.22; min-width:0; overflow:hidden; }
+  .evrow .txt b{ font-weight:700; }
+  .evrow .txt em{ font-style:italic; color:var(--ink-soft); }
+  .evrow .txt .note{ display:block; font-family:var(--mono); font-size:7.5px; letter-spacing:.02em; color:var(--ink-faint); margin-top:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .evrow .tag{
+    font-family:var(--mono); font-size:7px; letter-spacing:.10em; text-transform:uppercase;
+    padding:1px 4px 1px; border:1px solid var(--hair-strong); color:var(--ink-faint); white-space:nowrap;
+  }
+  .evrow .tag.hot{ color:var(--red); border-color:var(--red); }
+  .evrow .tag.cool{ color:var(--blue); border-color:var(--blue); }
+
+  /* ---------------- bottom: action bar ---------------- */
+  .actbar{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 274px; align-items:center; gap:12px; min-width:0;
+    padding:0 13px;
+    background:
+      linear-gradient(180deg, rgba(255,253,245,.62), rgba(214,198,166,.26)),
+      var(--paper-2);
+    border:1px solid var(--hair-strong);
+    box-shadow:0 -3px 9px rgba(70,50,26,.14), 0 1px 0 rgba(255,255,255,.5) inset;
+  }
+  .actgroup{ display:flex; align-items:center; gap:6px; min-width:0; }
+  .actgroup .gl{
+    font-family:var(--mono); font-size:7.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-faint); line-height:1.25; width:62px; flex:none;
+  }
+  .actgroup .gl.fug{ color:var(--red); }
+  .actgroup .gl.agt{ color:var(--blue); }
+  .btn{
+    position:relative;
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink);
+    padding:6px 8px 5px;
+    background:linear-gradient(180deg, rgba(255,253,246,.72), rgba(219,205,174,.34));
+    border:1px solid var(--hair-strong);
+    box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 2px 3px rgba(70,50,26,.16);
+    cursor:default; white-space:nowrap;
+  }
+  .btn .cost{
+    display:block; font-size:7px; letter-spacing:.09em; color:var(--ink-faint); margin-top:1px;
+  }
+  .btn.active{
+    color:#fdf8ec;
+    background:linear-gradient(180deg, #45403a, #241f19);
+    border-color:#15120e;
+    box-shadow:0 2px 6px rgba(40,28,14,.4) inset, 0 0 0 2px rgba(168,52,43,.20);
+    transform:translateY(1px);
+  }
+  .btn.active .cost{ color:rgba(253,248,236,.72); }
+  .btn.active::after{
+    content:"SELECTED";
+    position:absolute; right:-6px; top:-8px;
+    font-size:6.5px; letter-spacing:.14em; color:var(--red);
+    background:var(--card); border:1px solid var(--red); padding:1px 3px;
+    transform:rotate(5deg);
+  }
+  .btn.fug{ border-left:3px solid var(--red); }
+  .btn.agt{ border-left:3px solid var(--blue); }
+  .tickets{
+    display:flex; align-items:center; justify-content:flex-end; gap:6px; min-width:0;
+    font-family:var(--mono); font-size:8.5px; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .tickets .tcount{
+    display:flex; align-items:center; gap:5px; padding:4px 7px;
+    border:1px solid var(--hair); background:rgba(255,255,255,.42);
+  }
+  .tickets .chip{ width:11px; height:11px; border:1px solid rgba(0,0,0,.35); display:block; }
+  .tickets .chip.taxi{ background:#8a7448; }
+  .tickets .chip.bus{ background:#3d5a86; }
+  .tickets .chip.metro{ background:#a8342b; }
+  .tickets .chip.special{ background:#556b3f; }
+  .tickets .n{ color:var(--ink); font-weight:700; font-size:10px; }
+
+  /* ---------------- footer strip ---------------- */
+  .strip{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 4px; min-height:0; }
+  .legend{ display:flex; align-items:center; gap:13px; min-width:0; }
+  .legend .lg-t{
+    font-family:var(--mono); font-size:7.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .lgitem{ display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:8.5px; letter-spacing:.06em; color:var(--ink-soft); white-space:nowrap; }
+  .sg{ width:26px; height:0; border-top:2px solid #8a7448; display:block; }
+  .sg.bus{ border-top:2px solid var(--blue); border-top-style:double; border-top-width:4px; }
+  .sg.metro{ border-top:3px solid var(--red); }
+  .sg.special{ border-top:2px dashed #556b3f; }
+  .lgitem .k{ color:var(--ink); }
+  .factions{ display:flex; align-items:center; gap:10px; }
+  .fchip{
+    display:flex; align-items:center; gap:7px;
+    padding:4px 9px 4px 7px;
+    border:1px solid var(--hair-strong);
+    font-family:var(--mono); font-size:9px; letter-spacing:.10em; text-transform:uppercase;
+    background:rgba(255,255,255,.40);
+  }
+  .fchip .dot{ width:11px; height:11px; display:block; border-radius:50%; border:1px solid rgba(0,0,0,.35); }
+  .fchip.fug{ color:#7d2a22; border-color:rgba(168,52,43,.55); }
+  .fchip.fug .dot{ background:radial-gradient(circle at 34% 30%, #e2a294, #a8342b 60%, #6d1f18); }
+  .fchip.agt{ color:#2f4a71; border-color:rgba(61,90,134,.55); }
+  .fchip.agt .dot{ background:radial-gradient(circle at 34% 30%, #a8bcd8, #3d5a86 60%, #24395c); }
+  .fchip small{ color:var(--ink-faint); letter-spacing:.06em; }
+  .fchip.you{ box-shadow:0 0 0 2px rgba(168,52,43,.16); background:rgba(255,252,244,.72); }
+  .factions .sep{ font-family:var(--mono); font-size:8px; letter-spacing:.16em; color:var(--ink-faint); }
+
+  /* ---------------- svg map ---------------- */
+  #boardsvg text{ font-family:var(--mono); }
+  #boardsvg .nm{ font-family:var(--serif); }
+  #boardsvg .hand{ font-family:var(--serif); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="ui">
+
+    <!-- ============ HEADER ============ -->
+    <header class="hdr">
+      <div class="brand">
+        <span class="mark">X&#8209;Yard</span>
+        <span class="divider"></span>
+        <span class="sub">Case File <b>XY-114</b><br>Yard&nbsp;London &middot; Node Chart&nbsp;03</span>
+      </div>
+
+      <div class="hud">
+        <div class="cell">
+          <div class="k">Turn</div>
+          <div class="v">6 <em>/ 24</em></div>
+        </div>
+        <div class="cell">
+          <div class="k">Reveal Pulses</div>
+          <div class="v">3 &middot; 8 &middot; 13 <em>&hellip;</em></div>
+          <div class="pulses">
+            <i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="next"></i><i></i><i></i>
+          </div>
+        </div>
+        <div class="cell">
+          <div class="k">Next Pulse</div>
+          <div class="v alert">In 4 turns</div>
+        </div>
+        <div class="cell">
+          <div class="k">Phase</div>
+          <div class="v" style="font-size:14px;padding-top:3px;">Agent&nbsp;Movement</div>
+        </div>
+      </div>
+
+      <div class="stamps">
+        <span class="stamp red">Classified</span>
+        <span class="stamp blue">Active</span>
+      </div>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <div class="main">
+
+      <!-- ---------- MAP ---------- -->
+      <section class="mapwrap">
+        <div class="mapframe">
+          <div class="map-grid"></div>
+
+          <svg id="boardsvg" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet" aria-label="X-Yard node chart, turn 6">
+            <defs>
+              <pattern id="hatchA" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+                <line x1="0" y1="0" x2="0" y2="7" stroke="#5c5a52" stroke-width="0.9" opacity="0.42"/>
+              </pattern>
+              <pattern id="hatchB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-32)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#4a5c7c" stroke-width="0.85" opacity="0.32"/>
+              </pattern>
+              <pattern id="hatchRed" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-42)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#a8342b" stroke-width="0.85" opacity="0.34"/>
+              </pattern>
+
+              <filter id="pencil" x="-25%" y="-25%" width="150%" height="150%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.022 0.028" numOctaves="3" seed="8" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <filter id="pencilSoft" x="-30%" y="-30%" width="160%" height="160%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05 0.06" numOctaves="2" seed="3" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <filter id="stringy" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04 0.09" numOctaves="2" seed="17" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+
+              <marker id="arrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+                <path d="M0,1 L9,5 L0,9 L2.6,5 Z" fill="#a8342b" opacity="0.9"/>
+              </marker>
+              <marker id="arrInk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M0,1 L9,5 L0,9 L2.6,5 Z" fill="#5c5a52" opacity="0.85"/>
+              </marker>
+              <marker id="arrBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M0,1 L9,5 L0,9 L2.6,5 Z" fill="#3d5a86" opacity="0.9"/>
+              </marker>
+            </defs>
+
+            <!-- pencil grid margin ticks -->
+            <g opacity="0.35" stroke="#7c8577" stroke-width="0.8">
+              <line x1="40" y1="20" x2="600" y2="20" stroke-dasharray="2 10"/>
+              <line x1="40" y1="460" x2="600" y2="460" stroke-dasharray="2 10"/>
+              <line x1="36" y1="60" x2="36" y2="420" stroke-dasharray="2 10"/>
+              <line x1="604" y1="60" x2="604" y2="420" stroke-dasharray="2 10"/>
+            </g>
+
+            <!-- ======= POSSIBLE-POSITION ZONES (drawn first, under everything) ======= -->
+            <g opacity="0.26">
+              <ellipse cx="280" cy="98" rx="47" ry="46" fill="url(#hatchB)" transform="rotate(-14 280 98)"/>
+            </g>
+            <g opacity="0.22">
+              <circle cx="346" cy="404" r="41" fill="url(#hatchA)"/>
+            </g>
+            <g opacity="0.20">
+              <ellipse cx="452" cy="272" rx="52" ry="40" fill="url(#hatchA)" transform="rotate(24 452 272)"/>
+            </g>
+
+            <!-- ======= EDGES ======= -->
+            <!-- taxi -->
+            <g stroke="#8a7448" stroke-width="1.5" stroke-linecap="round" opacity="0.88">
+              <line x1="80" y1="80" x2="280" y2="60"/>
+              <line x1="280" y1="60" x2="480" y2="90"/>
+              <line x1="480" y1="90" x2="560" y2="240"/>
+              <line x1="560" y1="240" x2="420" y2="380"/>
+              <line x1="420" y1="380" x2="200" y2="400"/>
+              <line x1="200" y1="400" x2="60" y2="250"/>
+              <line x1="60" y1="250" x2="300" y2="220"/>
+              <line x1="300" y1="220" x2="80" y2="80"/>
+              <line x1="80" y1="80" x2="480" y2="90"/>
+              <line x1="280" y1="60" x2="560" y2="240"/>
+              <line x1="480" y1="90" x2="420" y2="380"/>
+              <line x1="560" y1="240" x2="200" y2="400"/>
+              <line x1="420" y1="380" x2="60" y2="250"/>
+              <line x1="200" y1="400" x2="300" y2="220"/>
+              <line x1="60" y1="250" x2="80" y2="80"/>
+              <line x1="300" y1="220" x2="280" y2="60"/>
+            </g>
+
+            <!-- bus (blue pencil, doubled) -->
+            <g stroke="#3d5a86" stroke-width="1.7" stroke-linecap="round" opacity="0.90">
+              <line x1="560" y1="240" x2="60" y2="250" stroke-dasharray="9 5"/>
+              <line x1="560" y1="240" x2="300" y2="220" stroke-dasharray="9 5"/>
+              <line x1="60" y1="250" x2="300" y2="220" stroke-dasharray="9 5"/>
+            </g>
+            <g stroke="#3d5a86" stroke-width="0.6" opacity="0.5">
+              <line x1="560" y1="244" x2="60" y2="254" stroke-dasharray="9 5"/>
+              <line x1="560" y1="244" x2="300" y2="224" stroke-dasharray="9 5"/>
+              <line x1="60" y1="254" x2="300" y2="224" stroke-dasharray="9 5"/>
+            </g>
+
+            <!-- metro (heavy red) -->
+            <g stroke="#a8342b" stroke-width="3.4" stroke-linecap="round" opacity="0.92">
+              <line x1="560" y1="240" x2="300" y2="220"/>
+            </g>
+            <g stroke="#a8342b" stroke-width="0.9" stroke-dasharray="6 9" opacity="0.75">
+              <line x1="560" y1="240" x2="300" y2="220"/>
+            </g>
+
+            <!-- special alleyway -->
+            <g stroke="#556b3f" stroke-width="1.6" stroke-linecap="round" opacity="0.9">
+              <line x1="200" y1="400" x2="300" y2="220" stroke-dasharray="2 2 7 4"/>
+            </g>
+
+            <!-- ======= STRING: Kestrel trail (s1 -> trail -> s2) ======= -->
+            <g filter="url(#stringy)">
+              <path d="M80,80 C120,148 190,160 250,196 L274,212"
+                    fill="none" stroke="#b1372c" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+              <path d="M80,80 C118,150 188,162 252,198"
+                    fill="none" stroke="#b1372c" stroke-width="0.8" opacity="0.42"/>
+            </g>
+            <circle cx="80" cy="80" r="4.5" fill="none" stroke="#b1372c" stroke-width="1.4" opacity="0.85"/>
+            <circle cx="274" cy="212" r="3.4" fill="#b1372c" opacity="0.9"/>
+
+            <!-- ======= CORRIDOR LOCK (grease pencil) ======= -->
+            <g filter="url(#pencilSoft)">
+              <path d="M300,221 C380,214 480,222 558,239" fill="none" stroke="#2f4636" stroke-width="4.6" stroke-linecap="round" opacity="0.30"/>
+              <path d="M303,220 C382,212 478,220 556,238" fill="none" stroke="#2f4636" stroke-width="1.7" stroke-linecap="round" opacity="0.62"/>
+            </g>
+
+            <!-- ======= ZONE OUTLINES (pencil) ======= -->
+            <g filter="url(#pencil)" fill="none" stroke-linecap="round">
+              <!-- s5 hot zone -->
+              <ellipse cx="346" cy="404" rx="41" ry="34" stroke="#a8342b" stroke-width="1.9" stroke-dasharray="7 4" transform="rotate(-8 346 404)" opacity="0.85"/>
+              <!-- s6 possible zone -->
+              <ellipse cx="228" cy="404" rx="42" ry="34" stroke="#5c5a52" stroke-width="1.5" stroke-dasharray="3 4" transform="rotate(6 228 404)" opacity="0.75"/>
+              <!-- s2 last-seen zone -->
+              <ellipse cx="280" cy="60" rx="47" ry="43" stroke="#3d5a86" stroke-width="1.8" stroke-dasharray="10 5" transform="rotate(12 280 60)" opacity="0.8"/>
+              <ellipse cx="280" cy="60" rx="54" ry="49" stroke="#3d5a86" stroke-width="0.9" stroke-dasharray="2 5" transform="rotate(12 280 60)" opacity="0.45"/>
+              <!-- s8 possible zone -->
+              <ellipse cx="522" cy="256" rx="49" ry="40" stroke="#5c5a52" stroke-width="1.4" stroke-dasharray="3 4" transform="rotate(-18 522 256)" opacity="0.7"/>
+            </g>
+
+            <!-- marks inside zones -->
+            <g filter="url(#pencil)">
+              <path d="M338,388 L354,420 M354,388 L338,420" stroke="#a8342b" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
+            </g>
+            <g filter="url(#pencil)">
+              <path d="M508,236 L556,236 M532,212 L532,276" stroke="#3d5a86" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/>
+            </g>
+            <!-- question marks -->
+            <text class="hand" x="330" y="376" font-size="21" fill="#a8342b" opacity="0.85" transform="rotate(-9 330 376)">?</text>
+            <text class="hand" x="248" y="378" font-size="17" fill="#5c5a52" opacity="0.8" transform="rotate(7 248 378)">?</text>
+
+            <!-- ======= STATION PLATES ======= -->
+            <!-- s1 last seen -->
+            <g filter="url(#pencilSoft)">
+              <circle cx="80" cy="80" r="13.5" fill="none" stroke="#3d5a86" stroke-width="1.7" stroke-dasharray="6 4"/>
+            </g>
+            <!-- s3 revealed this turn -->
+            <g filter="url(#pencilSoft)" fill="none" stroke="#a8342b">
+              <circle cx="480" cy="90" r="20" stroke-width="2.4"/>
+              <circle cx="480" cy="90" r="25" stroke-width="1" stroke-dasharray="3 4" opacity="0.7"/>
+            </g>
+            <path d="M499,71 L515,55 M461,71 L445,55" stroke="#a8342b" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+            <!-- s6 black market -->
+            <g filter="url(#pencilSoft)" fill="none" stroke="#556b3f">
+              <rect x="185" y="385" width="30" height="30" rx="3" stroke-width="1.7" stroke-dasharray="5 3" transform="rotate(-6 200 400)"/>
+              <path d="M190,390 L210,410 M210,390 L190,410" stroke-width="1.4" opacity="0.75" transform="rotate(-6 200 400)"/>
+            </g>
+            <!-- s7 safe house -->
+            <g fill="none" stroke="#b8892f">
+              <rect x="45" y="235" width="30" height="30" rx="4" stroke-width="2.1" transform="rotate(8 60 250)"/>
+              <rect x="50" y="240" width="20" height="20" rx="3" stroke-width="0.9" stroke-dasharray="3 2" transform="rotate(8 60 250)" opacity="0.8"/>
+            </g>
+
+            <!-- ======= AGENT TOKENS ======= -->
+            <g>
+              <!-- A1 s7 -->
+              <g transform="translate(60,250)">
+                <circle r="11" fill="#f7f0e0" opacity="0.55"/>
+                <circle r="10" fill="#3d5a86" stroke="#22385c" stroke-width="1.2"/>
+                <circle r="6.6" fill="none" stroke="#e9eef6" stroke-width="1" opacity="0.85"/>
+                <text y="3.2" text-anchor="middle" font-size="8.4" font-weight="700" fill="#f2f5fa">A1</text>
+              </g>
+              <!-- A2 s4 -->
+              <g transform="translate(560,240)">
+                <circle r="11" fill="#f7f0e0" opacity="0.55"/>
+                <circle r="10" fill="#3d5a86" stroke="#22385c" stroke-width="1.2"/>
+                <circle r="6.6" fill="none" stroke="#e9eef6" stroke-width="1" opacity="0.85"/>
+                <text y="3.2" text-anchor="middle" font-size="8.4" font-weight="700" fill="#f2f5fa">A2</text>
+              </g>
+              <!-- A3 s8 -->
+              <g transform="translate(300,220)">
+                <circle r="11" fill="#f7f0e0" opacity="0.55"/>
+                <circle r="10" fill="#3d5a86" stroke="#22385c" stroke-width="1.2"/>
+                <circle r="6.6" fill="none" stroke="#e9eef6" stroke-width="1" opacity="0.85"/>
+                <text y="3.2" text-anchor="middle" font-size="8.4" font-weight="700" fill="#f2f5fa">A3</text>
+              </g>
+            </g>
+
+            <!-- agent move notes -->
+            <g class="hand" font-size="10.5" fill="#3d5a86" opacity="0.9">
+              <text x="500" y="178" transform="rotate(-3 500 178)">A3 &rarr; sweep 2-node radius</text>
+              <text x="212" y="316" transform="rotate(-3 212 316)">A2 holds metro corridor</text>
+              <text x="141" y="216" transform="rotate(-4 141 216)">A1 holds s7</text>
+            </g>
+
+            <!-- ======= FUGITIVE MARKERS ======= -->
+            <!-- F1 Vulture: REVEALED at s3 -->
+            <g transform="translate(470,90)">
+              <circle r="14" fill="#f7f0e0" opacity="0.5"/>
+              <circle r="12.5" fill="#a8342b" stroke="#6d1f18" stroke-width="1.2"/>
+              <text y="3.9" text-anchor="middle" font-size="10.4" font-weight="700" fill="#fdf6ee">F1</text>
+            </g>
+
+            <!-- F2 Kestrel: hidden, last seen s1 -->
+            <g transform="translate(80,80)">
+              <text class="hand" x="58" y="68" font-size="12" fill="#2f3d5e" transform="rotate(-4 58 68)">KESTREL &mdash; HIDDEN</text>
+              <text x="58" y="81" font-size="8.4" fill="#4d5468" letter-spacing="0.5">last seen T3 &middot; trail cold</text>
+            </g>
+            <line x1="80" y1="104" x2="70" y2="97" stroke="#3d5a86" stroke-width="1" opacity="0.7"/>
+
+            <!-- F3 Magpie: hidden, heavy contraband near s5 -->
+            <g transform="translate(480,352)">
+              <text class="hand" x="-34" y="14" font-size="11.5" fill="#7d2a22" transform="rotate(-3 -34 14)">MAGPIE &mdash; HIDDEN</text>
+              <text x="-34" y="26" font-size="8.4" fill="#7a5348" letter-spacing="0.5">heavy contraband &middot; believed near s5</text>
+            </g>
+
+            <!-- ======= NODE ID + CLASS TAGS ======= -->
+            <g font-size="8.6" fill="#4a4234" letter-spacing="0.5">
+              <text x="78" y="112" text-anchor="middle">s1</text>
+              <text x="280" y="118" text-anchor="middle">s2</text>
+              <text x="486" y="102" text-anchor="middle">s3</text>
+              <text x="612" y="245" text-anchor="middle">s4</text>
+              <text x="22" y="230" text-anchor="middle">s7</text>
+            </g>
+            <g font-size="7" fill="#6f6553" letter-spacing="0.9">
+              <text x="600" y="262" text-anchor="middle">TERMINAL</text>
+              <text x="350" y="198" text-anchor="middle">TERMINAL</text>
+              <text x="70" y="296" text-anchor="middle" fill="#8a6d3b">s7 &middot; HUB / SAFE HOUSE</text>
+              <text x="238" y="444" text-anchor="middle" fill="#4f6339">s6 &middot; BLACK MARKET</text>
+            </g>
+
+            <!-- ======= PROBABILITY ANNOTATIONS ======= -->
+            <g>
+              <!-- s2 40 -->
+              <g transform="translate(146,26)">
+                <rect x="0" y="0" width="104" height="26" fill="#f6efdd" stroke="#3d5a86" stroke-width="1" opacity="0.96"/>
+                <text x="7" y="11" font-size="7.6" fill="#3d5a86" letter-spacing="0.8">F2 KESTREL &middot; s2</text>
+                <text x="7" y="21.5" font-size="11" font-weight="700" fill="#2c271e">40%</text>
+                <rect x="42" y="12" width="54" height="6" fill="none" stroke="#3d5a86" stroke-width="0.7" opacity="0.7"/>
+                <rect x="42" y="12" width="21.6" height="6" fill="#3f5480" opacity="0.85"/>
+                <line x1="98" y1="26" x2="126" y2="42" stroke="#3d5a86" stroke-width="1" opacity="0.8"/>
+              </g>
+              <!-- s3 25 -->
+              <g transform="translate(340,208)">
+                <rect x="0" y="0" width="102" height="26" fill="#f6efdd" stroke="#a8342b" stroke-width="1" opacity="0.96"/>
+                <text x="7" y="11" font-size="7.6" fill="#8f2c23" letter-spacing="0.8">F2 KESTREL &middot; s3</text>
+                <text x="7" y="21.5" font-size="11" font-weight="700" fill="#2c271e">25%</text>
+                <rect x="42" y="12" width="52" height="6" fill="none" stroke="#a8342b" stroke-width="0.7" opacity="0.7"/>
+                <rect x="42" y="12" width="13" height="6" fill="#a8342b" opacity="0.8"/>
+                <line x1="104" y1="12" x2="166" y2="-44" stroke="#a8342b" stroke-width="1" opacity="0.8"/>
+              </g>
+              <!-- s8 20 -->
+              <g transform="translate(452,306)">
+                <rect x="0" y="0" width="102" height="26" fill="#f6efdd" stroke="#5c5a52" stroke-width="1" opacity="0.96"/>
+                <text x="7" y="11" font-size="7.6" fill="#4a4234" letter-spacing="0.8">F2 KESTREL &middot; s8</text>
+                <text x="7" y="21.5" font-size="11" font-weight="700" fill="#2c271e">20%</text>
+                <rect x="42" y="12" width="52" height="6" fill="none" stroke="#5c5a52" stroke-width="0.7" opacity="0.7"/>
+                <rect x="42" y="12" width="10.4" height="6" fill="#5c5a52" opacity="0.8"/>
+                <line x1="96" y1="0" x2="86" y2="-34" stroke="#5c5a52" stroke-width="1" opacity="0.8"/>
+              </g>
+              <!-- s6 15 -->
+              <g transform="translate(140,420)">
+                <rect x="0" y="0" width="102" height="26" fill="#f6efdd" stroke="#5c5a52" stroke-width="1" opacity="0.96"/>
+                <text x="7" y="11" font-size="7.6" fill="#4a4234" letter-spacing="0.8">F2 KESTREL &middot; s6</text>
+                <text x="7" y="21.5" font-size="11" font-weight="700" fill="#2c271e">15%</text>
+                <rect x="42" y="12" width="52" height="6" fill="none" stroke="#5c5a52" stroke-width="0.7" opacity="0.7"/>
+                <rect x="42" y="12" width="7.8" height="6" fill="#5c5a52" opacity="0.8"/>
+                <line x1="10" y1="24" x2="56" y2="34" stroke="#5c5a52" stroke-width="1" opacity="0.8"/>
+              </g>
+            </g>
+
+            <!-- ======= HAND-DRAWN CALLOUTS ======= -->
+            <g class="hand" font-size="12.5" fill="#2f3d5e">
+            </g>
+            <g class="hand" font-size="12.5" fill="#a8342b">
+              <text x="368" y="450" transform="rotate(-2 368 450)">Magpie close &mdash; grab zone</text>
+            </g>
+            <path d="M384,440 C398,432 404,424 414,410" fill="none" stroke="#a8342b" stroke-width="1.4" marker-end="url(#arrRed)" opacity="0.8"/>
+
+            <g class="hand" font-size="12" fill="#5c5a52">
+              <text x="386" y="288" transform="rotate(-3 386 288)">re-check alley exit</text>
+            </g>
+            <path d="M368,188 C356,196 342,204 328,214" fill="none" stroke="#5c5a52" stroke-width="1.2" marker-end="url(#arrInk)" opacity="0.7"/>
+
+
+            <!-- corridor lock note -->
+            <g class="hand" font-size="12" fill="#2f4636">
+              <text x="430" y="262" transform="rotate(-2 430 262)">corridor locked T6</text>
+            </g>
+
+            <!-- ======= STAMP: REVEAL ======= -->
+            <g transform="translate(46,372) rotate(-8)">
+              <rect x="-52" y="-15" width="104" height="30" fill="none" stroke="#a8342b" stroke-width="2.6" rx="3" opacity="0.72"/>
+              <rect x="-48" y="-11" width="96" height="22" fill="none" stroke="#a8342b" stroke-width="1" rx="2" opacity="0.5"/>
+              <text y="4" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a8342b" letter-spacing="2.4" opacity="0.82">REVEALED</text>
+            </g>
+
+            <!-- transport key inset -->
+            <g transform="translate(512,380)">
+              <rect x="0" y="0" width="94" height="38" fill="#f6efdd" stroke="rgba(44,39,30,.42)" stroke-width="1" opacity="0.95"/>
+              <text x="6" y="10.5" font-size="6.6" fill="#6f6553" letter-spacing="0.8">TRANSPORT KEY</text>
+              <line x1="7" y1="18" x2="27" y2="18" stroke="#8a7448" stroke-width="1.6"/>
+              <text x="31" y="20.5" font-size="7.4" fill="#4a4234">taxi</text>
+              <line x1="58" y1="18" x2="78" y2="18" stroke="#3d5a86" stroke-width="1.6" stroke-dasharray="5 3"/>
+              <text x="81" y="20.5" font-size="7.4" fill="#4a4234">bus</text>
+              <line x1="7" y1="29" x2="27" y2="29" stroke="#a8342b" stroke-width="3"/>
+              <text x="31" y="31.5" font-size="7.4" fill="#4a4234">metro</text>
+              <line x1="58" y1="29" x2="78" y2="29" stroke="#556b3f" stroke-width="1.6" stroke-dasharray="2 2 6 3"/>
+              <text x="81" y="31.5" font-size="7.4" fill="#4a4234">alley</text>
+            </g>
+
+            <!-- north arrow -->
+            <g transform="translate(596,414)" opacity="0.8">
+              <path d="M0,-18 L6,6 L0,1 L-6,6 Z" fill="#4a4234"/>
+              <text y="20" text-anchor="middle" font-size="8" fill="#4a4234" letter-spacing="1">N</text>
+            </g>
+          </svg>
+
+          <div class="mapplate">
+            <b>Node Chart 03 &mdash; City of London Yard</b>
+            <span>30 links &middot; 8 nodes &middot; scale 1:4000</span>
+          </div>
+
+          <div class="pin tl"></div>
+          <div class="pin brass tr"></div>
+          <div class="pin brass bl"></div>
+          <div class="pin br"></div>
+
+          <div class="scalebar">
+            <span>0</span><span class="bar"><i></i><i></i><i></i><i></i></span><span>400 m</span>
+          </div>
+
+          <!-- torn-note annotation -->
+          <div class="torn">
+            <div class="ttape"></div>
+            <div class="hand">Kestrel last seen <b>here</b> &mdash; 3 turns ago. Trail cold, but the s2 link is the only clean line out.</div>
+            <div class="sig"><span>Log pg.&nbsp;12</span><span>DS&nbsp;Marlow</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- SIDEBAR ---------- -->
+      <aside class="side">
+
+        <!-- probability overlay -->
+        <section class="card panel psheet">
+          <span class="tape"></span>
+          <div class="head">
+            <h3>Probability Sheet
+              <small>Subject F2 &middot; Kestrel &middot; pencil overlay</small>
+            </h3>
+            <div class="pright">TURN 6 &middot; CONF 62%</div>
+          </div>
+          <div class="prows">
+            <div class="prow">
+              <span class="pname"><b>s2</b> Kentish Row</span>
+              <span class="pzone">
+                <span class="ptrack"><i class="hi" style="width:40%"></i></span>
+                <span class="pval">40%</span>
+              </span>
+            </div>
+            <div class="prow">
+              <span class="pname"><b>s3</b> Aldgate Spur</span>
+              <span class="pzone">
+                <span class="ptrack"><i style="width:25%"></i></span>
+                <span class="pval">25%</span>
+              </span>
+            </div>
+            <div class="prow">
+              <span class="pname"><b>s8</b> Yard Central</span>
+              <span class="pzone">
+                <span class="ptrack"><i style="width:20%"></i></span>
+                <span class="pval">20%</span>
+              </span>
+            </div>
+            <div class="prow">
+              <span class="pname"><b>s6</b> Dockside</span>
+              <span class="pzone">
+                <span class="ptrack"><i style="width:15%"></i></span>
+                <span class="pval">15%</span>
+              </span>
+            </div>
+            <div class="prow">
+              <span class="pname">&mdash; elsewhere</span>
+              <span class="pzone">
+                <span class="ptrack"><i style="width:0%"></i></span>
+                <span class="pval faint">0%</span>
+              </span>
+            </div>
+          </div>
+          <div class="pfoot">
+            <span>Ticket trail: unknown transport T6</span>
+            <span>Method: edge reach &minus; 1 hop</span>
+          </div>
+        </section>
+
+        <!-- ticket log -->
+        <section class="card panel log">
+          <span class="tape right"></span>
+          <div class="head">
+            <h3>Ticket Log
+              <small>Newest first</small>
+            </h3>
+            <div class="pright">5 OF 12 SHOWN</div>
+          </div>
+          <ol>
+            <li>
+              <span class="t">T6</span>
+              <span class="e"><span class="who">F1 Vulture</span> &mdash; Bus ticket</span>
+              <span class="tk bus">bus</span>
+            </li>
+            <li>
+              <span class="t">T6</span>
+              <span class="e"><span class="who">F2 Kestrel</span> &mdash; Unknown Transport</span>
+              <span class="tk unknown">unknown<span class="flag">FORGED IDENTITY?</span></span>
+            </li>
+            <li>
+              <span class="t">T5</span>
+              <span class="e"><span class="who">F3 Magpie</span> &mdash; Taxi ticket</span>
+              <span class="tk taxi">taxi</span>
+            </li>
+            <li>
+              <span class="t">T5</span>
+              <span class="e"><span class="who">F1 Vulture</span> &mdash; Taxi ticket</span>
+              <span class="tk taxi">taxi</span>
+            </li>
+            <li>
+              <span class="t">T4</span>
+              <span class="e"><span class="who">F3 Magpie</span> &mdash; Metro ticket</span>
+              <span class="tk metro">metro</span>
+            </li>
+          </ol>
+          <div class="pfoot" style="margin-top:auto;">
+            <span>F2 has forged identity twice</span>
+          </div>
+        </section>
+
+        <!-- evidence -->
+        <section class="card panel ev">
+          <div class="head">
+            <h3>Evidence &amp; Working
+              <small>Agent board, hand-corrected</small>
+            </h3>
+            <div class="pright">3 ACTIVE SUBJECTS</div>
+          </div>
+          <div class="list">
+            <div class="evrow">
+              <span class="no">01</span>
+              <span class="txt"><b>F1 &ldquo;Vulture&rdquo;</b> pinned at <b>s3</b> by the pulse.
+                <span class="note">s3 links: taxi s2, s4, s5 &mdash; no bus or metro.</span>
+              </span>
+              <span class="tag hot">Revealed</span>
+            </div>
+            <div class="evrow">
+              <span class="no">02</span>
+              <span class="txt"><b>F2 &ldquo;Kestrel&rdquo;</b> off the board since the T3 pulse.
+                <span class="note">Prime suspect s2 (40%). Forged ticket blurs the trail.</span>
+              </span>
+              <span class="tag cool">Hidden</span>
+            </div>
+            <div class="evrow">
+              <span class="no">03</span>
+              <span class="txt"><b>F3 &ldquo;Magpie&rdquo;</b> off the board, heavy contraband.
+                <span class="note">Metro T4, taxi T5 &rarr; fits s5 / s6. Roadblock s6.</span>
+              </span>
+              <span class="tag hot">Priority</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- ============ ACTION BAR ============ -->
+    <div class="actbar">
+      <div class="actgroup">
+        <span class="gl fug">Fugitive<br>Gadgets</span>
+        <button class="btn fug">Decoy Ping<span class="cost">2 charges &middot; 1 turn</span></button>
+        <button class="btn fug active">Counterfeit Identity<span class="cost">forges ticket type</span></button>
+        <button class="btn fug">Alleyway Sprint<span class="cost">no trail &middot; 1 use</span></button>
+      </div>
+
+      <div class="actgroup">
+        <span class="gl agt">Agent<br>Skills</span>
+        <button class="btn agt">Targeted Roadblock<span class="cost">block s6 metro</span></button>
+        <button class="btn agt">Sensor Sweep<span class="cost">2-node radius</span></button>
+        <button class="btn agt">Rapid Deployment<span class="cost">3 passes</span></button>
+      </div>
+
+      <div class="tickets">
+        <span class="tcount"><i class="chip taxi"></i>Taxi <b class="n">4</b></span>
+        <span class="tcount"><i class="chip bus"></i>Bus <b class="n">2</b></span>
+        <span class="tcount"><i class="chip metro"></i>Metro <b class="n">1</b></span>
+        <span class="tcount"><i class="chip special"></i>Alley <b class="n">1</b></span>
+      </div>
+    </div>
+
+    <!-- ============ FOOTER STRIP ============ -->
+    <div class="strip">
+      <div class="legend">
+        <span class="lg-t">Transport</span>
+        <span class="lgitem"><i class="sg"></i><span class="k">Taxi</span> &middot; short haul</span>
+        <span class="lgitem"><i class="sg bus"></i><span class="k">Bus</span> &middot; skips streets</span>
+        <span class="lgitem"><i class="sg metro"></i><span class="k">Metro</span> &middot; long haul</span>
+        <span class="lgitem"><i class="sg special"></i><span class="k">Alleyway</span> &middot; gear only</span>
+      </div>
+      <div class="factions">
+        <span class="fchip fug you"><i class="dot"></i>Fugitives <small>F1&ndash;F3 &middot; hidden</small></span>
+        <span class="sep">VS</span>
+        <span class="fchip agt"><i class="dot"></i>Agents <small>A1&ndash;A3 &middot; visible</small></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# X-Yard monorepo — native pnpm workspaces (deliberately NO Turborepo / Nx).
+#
+# Only two globs are needed: every deployable lives in apps/, every library in
+# packages/. Adding a new workspace means adding a directory, not editing a
+# build graph.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm blocks dependency build scripts by default. esbuild (pulled in by both
+# Vite and tsx) needs its postinstall to place its native binary; while blocked,
+# every `pnpm install` exits non-zero with ERR_PNPM_IGNORED_BUILDS.
+#
+# This is a deliberate allow-list, not a blanket opt-in: add an entry only after
+# establishing why that package needs to run code at install time.
+# (pnpm 12 spelling; `onlyBuiltDependencies` is the older pnpm 10 key.)
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,23 @@
+{
+  "name": "@x-yard/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "X-Yard authoritative match server: Fastify HTTP + Socket.io.",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@x-yard/game-core": "workspace:*",
+    "@x-yard/shared-types": "workspace:*",
+    "fastify": "^5.12.7",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15"
+  }
+}

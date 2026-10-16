@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Yard-Meridian — Sector 7 — Pixel / 2.5D / Day</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#07090c}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#f2efe6}
+.stage{position:relative;width:1280px;height:720px;overflow:hidden;background:#07090c}
+svg.map{position:absolute;left:0;top:0;display:block}
+
+/* ---- 24-colour city palette, applied flat ---- */
+.ink{fill:#0f151b}
+.w1{fill:#1f4f70}.w2{fill:#3579a2}.w3{fill:#57a3c6}
+.g1{fill:#4a6b3a}.g2{fill:#688f47}.g3{fill:#86ab58}.t1{fill:#2f4230}.t2{fill:#4d6b3a}
+.p1{fill:#8f8878}.p2{fill:#b0a998}.p3{fill:#cfc8b4}.rd{fill:#dfd9c8}.kb{fill:#a8a191}
+.r1{fill:#e0d5b8}.r2{fill:#c9ab7e}.r3{fill:#b07a6a}.r4{fill:#97a3ad}.r5{fill:#7c8a72}.r6{fill:#6b6152}
+.am{fill:#f2c14e}.cy{fill:#4fd1e0}.mg{fill:#e0607f}.pa{fill:#f2efe6}
+.sh{fill:rgba(15,21,27,.45)}.sh2{fill:rgba(15,21,27,.72)}
+.cya{fill:rgba(79,209,224,.55)}.mga{fill:rgba(224,96,127,.55)}
+.plate{fill:rgba(15,21,27,.6)}
+.prob{fill:rgba(224,96,127,.5)}
+.wpp{fill:url(#pw)}.gpp{fill:url(#pg)}.pavp{fill:url(#pp)}.sqp{fill:url(#ps)}.grpp{fill:url(#gr)}
+.d40{fill:url(#d40)}.d25{fill:url(#d25)}.d20{fill:url(#d20)}.d15{fill:url(#d15)}
+.st-cy{stroke:#4fd1e0}.st-cya{stroke:rgba(79,209,224,.55)}.st-mg{stroke:#e0607f}
+.st-pa{stroke:#f2efe6}.st-pa2{stroke:rgba(242,239,230,.8)}.st-am{stroke:#f2c14e}
+.st-p3{stroke:#cfc8b4}.st-h{stroke:#f2c14e}.st-t{stroke:#f2efe6}
+.st-cy,.st-cya,.st-mg,.st-pa,.st-pa2,.st-am,.st-p3,.st-h,.st-t{fill:none}
+.cas{fill:none;stroke:rgba(15,21,27,.7)}
+.bob{animation:bob 2.8s steps(1,end) infinite}
+@keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-2.5px)}100%{transform:translateY(0)}}
+.ping{fill:none;stroke:#e0607f;stroke-width:5;animation:ping 2.6s steps(8,end) infinite}
+@keyframes ping{
+0%{x:660px;y:210px;width:80px;height:80px;opacity:0}
+6%{opacity:.95}
+55%{opacity:.5}
+100%{x:608px;y:158px;width:184px;height:184px;opacity:0}}
+.shim{fill:#57a3c6;animation:shim 7.5s steps(1,end) infinite}
+@keyframes shim{0%{opacity:0}18%{opacity:.75}40%{opacity:0}100%{opacity:0}}
+.carA{animation:driveA 30s steps(24,end) infinite}
+@keyframes driveA{0%{transform:translateX(0)}92%{transform:translateX(240px)}100%{transform:translateX(240px)}}
+.carB{animation:driveB 34s steps(36,end) infinite}
+@keyframes driveB{0%{transform:translateX(0)}92%{transform:translateX(360px)}100%{transform:translateX(360px)}}
+.pedA{animation:pedA 26s steps(6,end) infinite}
+@keyframes pedA{0%{transform:translate(0,0)}45%{transform:translate(60px,0)}55%{transform:translate(60px,0)}100%{transform:translate(0,0)}}
+.pedB{animation:pedB 32s steps(8,end) infinite}
+@keyframes pedB{0%{transform:translate(80px,0)}50%{transform:translate(0,0)}100%{transform:translate(80px,0)}}
+
+/* ---- modern HUD (deliberately not 1990s chrome) ---- */
+.hud{position:absolute;left:0;top:0;width:1280px;height:720px;pointer-events:none}
+.panel{position:absolute;background:rgba(9,12,17,.9);border:1px solid rgba(242,239,230,.16)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}
+.lbl{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:9px;line-height:1.1;letter-spacing:.17em;text-transform:uppercase;color:rgba(242,239,230,.5)}
+.lbl.sm{font-size:8px;letter-spacing:.12em}
+.ttl{font-size:14px;font-weight:600;letter-spacing:.02em;line-height:1}
+.hd{display:flex;align-items:center;justify-content:space-between;height:24px;padding:0 10px;border-bottom:1px solid rgba(242,239,230,.1)}
+.vdiv{width:1px;height:22px;background:rgba(242,239,230,.12)}
+.dot{width:6px;height:6px;display:inline-block;background:#4fd1e0}
+.dot.am{background:#f2c14e}
+.dot.mg{background:#e0607f}
+.live{display:flex;align-items:center;gap:5px;font-family:ui-monospace,monospace;font-size:8px;letter-spacing:.14em;color:rgba(79,209,224,.9)}
+.live i{width:5px;height:5px;background:#4fd1e0;animation:blink 2.4s steps(1,end) infinite}
+@keyframes blink{0%{opacity:1}50%{opacity:.15}100%{opacity:1}}
+.seg{display:flex;gap:3px}
+.seg span{font-family:ui-monospace,monospace;font-size:8px;letter-spacing:.08em;padding:2px 5px;border:1px solid rgba(242,239,230,.14);color:rgba(242,239,230,.42)}
+.seg span.on{border-color:#f2c14e;color:#f2c14e;background:rgba(242,193,78,.12)}
+.pips{display:flex;gap:2px;align-items:center}
+.pips i{width:4px;height:9px;background:rgba(242,239,230,.14);border:1px solid rgba(242,239,230,.1)}
+.pips i.on{background:#4fd1e0;border-color:#4fd1e0}
+.kv{display:flex;align-items:center;gap:8px;height:18px;white-space:nowrap}
+.mrow{display:flex;align-items:center;gap:9px;height:38px;border-bottom:1px solid rgba(242,239,230,.06)}
+.mrow.off{opacity:.45}
+.mname{font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.1em;color:#f2efe6;line-height:1.3}
+.mdest{font-size:9px;color:rgba(242,239,230,.62);line-height:1.3}
+.mtag{margin-left:auto;font-family:ui-monospace,monospace;font-size:8px;letter-spacing:.1em;color:rgba(242,239,230,.45)}
+.sw{position:relative;width:32px;height:10px;flex:0 0 32px}
+.sw i{position:absolute;left:0;top:3px;width:32px}
+.s-foot i{border-top:2px dotted #f2efe6}
+.s-taxi i{border-top:3px solid #f2c14e}
+.s-bus i{border-top:3px solid #4fd1e0}
+.s-bus i+i{border-top:1px dashed #f2efe6;top:4px}
+.s-alley i{border-top:2px dashed #e0607f}
+.s-metro i{border-top:4px solid #1f4f70}
+.s-metro i+i{border-top:2px dashed #f2efe6;top:4px}
+.trow{display:flex;align-items:center;gap:7px;height:23px;padding:0 10px;border-bottom:1px solid rgba(242,239,230,.06);white-space:nowrap}
+.trow .t{font-family:ui-monospace,monospace;font-size:9px;color:rgba(242,239,230,.4);width:16px}
+.trow .fid{font-family:ui-monospace,monospace;font-size:10px;width:17px;color:#e0607f}
+.trow .txt{font-family:ui-monospace,monospace;font-size:8.5px;color:rgba(242,239,230,.86);overflow:hidden}
+.trow.concealed{border-left:2px dashed rgba(242,193,78,.85);background:rgba(242,193,78,.05)}
+.trow.concealed .txt{color:rgba(242,193,78,.92)}
+.q{width:12px;height:12px;border:1px solid rgba(242,193,78,.85);color:#f2c14e;font-family:ui-monospace,monospace;font-size:9px;line-height:10px;text-align:center;margin-left:auto}
+.prow{display:flex;align-items:center;gap:7px;height:26px;padding:0 10px}
+.prow .st{font-family:ui-monospace,monospace;font-size:10px;width:24px;color:#f2efe6}
+.prow .tr{position:relative;width:58px;height:6px;border:1px solid rgba(242,239,230,.2)}
+.prow .tr i{position:absolute;left:1px;top:1px;bottom:1px;background:#e0607f;opacity:.85}
+.prow .pc{font-family:ui-monospace,monospace;font-size:10px;color:rgba(242,239,230,.86);width:26px;text-align:right}
+.dsw{width:12px;height:12px;flex:0 0 12px}
+.agrp{padding:9px 10px}
+.ahd{display:flex;align-items:center;justify-content:space-between;height:14px;margin-bottom:5px;white-space:nowrap}
+.chip{display:flex;align-items:center;gap:7px;height:25px;padding:0 8px;border:1px solid rgba(242,239,230,.13);background:rgba(242,239,230,.03);margin-bottom:3px}
+.chip:last-child{margin-bottom:0}
+.chip .sq{width:7px;height:7px;flex:0 0 7px;background:rgba(242,239,230,.3)}
+.chip .nm{font-size:10.5px;letter-spacing:.01em;color:rgba(242,239,230,.9);line-height:1}
+.chip .mt{margin-left:auto;font-family:ui-monospace,monospace;font-size:8px;letter-spacing:.1em;color:rgba(242,239,230,.42)}
+.chip.locked{opacity:.42}
+.chip.armed{border-color:rgba(79,209,224,.85);background:rgba(79,209,224,.1)}
+.chip.armed .sq{background:#4fd1e0}
+.chip.armed .mt{color:#4fd1e0}
+.chip.ready .sq{background:rgba(79,209,224,.5)}
+.tag{font-family:ui-monospace,monospace;font-size:8px;letter-spacing:.1em;color:rgba(242,239,230,.45)}
+.tag.lock{color:rgba(242,193,78,.8)}
+#mm{display:block}
+.foot{height:20px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border-top:1px solid rgba(242,239,230,.08);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="stage">
+  <svg class="map" width="1280" height="720" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-label="Yard-Meridian city map, sector 7">
+    <defs>
+      <pattern id="pg" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" class="p1"/>
+        <rect x="10" y="10" width="10" height="10" class="p2"/><rect x="30" y="10" width="10" height="10" class="p2"/>
+        <rect x="0" y="20" width="10" height="10" class="p2"/><rect x="20" y="30" width="10" height="10" class="p2"/>
+      </pattern>
+      <pattern id="pw" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" class="w2"/>
+        <rect x="10" y="0" width="10" height="10" class="w1"/><rect x="30" y="10" width="10" height="10" class="w1"/>
+        <rect x="0" y="20" width="10" height="10" class="w1"/><rect x="20" y="30" width="10" height="10" class="w1"/>
+        <rect x="0" y="0" width="10" height="10" class="w3"/><rect x="20" y="10" width="10" height="10" class="w3"/>
+        <rect x="10" y="30" width="10" height="10" class="w3"/>
+      </pattern>
+      <pattern id="pp" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" class="p2"/>
+        <rect x="10" y="0" width="10" height="10" class="p1"/><rect x="30" y="20" width="10" height="10" class="p1"/>
+        <rect x="0" y="30" width="10" height="10" class="p1"/>
+      </pattern>
+      <pattern id="ps" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" class="p3"/>
+        <rect x="20" y="0" width="10" height="10" class="p2"/><rect x="0" y="20" width="10" height="10" class="p2"/>
+        <rect x="30" y="30" width="10" height="10" class="p2"/>
+      </pattern>
+      <pattern id="gr" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect width="40" height="40" class="g2"/>
+        <rect x="0" y="10" width="10" height="10" class="g1"/><rect x="30" y="0" width="10" height="10" class="g3"/>
+        <rect x="20" y="20" width="10" height="10" class="g3"/><rect x="10" y="30" width="10" height="10" class="g1"/>
+        <rect x="20" y="0" width="10" height="10" class="g1"/>
+      </pattern>
+      <pattern id="d40" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect class="prob" x="0" y="0" width="10" height="10"/><rect class="prob" x="20" y="0" width="10" height="10"/>
+        <rect class="prob" x="10" y="10" width="10" height="10"/><rect class="prob" x="30" y="10" width="10" height="10"/>
+        <rect class="prob" x="0" y="20" width="10" height="10"/><rect class="prob" x="20" y="20" width="10" height="10"/>
+        <rect class="prob" x="30" y="30" width="10" height="10"/>
+      </pattern>
+      <pattern id="d25" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect class="prob" x="10" y="0" width="10" height="10"/><rect class="prob" x="30" y="10" width="10" height="10"/>
+        <rect class="prob" x="0" y="20" width="10" height="10"/><rect class="prob" x="20" y="30" width="10" height="10"/>
+      </pattern>
+      <pattern id="d20" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect class="prob" x="20" y="0" width="10" height="10"/><rect class="prob" x="0" y="20" width="10" height="10"/>
+        <rect class="prob" x="30" y="30" width="10" height="10"/>
+      </pattern>
+      <pattern id="d15" width="40" height="40" patternUnits="userSpaceOnUse">
+        <rect class="prob" x="10" y="10" width="10" height="10"/><rect class="prob" x="30" y="30" width="10" height="10"/>
+      </pattern>
+    </defs>
+    <rect class="gpp" x="0" y="0" width="1600" height="1000"/>
+    <g id="L_shore"></g>
+    <g id="L_water"></g>
+    <g id="L_glint"></g>
+    <g id="L_street"></g>
+    <g id="L_land"></g>
+    <g id="L_city"></g>
+    <g id="L_rail"></g>
+    <g id="L_prob"></g>
+    <g id="L_route"></g>
+    <g id="L_mark"></g>
+    <g id="L_char"></g>
+    <g id="L_label"></g>
+  </svg>
+
+  <div class="hud">
+    <div class="panel" style="left:716px;top:14px;width:548px;height:38px;display:flex;align-items:center">
+      <div style="width:238px;padding:0 12px;display:flex;flex-direction:column;gap:3px">
+        <div class="ttl">YARD-MERIDIAN</div>
+        <div class="lbl">Sector 7 / 24 &middot; 618 stations</div>
+      </div>
+      <div class="vdiv"></div>
+      <div style="width:164px;padding:0 12px;display:flex;flex-direction:column;gap:4px">
+        <div class="lbl">Viewing as</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span class="dot"></span>
+          <span class="mono" style="font-size:11px;letter-spacing:.12em;color:#4fd1e0">AGENT</span>
+          <span class="lbl sm">= ghosts only</span>
+        </div>
+      </div>
+      <div class="vdiv"></div>
+      <div style="flex:1;padding:0 12px;display:flex;flex-direction:column;gap:4px">
+        <div class="lbl">Time of day &middot; 12:40</div>
+        <div class="seg"><span>DAWN</span><span class="on">DAY</span><span>DUSK</span><span>NIGHT</span></div>
+      </div>
+    </div>
+
+    <div class="panel" style="left:716px;top:58px;width:220px;height:38px;padding:5px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;height:13px">
+        <span class="lbl">Turn</span>
+        <span class="mono" style="font-size:13px;line-height:13px">6<span style="color:rgba(242,239,230,.4);font-size:10px"> / 24</span></span>
+      </div>
+      <div class="pips" id="tpips" style="margin-top:4px"></div>
+    </div>
+
+    <div class="panel" style="left:946px;top:58px;width:150px;height:38px;padding:5px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;height:11px">
+        <span class="lbl">Reveal pulse</span>
+        <span class="lbl sm">last T3</span>
+      </div>
+      <div class="mono" style="font-size:10px;line-height:11px;height:11px;margin-top:3px;letter-spacing:.02em;color:#f2c14e">NEXT IN 2 TURNS &middot; T8</div>
+    </div>
+
+    <div class="panel" style="left:16px;top:120px;width:200px;height:124px">
+      <div class="hd"><span class="lbl">Selected character</span><span class="live"><i></i>live</span></div>
+      <div style="padding:6px 10px 0">
+        <div style="font-size:14px;font-weight:600;letter-spacing:.01em;line-height:15px;height:15px">A1 &ldquo;FALCON&rdquo;</div>
+        <div class="lbl" style="margin-top:3px">Agent &middot; your piece</div>
+        <div class="kv" style="margin-top:6px"><span class="lbl">Stamina</span><span class="pips" id="spips"></span><span class="mono" style="font-size:10px;color:rgba(242,239,230,.7)">4/6</span></div>
+        <div class="kv"><span class="lbl">Tickets</span><span class="mono" style="font-size:10px">3</span></div>
+        <div class="kv"><span class="lbl">Mission</span><span class="mono" style="font-size:9px;color:rgba(242,239,230,.85)">INTERCEPT F1 &middot; 104</span></div>
+      </div>
+    </div>
+
+    <div class="panel" style="left:16px;top:292px;width:200px;height:250px">
+      <div class="hd"><span class="lbl">Legal moves &middot; A1 at 113</span><span class="lbl sm">T6</span></div>
+      <div style="padding:4px 10px 0">
+        <div class="mrow"><span class="sw s-foot"><i></i></span><div><div class="mname">ON FOOT</div><div class="mdest mono">112 &middot; 114</div></div><span class="mtag">FREE</span></div>
+        <div class="mrow"><span class="sw s-taxi"><i></i></span><div><div class="mname">TAXI</div><div class="mdest mono">104 &middot; 107</div></div><span class="mtag">1 TICKET</span></div>
+        <div class="mrow"><span class="sw s-bus"><i></i><i></i></span><div><div class="mname">BUS</div><div class="mdest mono">110 &middot; 117</div></div><span class="mtag">1 TICKET</span></div>
+        <div class="mrow"><span class="sw s-alley"><i></i></span><div><div class="mname">ALLEYWAY</div><div class="mdest mono">115</div></div><span class="mtag">SECRET</span></div>
+        <div class="mrow off"><span class="sw s-metro"><i></i><i></i></span><div><div class="mname">METRO</div><div class="mdest">NO TERMINAL AT 113</div></div><span class="mtag">N/A</span></div>
+      </div>
+      <div class="foot"><span class="lbl sm">Ring = reachable</span><span class="lbl sm">7 targets</span></div>
+    </div>
+
+    <div class="panel" style="left:1088px;top:108px;width:176px;height:144px">
+      <div class="hd"><span class="lbl">Ticket log</span><span class="lbl sm">5 new</span></div>
+      <div class="trow"><span class="t">T6</span><span class="fid">F1</span><span class="txt">BUS TICKET</span></div>
+      <div class="trow concealed"><span class="t">T6</span><span class="fid">F2</span><span class="txt">UNKNOWN TRANSPORT</span><span class="q">?</span></div>
+      <div class="trow"><span class="t">T5</span><span class="fid">F3</span><span class="txt">TAXI TICKET</span></div>
+      <div class="trow"><span class="t">T5</span><span class="fid">F1</span><span class="txt">TAXI TICKET</span></div>
+      <div class="trow"><span class="t">T4</span><span class="fid">F3</span><span class="txt">METRO TICKET</span></div>
+    </div>
+
+    <div class="panel" style="left:1088px;top:262px;width:176px;height:180px">
+      <div class="hd"><span class="lbl">Probability &middot; F2</span><span class="lbl sm">hidden</span></div>
+      <div style="padding:5px 0 0">
+        <div style="padding:0 10px 6px"><span class="lbl sm">Kestrel &middot; hidden since T3</span></div>
+        <div class="prow"><span class="st">102</span><span class="tr"><i style="width:22px"></i></span><span class="pc">40%</span><span class="dsw d40"></span></div>
+        <div class="prow"><span class="st">111</span><span class="tr"><i style="width:13px"></i></span><span class="pc">25%</span><span class="dsw d25"></span></div>
+        <div class="prow"><span class="st">103</span><span class="tr"><i style="width:10px"></i></span><span class="pc">20%</span><span class="dsw d20"></span></div>
+        <div class="prow"><span class="st">105</span><span class="tr"><i style="width:7px"></i></span><span class="pc">15%</span><span class="dsw d15"></span></div>
+      </div>
+      <div class="foot"><span class="lbl sm">Dither on map = odds</span></div>
+    </div>
+
+    <div class="panel" style="left:1088px;top:452px;width:176px;height:144px">
+      <div class="hd"><span class="lbl">City overview</span><span class="lbl sm">S7</span></div>
+      <div style="padding:6px 16px 0"><svg id="mm" width="144" height="88" viewBox="0 0 144 88" shape-rendering="crispEdges"></svg></div>
+      <div class="foot"><span class="lbl sm">618 stations</span><span class="lbl sm">24 in view</span></div>
+    </div>
+
+    <div class="panel" style="left:16px;top:592px;width:444px;height:116px;display:flex">
+      <div class="agrp" style="width:221px;border-right:1px solid rgba(242,239,230,.1)">
+        <div class="ahd"><span class="lbl">Fugitive gadgets</span><span class="tag lock">locked &middot; agent</span></div>
+        <div class="chip locked"><span class="sq"></span><span class="nm">Decoy Ping</span><span class="mt">LOCKED</span></div>
+        <div class="chip locked"><span class="sq"></span><span class="nm">Counterfeit Identity</span><span class="mt">LOCKED</span></div>
+        <div class="chip locked"><span class="sq"></span><span class="nm">Alleyway Sprint</span><span class="mt">LOCKED</span></div>
+      </div>
+      <div class="agrp" style="width:221px">
+        <div class="ahd"><span class="lbl">Agent skills</span><span class="tag">1 armed</span></div>
+        <div class="chip ready"><span class="sq"></span><span class="nm">Targeted Roadblock</span><span class="mt">READY</span></div>
+        <div class="chip armed"><span class="sq"></span><span class="nm">Sensor Sweep</span><span class="mt">ARMED</span></div>
+        <div class="chip ready"><span class="sq"></span><span class="nm">Rapid Deployment</span><span class="mt">READY</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var T=10, GW=160, GH=100;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var rnd=mulberry32(90210);
+function R(n){return Math.floor(rnd()*n);}
+function pick(a){return a[R(a.length)];}
+function rc(x,y,w,h,cls,extra){return '<rect'+(cls?' class="'+cls+'"':'')+' x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'"'+(extra||'')+'/>';}
+function rs(x,y,w,h,cls,sw,dash){return '<rect class="'+cls+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="none" stroke-width="'+sw+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>';}
+
+/* ---------- 3x5 pixel font (map labels only) ---------- */
+var FONT={
+'0':['111','101','101','101','111'],'1':['010','110','010','010','111'],'2':['111','001','111','100','111'],
+'3':['111','001','111','001','111'],'4':['101','101','111','001','001'],'5':['111','100','111','001','111'],
+'6':['111','100','111','101','111'],'7':['111','001','001','001','001'],'8':['111','101','111','101','111'],
+'9':['111','101','111','001','111'],
+'A':['111','101','111','101','101'],'B':['111','101','110','101','111'],'C':['111','100','100','100','111'],
+'D':['110','101','101','101','110'],'E':['111','100','111','100','111'],'F':['111','100','111','100','100'],
+'G':['111','100','101','101','111'],'H':['101','101','111','101','101'],'I':['111','010','010','010','111'],
+'J':['001','001','001','101','111'],'K':['101','101','110','101','101'],'L':['100','100','100','100','111'],
+'M':['101','111','111','101','101'],'N':['110','101','101','101','101'],'O':['111','101','101','101','111'],
+'P':['111','101','111','100','100'],'Q':['111','101','101','111','001'],'R':['111','101','111','110','101'],
+'S':['111','100','111','001','111'],'T':['111','010','010','010','010'],'U':['101','101','101','101','111'],
+'V':['101','101','101','101','010'],'W':['101','101','111','111','101'],'X':['101','101','010','101','101'],
+'Y':['101','101','010','010','010'],'Z':['111','001','010','100','111'],
+'?':['111','001','011','000','010'],'%':['101','001','010','100','101'],'.':['000','000','000','000','010'],
+' ':['000','000','000','000','000']
+};
+function label(txt,x,y,cls,plate){
+  var u=2.5, cw=10, i,c,r,g,ch;
+  var total=txt.length*cw-u;
+  var out='';
+  if(plate) out+=rc(x-2.5,y-2.5,total+5,17.5,'plate');
+  var cx=x;
+  for(i=0;i<txt.length;i++){
+    ch=FONT[txt.charAt(i)]||FONT[' '];
+    for(r=0;r<5;r++) for(c=0;c<3;c++) if(ch[r].charAt(c)==='1') out+=rc(cx+c*u,y+r*u,u,u,cls);
+    cx+=cw;
+  }
+  return out;
+}
+
+/* ---------- city data ---------- */
+var ST=[[101,210,120,'s'],[102,400,95,'s'],[103,560,150,'h'],[104,700,250,'h'],[105,860,120,'s'],
+[106,1010,190,'s'],[107,1180,470,'t'],[108,1330,330,'s'],[109,1400,150,'s'],[110,120,380,'h'],
+[111,330,300,'s'],[112,520,430,'s'],[113,650,520,'h'],[114,900,420,'s'],[115,1050,560,'s'],
+[116,300,600,'s'],[117,470,700,'h'],[118,620,820,'s'],[119,790,900,'s'],[120,960,760,'s'],
+[121,1120,880,'s'],[122,1290,700,'h'],[123,1430,820,'s'],[124,860,640,'t']];
+
+var MESH={
+'101-102':[[210,120],[210,95],[400,95]],
+'101-111':[[210,120],[210,300],[330,300]],
+'102-103':[[400,95],[560,95],[560,150]],
+'103-104':[[560,150],[560,250],[700,250]],
+'104-105':[[700,250],[700,120],[860,120]],
+'105-106':[[860,120],[1010,120],[1010,190]],
+'104-113':[[700,250],[700,470],[650,470],[650,520]],
+'107-113':[[1180,470],[700,470],[650,470],[650,520]],
+'112-113':[[520,430],[520,470],[650,470],[650,520]],
+'114-113':[[900,420],[900,470],[650,470],[650,520]],
+'114-115':[[900,420],[900,470],[1050,470],[1050,560]],
+'107-115':[[1180,470],[1050,470],[1050,560]],
+'112-114':[[520,430],[520,470],[900,470],[900,420]],
+'111-112':[[330,300],[330,430],[520,430]],
+'110-111':[[120,380],[120,300],[330,300]],
+'116-117':[[300,600],[300,610],[470,610],[470,700]],
+'112-116':[[520,430],[520,470],[420,470],[420,610],[300,610],[300,600]],
+'117-118':[[470,700],[470,690],[620,690],[620,820]],
+'118-119':[[620,820],[620,900],[790,900]],
+'118-124':[[620,820],[620,690],[860,690],[860,640]],
+'119-120':[[790,900],[790,880],[960,880],[960,760]],
+'119-124':[[790,900],[860,900],[860,640]],
+'120-121':[[960,760],[960,880],[1120,880]],
+'121-122':[[1120,880],[1120,690],[1290,690],[1290,700]],
+'120-122':[[960,760],[960,690],[1290,690],[1290,700]],
+'120-124':[[960,760],[960,690],[860,690],[860,640]],
+'122-124':[[1290,700],[1290,690],[860,690],[860,640]],
+'122-123':[[1290,700],[1290,820],[1430,820]],
+'121-123':[[1120,880],[1430,880],[1430,820]],
+'115-124':[[1050,560],[1080,560],[1080,690],[860,690],[860,640]],
+'107-122':[[1180,470],[1080,470],[1080,690],[1290,690],[1290,700]],
+'106-108':[[1010,190],[1330,190],[1330,330]],
+'108-109':[[1330,330],[1400,330],[1400,150]],
+'107-108':[[1180,470],[1180,330],[1330,330]],
+'bus-110':[[120,380],[120,470],[420,470]],
+'bus-117':[[420,470],[420,700],[470,700]],
+'lane-1':[[760,250],[760,300],[830,300]],
+'lane-2':[[700,820],[700,900]],
+'lane-3':[[1420,190],[1420,300]],
+'lane-4':[[900,760],[900,880]]
+};
+var BUS_LOOP=[[120,380],[120,470],[650,470],[650,520],[650,470],[420,470],[420,700],[470,700],
+[470,690],[860,690],[860,640],[860,690],[1290,690],[1290,700],[1290,690],[1080,690],[1080,470],
+[1180,470],[700,470],[700,250],[560,250],[560,150],[560,95],[210,95],[210,300],[120,300],[120,380]];
+
+var RT_110=[[650,520],[650,470],[420,470],[120,470],[120,380]];
+var RT_117=[[650,520],[650,470],[420,470],[420,700],[470,700]];
+var RT_ALLEY=[[650,520],[880,498],[1050,560]];
+
+/* ---------- river ---------- */
+var RP=[[0,705],[120,660],[200,608],[260,545],[320,532],[400,540],[470,552],[560,566],[650,578],
+[780,580],[880,580],[960,600],[1050,620],[1120,610],[1180,590],[1250,610],[1290,620],[1420,600],[1600,566]];
+function riverY(x){var i,a,b;for(i=0;i<RP.length-1;i++){a=RP[i];b=RP[i+1];if(x>=a[0]&&x<=b[0])return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return RP[RP.length-1][1];}
+var HALF=45;
+function waterRuns(extra){
+  var runs=[],cur=null,tx,cx,top,bot;
+  for(tx=0;tx<GW;tx++){
+    cx=tx*T+T/2;
+    top=Math.round((riverY(cx)-HALF-extra)/T)*T;
+    bot=Math.round((riverY(cx)+HALF+extra)/T)*T;
+    if(cur&&cur.top===top&&cur.bot===bot)cur.x1=tx;
+    else{if(cur)runs.push(cur);cur={x0:tx,x1:tx,top:top,bot:bot};}
+  }
+  if(cur)runs.push(cur);
+  return runs;
+}
+var shoreRuns=waterRuns(10), waterRuns0=waterRuns(0), i,r;
+var shore=[],water=[],glint=[];
+for(i=0;i<shoreRuns.length;i++){r=shoreRuns[i];shore.push(rc(r.x0*T,r.top,(r.x1-r.x0+1)*T,r.bot-r.top,'p2'));}
+for(i=0;i<waterRuns0.length;i++){
+  r=waterRuns0[i];
+  water.push(rc(r.x0*T,r.top,(r.x1-r.x0+1)*T,r.bot-r.top,'wpp'));
+  var span=r.x1-r.x0+1;
+  if(span>6){
+    var gx=r.x0+2+R(Math.max(1,span-6));
+    glint.push('<rect class="shim" style="animation-delay:'+(i%4)*1.4+'s" x="'+(gx*T)+'" y="'+(r.top+20)+'" width="20" height="10"/>');
+    if(span>12) glint.push('<rect class="shim" style="animation-delay:'+((i%4)*1.4+2.2)+'s" x="'+((r.x0+Math.floor(span*0.7))*T)+'" y="'+(r.top+40)+'" width="10" height="10"/>');
+  }
+}
+
+/* ---------- streets from the movement mesh ---------- */
+function segKey(x1,y1,x2,y2){var a=x1+','+y1,b=x2+','+y2;return a<b?a+'|'+b:b+'|'+a;}
+var segUse={},k,p,j;
+var keys=Object.keys(MESH);
+for(i=0;i<keys.length;i++){p=MESH[keys[i]];for(j=0;j<p.length-1;j++){k=segKey(p[j][0],p[j][1],p[j+1][0],p[j+1][1]);segUse[k]=(segUse[k]||0)+1;}}
+var streetTiles=new Uint8Array(GW*GH);
+var kerb=[],road=[],drawn={},ty,tx,cx,cy;
+for(i=0;i<keys.length;i++){
+  p=MESH[keys[i]];
+  for(j=0;j<p.length-1;j++){
+    var x1=p[j][0],y1=p[j][1],x2=p[j+1][0],y2=p[j+1][1];
+    k=segKey(x1,y1,x2,y2);
+    if(drawn[k])continue; drawn[k]=1;
+    var w=(segUse[k]>=3)?30:20,rx,ry,rw,rh;
+    if(y1===y2){ry=y1-w/2;rh=w;rx=Math.min(x1,x2)-w/2;rw=Math.abs(x2-x1)+w;}
+    else if(x1===x2){rx=x1-w/2;rw=w;ry=Math.min(y1,y2)-w/2;rh=Math.abs(y2-y1)+w;}
+    else continue;
+    kerb.push(rc(rx-1.25,ry-1.25,rw+2.5,rh+2.5,'kb'));
+    road.push(rc(rx,ry,rw,rh,'rd'));
+    for(ty=0;ty<GH;ty++){cy=ty*T+T/2;if(cy<ry||cy>ry+rh)continue;
+      for(tx=0;tx<GW;tx++){cx=tx*T+T/2;if(cx>=rx&&cx<=rx+rw)streetTiles[ty*GW+tx]=1;}}
+  }
+}
+
+/* ---------- reserved land ---------- */
+var RES=[[620,130,800,310],[1080,380,1280,470],[1095,140,1155,400],[612,405,1120,445],
+[610,645,960,700],[1340,830,1530,945],[150,180,520,430],[875,500,995,540],[975,790,1085,885],[435,625,525,675]];
+var free=new Uint8Array(GW*GH);
+var wr=waterRuns0;
+for(i=0;i<wr.length;i++){r=wr[i];for(tx=r.x0;tx<=r.x1;tx++){for(ty=Math.max(0,r.top/T-1);ty<=Math.min(GH-1,r.bot/T+1);ty++)free[ty*GW+tx]=0;}}
+for(ty=0;ty<GH;ty++)for(tx=0;tx<GW;tx++){if(streetTiles[ty*GW+tx])continue;free[ty*GW+tx]=1;}
+for(i=0;i<shoreRuns.length;i++){r=shoreRuns[i];for(tx=r.x0;tx<=r.x1;tx++){for(ty=Math.max(0,r.top/T-1);ty<=Math.min(GH-1,r.bot/T+1);ty++)free[ty*GW+tx]=0;}}
+for(i=0;i<RES.length;i++){var A=RES[i];for(ty=Math.floor(A[1]/T);ty<A[3]/T;ty++)for(tx=Math.floor(A[0]/T);tx<A[2]/T;tx++)free[ty*GW+tx]=0;}
+
+/* ---------- buildings ---------- */
+var RIDGE={r1:'pa',r2:'r1',r3:'r2',r4:'p3',r5:'r4',r6:'r2'};
+var WALL={r1:'p2',r2:'r6',r3:'r6',r4:'r6',r5:'r6',r6:'ink'};
+var city=[];
+function roofFor(x,y){
+  var old=(x>540&&x<920&&y>120&&y<400);
+  var ind=((x>1020&&y>360&&y<560)||(x>1150&&y>640)||(y>780&&x>600));
+  var pool;
+  if(old)pool=['r1','r3','r2','r1','r3','r2','r6'];
+  else if(ind)pool=['r4','r5','r6','r4','r2','r5'];
+  else pool=['r1','r2','r4','r3','r2','r5','r1','r6'];
+  return pick(pool);
+}
+var SIZEW=[2,3,3,4,4,5,6,7], SIZEH=[2,3,3,4,5];
+for(ty=0;ty<GH;ty++){
+  for(tx=0;tx<GW;tx++){
+    if(!free[ty*GW+tx])continue;
+    var maxw=0;while(tx+maxw<GW&&free[ty*GW+tx+maxw])maxw++;
+    var bw=Math.min(maxw,pick(SIZEW));
+    if(bw<2){
+      free[ty*GW+tx]=0;
+      var g=rnd();
+      if(g<0.45)city.push(rc(tx*T+2.5,ty*T+2.5,5,5,'t1'));
+      else if(g<0.7)city.push(rc(tx*T+1.25,ty*T+1.25,7.5,7.5,'p3'));
+      continue;
+    }
+    var bh=1,targetH=pick(SIZEH),ok,xx,yy;
+    while(bh<targetH&&ty+bh<GH){ok=true;for(xx=0;xx<bw;xx++){if(!free[(ty+bh)*GW+tx+xx]){ok=false;break;}}if(!ok)break;bh++;}
+    for(yy=ty;yy<ty+bh;yy++)for(xx=tx;xx<tx+bw;xx++)free[yy*GW+xx]=0;
+    if(rnd()<0.3&&tx+bw<GW){for(yy=ty;yy<ty+bh;yy++)free[yy*GW+tx+bw]=0;}
+    if(rnd()<0.25&&ty+bh<GH){for(xx=tx;xx<tx+bw;xx++)free[(ty+bh)*GW+xx]=0;}
+    var X=tx*T,Y=ty*T,BW=bw*T,BH=bh*T;
+    var roof=roofFor(X,Y), ridge=RIDGE[roof], wall=WALL[roof];
+    var e=[1.25,2.5,3.75][R(3)];
+    city.push(rc(X,Y,BW,BH-e,roof));
+    if(bw>=3&&bh>=3&&rnd()<0.72){
+      if(bw>=bh){var mx=X+T,my=Y+Math.floor((BH-e)/2/T)*T-0.625;city.push(rc(mx,my,BW-2*T,1.25,ridge));}
+      else{var myy=Y+T,mxx=X+Math.floor(BW/2/T)*T-0.625;city.push(rc(mxx,myy,1.25,BH-e-2*T,ridge));}
+    }
+    if(bw>=3&&bh>=3&&rnd()<0.5)city.push(rc(X+T*0.5,Y+T*0.5,10,10,'r6'));
+    if(bw>=4&&rnd()<0.55)city.push(rc(X+BW-2*T,Y+T,5,5,'p3'));
+    if(bw>=5&&bh>=4&&rnd()<0.3){
+      var cxx=X+Math.floor(BW/2/T-1)*T, cyy=Y+Math.floor(BH/2/T-1)*T;
+      city.push(rc(cxx,cyy,20,20,'g2'));
+      city.push(rc(cxx+2.5,cyy+2.5,10,10,'t1'));
+      city.push(rc(cxx+5,cyy+15,10,5,'sh'));
+    }
+    city.push(rc(X,Y+BH-e,BW,e,wall));
+    city.push(rc(X,Y+BH-1.25,BW,1.25,'sh'));
+  }
+}
+
+/* ---------- park ---------- */
+var land=[];
+land.push(rc(150,180,370,250,'grpp'));
+for(tx=15;tx<=51;tx++){land.push(rc(tx*T,180,10,1.25,'sh'));land.push(rc(tx*T,428.75,10,1.25,'sh'));}
+for(ty=18;ty<=42;ty++){land.push(rc(150,ty*T,1.25,10,'sh'));land.push(rc(518.75,ty*T,1.25,10,'sh'));}
+land.push(rc(150,392.5,370,20,'pavp'));
+land.push(rc(320,190,20,240,'pavp'));
+land.push(rc(200,270,140,20,'pavp'));
+var pond=[[250,300,110,20],[240,320,130,20],[250,340,110,20],[260,360,80,20]];
+for(i=0;i<pond.length;i++){
+  land.push(rc(pond[i][0]-5,pond[i][1]-5,pond[i][2]+10,pond[i][3]+10,'p3'));
+  land.push(rc(pond[i][0],pond[i][1],pond[i][2],pond[i][3],'wpp'));
+}
+for(i=0;i<54;i++){
+  var ttx=16+Math.floor(rnd()*35),tty=19+Math.floor(rnd()*23);
+  if(ttx>=24&&ttx<=36&&tty>=29&&tty<=37)continue;
+  if(tty>=38&&tty<=40)continue;
+  if(ttx>=31&&ttx<=33)continue;
+  if(tty>=26&&tty<=28&&ttx<=34)continue;
+  var TX=ttx*T,TY=tty*T;
+  land.push(rc(TX+2.5,TY+7.5,20,10,'sh'));
+  land.push(rc(TX,TY,20,20,'t1'));
+  land.push(rc(TX,TY,10,10,'t2'));
+}
+land.push(rc(398,266,40,10,'sh'));
+land.push(rc(396,232,40,40,'p3'));
+land.push(rc(402,226,28,52,'r4'));
+land.push(rc(396,238,40,28,'r4'));
+land.push(rc(408,244,16,16,'p1'));
+for(i=0;i<4;i++)land.push(rc(160+i*90,383,20,8,'r6'));
+
+/* ---------- landmarks ---------- */
+/* cathedral + square (station 104) */
+land.push(rc(620,220,180,90,'sqp'));
+land.push(rc(655,150,90,50,'r1'));
+land.push(rc(625,185,150,30,'r1'));
+land.push(rc(660,150,80,12.5,'r4'));
+land.push(rc(670,162.5,60,12.5,'r4'));
+land.push(rc(640,200,22,30,'r1'));
+land.push(rc(738,200,22,30,'r1'));
+land.push(rc(644,196,14,10,'r4'));
+land.push(rc(742,196,14,10,'r4'));
+land.push(rc(645.6,175,1.25,20,'pa'));
+land.push(rc(640,180,12.5,1.25,'pa'));
+land.push(rc(660,215,90,3.75,'r6'));
+land.push(rc(640,228,22,2.5,'r6'));
+land.push(rc(738,228,22,2.5,'r6'));
+land.push(rc(690,250,20,20,'p3'));
+land.push(rc(795,225,5,80,'sh2'));
+
+/* central station (107) + rail fan + viaduct */
+land.push(rc(1100,380,160,20,'r4'));
+land.push(rc(1110,362.5,140,17.5,'r4'));
+land.push(rc(1130,347.5,100,15,'r4'));
+land.push(rc(1110,380,140,1.25,'r1'));
+land.push(rc(1220,340,25,55,'r1'));
+land.push(rc(1226,346,12.5,12.5,'pa'));
+land.push(rc(1100,400,160,55,'r1'));
+land.push(rc(1100,451.25,160,3.75,'r6'));
+land.push(rc(1096,455,168,45,'sqp'));
+land.push(rc(1088,395,12,60,'sh2'));
+var rail=[];
+for(i=0;i<4;i++){
+  var rx0=1105+i*15;
+  rail.push(rc(rx0-5,150,10,245,'p1'));
+  rail.push(rc(rx0-2.5,150,1.25,245,'ink'));
+  rail.push(rc(rx0+1.25,150,1.25,245,'ink'));
+  for(var sy=160;sy<395;sy+=20)rail.push(rc(rx0-5,sy,10,1.25,'r6'));
+}
+rail.push(rc(612,415,508,20,'p1'));
+for(tx=62;tx<112;tx+=3)rail.push(rc(tx*T,425,10,10,'ink'));
+rail.push(rc(618,417.5,500,1.25,'ink'));
+rail.push(rc(618,431.25,500,1.25,'ink'));
+rail.push(rc(616,405,8,40,'sh2'));
+
+/* south terminal (124) + yard */
+land.push(rc(800,615,160,35,'sqp'));
+land.push(rc(810,652,140,45,'r1'));
+land.push(rc(820,642,120,12.5,'r4'));
+land.push(rc(810,693.75,140,3.75,'r6'));
+land.push(rc(795,650,12,50,'sh2'));
+for(i=0;i<3;i++){
+  var sx=630, sy=658+i*14;
+  land.push(rc(sx,sy,170,10,'p1'));
+  land.push(rc(sx,sy+2.5,170,1.25,'ink'));
+  land.push(rc(sx,sy+6.25,170,1.25,'ink'));
+}
+
+/* stadium */
+land.push(rc(1350,850,170,20,'r4'));
+land.push(rc(1350,870,170,50,'r4'));
+land.push(rc(1350,920,170,15,'r4'));
+land.push(rc(1360,860,150,70,'r1'));
+land.push(rc(1370,868,130,54,'g2'));
+land.push(rc(1375,870,120,1.25,'pa'));
+land.push(rc(1375,917.5,120,1.25,'pa'));
+land.push(rc(1432.5,868,1.25,54,'pa'));
+land.push(rc(1370,864,12,12,'r4'));
+land.push(rc(1488,864,12,12,'r4'));
+land.push(rc(1370,912,12,12,'r4'));
+land.push(rc(1488,912,12,12,'r4'));
+land.push(rc(1350,933.75,170,3.75,'r6'));
+land.push(rc(1344,855,12,85,'sh2'));
+
+/* dock */
+land.push(rc(875,500,120,40,'sqp'));
+land.push(rc(880,505,110,5,'p1'));
+for(i=0;i<2;i++){var px=900+i*50;land.push(rc(px,535,20,42,'p1'));land.push(rc(px,570,20,7.5,'r6'));}
+land.push(rc(935,548,25,15,'r3'));
+land.push(rc(1000,560,30,12,'r6'));
+
+/* allotments */
+for(i=0;i<6;i++)for(j=0;j<4;j++){
+  var ax=978+i*18, ay=794+j*23;
+  land.push(rc(ax,ay,14,19,(i+j)%2?'g3':'g1'));
+  land.push(rc(ax+4,ay+4,6,6,'r6'));
+}
+land.push(rc(975,790,110,1.25,'sh'));
+land.push(rc(975,880,110,1.25,'sh'));
+land.push(rc(975,790,1.25,92,'sh'));
+land.push(rc(1083.75,790,1.25,92,'sh'));
+
+/* market */
+land.push(rc(435,625,90,50,'sqp'));
+for(i=0;i<5;i++)for(j=0;j<2;j++)land.push(rc(440+i*17,630+j*22,12,10,['r3','am','g3','cy','p3'][(i+j)%5]));
+land.push(rc(435,625,90,1.25,'sh'));
+
+/* ---------- probability patches ---------- */
+var prob=[], pcent={40:'d40',25:'d25',20:'d20',15:'d15'};
+var f2=[[102,400,95,40],[111,330,300,25],[103,560,150,20],[105,860,120,15]];
+for(i=0;i<f2.length;i++){
+  var s=f2[i], px0=s[1]-45, py0=s[2]-45;
+  prob.push(rc(px0,py0,90,90,pcent[s[3]]));
+  prob.push(rs(px0,py0,90,90,'st-mg',1.25));
+  prob.push(label(s[3]+'%',px0+90-3-(String(s[3]).length+1)*10+2.5,py0+94,'mg',true));
+}
+prob.push(rc(475,385,90,90,'d15'));
+prob.push(rs(475,385,90,90,'st-mg',1.25,'3.75 3.75'));
+
+/* ---------- legal-move routes for A1 at 113 ---------- */
+function poly(pts,cls,sw,dash){
+  var s='',n;
+  for(n=0;n<pts.length;n++)s+=(n?',':'')+pts[n][0]+','+pts[n][1];
+  return '<polyline points="'+s+'" fill="none" class="'+cls+'" stroke-width="'+sw+'" stroke-linejoin="miter"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>';
+}
+function route(pts,cls,sw,dash){
+  return poly(pts,'cas',sw+2.5)+poly(pts,cls,sw,dash);
+}
+var routes=[];
+routes.push(route(MESH['112-113'],'st-pa',2.5,'5 5'));
+routes.push(route(MESH['114-113'],'st-pa',2.5,'5 5'));
+routes.push(route(MESH['104-113'],'st-am',3.75));
+routes.push(route(MESH['107-113'],'st-am',3.75));
+routes.push(route(RT_110,'st-cy',3.75));
+routes.push(route(RT_117,'st-cy',3.75));
+routes.push(route(RT_110,'st-pa2',1.25,'2.5 6.25'));
+routes.push(route(RT_117,'st-pa2',1.25,'2.5 6.25'));
+routes.push(route(RT_ALLEY,'st-mg',3.75,'6.25 4'));
+
+/* ---------- station markers ---------- */
+var CLASSCOL={'s':'p3','h':'am','t':'pa'};
+var marks=[];
+for(i=0;i<ST.length;i++){
+  var st=ST[i],id=st[0],sx=st[1],sy=st[2],sc=st[3],col=CLASSCOL[sc];
+  var bx=sx-18,by=sy-46;
+  if(id===102){bx=sx-58;by=sy-11;}
+  marks.push(rc(bx,by,36,22,'ink'));
+  marks.push(rs(bx,by,36,22,'st-'+col,1.25));
+  marks.push(label(String(id),bx+4,by+4.75,'pa',false));
+  if(id!==102)marks.push(rc(sx-0.625,by+22,1.25,(sy-10)-(by+22),'sh2'));
+  marks.push(rc(sx-10,sy-10,20,20,'ink'));
+  marks.push(rc(sx-6.25,sy-6.25,12.5,12.5,col));
+}
+/* reachable rings */
+var dest=[['112','#f2efe6'],['114','#f2efe6'],['104','#f2c14e'],['107','#f2c14e'],
+['110','#4fd1e0'],['117','#4fd1e0'],['115','#e0607f']];
+for(i=0;i<dest.length;i++){
+  var dn=dest[i][0],dx=0,dy=0;
+  for(j=0;j<ST.length;j++)if(String(ST[j][0])===dn){dx=ST[j][1];dy=ST[j][2];}
+  marks.push(rs(dx-16,dy-16,32,32,'cas',5));
+  marks.push('<rect x="'+(dx-16)+'" y="'+(dy-16)+'" width="32" height="32" fill="none" stroke="'+dest[i][1]+'" stroke-width="2.5"/>');
+}
+
+/* ---------- characters ---------- */
+var CH=[
+{id:'A1',x:650,y:520,f:'cy',sel:true,bob:0},
+{id:'A2',x:1180,y:470,f:'cya',dim:true,bob:0.7},
+{id:'A3',x:960,y:760,f:'cya',dim:true,bob:1.3},
+{id:'F1',x:700,y:250,f:'mg',reveal:true,bob:0.4},
+{id:'F2',x:400,y:95,f:'mg',ghost:true,bob:1.0},
+{id:'F3',x:520,y:430,f:'mg',ghost:true,dotted:true,bob:1.6}
+];
+var chars=[],fx=[];
+for(i=0;i<CH.length;i++){
+  var c=CH[i],X=c.x,Y=c.y,R0=18;
+  chars.push(rc(X-8,Y+9,16,5,'sh'));
+  if(c.ghost){
+    chars.push(rs(X-R0,Y-R0,R0*2,R0*2,'st-mg',5,c.dotted?'3.75 3.75':'7.5 7.5'));
+    chars.push(rs(X-5,Y-13,10,10,'st-mg',2.5));
+    chars.push(rs(X-5,Y-3,10,10,'st-mg',2.5));
+    chars.push(rc(X-5,Y+7,10,2.5,'mga'));
+  }else{
+    var body=c.dim?'cya':c.f;
+    chars.push(rc(X-R0,Y-R0,R0*2,5,body)+rc(X-R0,Y+R0-5,R0*2,5,body)+rc(X-R0,Y-R0+5,5,R0*2-10,body)+rc(X+R0-5,Y-R0+5,5,R0*2-10,body));
+    chars.push('<g class="bob" style="animation-delay:'+c.bob+'s">');
+    chars.push(rc(X-5,Y-13,10,10,'pa'));
+    chars.push(rc(X-5,Y-3,10,10,body));
+    chars.push(rc(X-5,Y+7,4,5,'ink')+rc(X+1,Y+7,4,5,'ink'));
+    chars.push('</g>');
+  }
+  if(c.sel){
+    chars.push(rc(X-R0-5,Y-R0-5,7.5,7.5,'pa')+rc(X+R0-2.5,Y-R0-5,7.5,7.5,'pa'));
+    chars.push(rc(X-R0-5,Y+R0-2.5,7.5,7.5,'pa')+rc(X+R0-2.5,Y+R0-2.5,7.5,7.5,'pa'));
+  }
+  chars.push(label(c.id,X-12,Y+21,c.ghost?'mg':'pa',true));
+  if(c.reveal){
+    chars.push(label('REVEALED',X-32,Y+37,'am',true));
+    fx.push('<rect class="ping" x="660" y="210" width="80" height="80"/>');
+    fx.push('<rect class="ping" x="660" y="210" width="80" height="80" style="animation-delay:.85s"/>');
+    fx.push('<rect class="ping" x="660" y="210" width="80" height="80" style="animation-delay:1.7s"/>');
+  }
+  if(c.id==='F2')chars.push(label('T3',X+22,Y+21,'mg',true));
+  if(c.id==='F3')chars.push(label('?',X-4,Y+31,'mg',true));
+}
+
+/* ---------- map labels ---------- */
+var labels=[];
+labels.push(label('MERIDIAN PARK',300,404,'pa',true));
+labels.push(label('CATHEDRAL',628,132,'pa',true));
+labels.push(label('CENTRAL STATION',1096,372,'pa',true));
+labels.push(label('SOUTH TERMINAL',806,606,'pa',true));
+labels.push(label('STADIUM',1364,948,'pa',true));
+labels.push(label('ALLOTMENTS',978,884,'pa',true));
+labels.push(label('MARKET',436,682,'pa',true));
+labels.push(label('DOCKS',878,492,'pa',true));
+labels.push(label('THE MERIDIAN',1130,608,'w3',true));
+labels.push(label('OLD TOWN',790,320,'pa',true));
+
+/* ---------- ambient actors (deliberately sparse, unringed) ---------- */
+var amb=[];
+amb.push('<g class="carA">'+rc(1040,185,20,10,'p2')+rc(1042.5,187.5,15,5,'ink')+'</g>');
+amb.push('<g class="carB">'+rc(900,683,20,10,'p1')+rc(902.5,685.5,15,5,'ink')+'</g>');
+amb.push('<g class="pedA">'+rc(340,378,5,7.5,'p2')+'</g>');
+amb.push('<g class="pedB">'+rc(430,378,5,7.5,'r6')+'</g>');
+
+/* ---------- inject ---------- */
+function set(id,arr){document.getElementById(id).innerHTML=arr.join('');}
+set('L_shore',shore);set('L_water',water);set('L_glint',glint);
+set('L_street',kerb.concat(road));
+set('L_land',land);set('L_city',city);set('L_rail',rail);
+set('L_prob',prob);set('L_route',routes);set('L_mark',marks);
+set('L_char',chars.concat(fx,amb));set('L_label',labels);
+
+/* ---------- minimap: whole city, 24 sectors, wider network ---------- */
+var mm=[];
+mm.push(rc(0,0,144,88,'ink'));
+for(i=0;i<=6;i++)mm.push(rc(i*24,0,1,88,'sh2'));
+for(i=0;i<=4;i++)mm.push(rc(0,i*22,144,1,'sh2'));
+for(i=0;i<7;i++)mm.push(rc(2+i*20,8+((i%3)*12),1,52-((i%3)*8),'rd'));
+for(i=0;i<8;i++)mm.push(rc(4+i*16,4+(i%4)*22,26,1,'rd'));
+mm.push('<path d="M0 30 L30 34 L62 40 L96 46 L126 52 L144 54 L144 66 L126 64 L96 58 L62 52 L30 46 L0 42 Z" fill="#3579a2"/>');
+mm.push('<path d="M0 33 L30 37 L62 43 L96 49 L126 55 L144 57" fill="none" stroke="#57a3c6" stroke-width="1"/>');
+for(i=0;i<104;i++){
+  var mx=4+Math.floor(rnd()*136), my=5+Math.floor(rnd()*78);
+  if(my>28&&my<46&&rnd()<0.6)continue;
+  mm.push(rc(mx,my,1,1,'p3'));
+}
+mm.push(rc(30,20,1,1,'cy')+rc(78,32,1,1,'cy')+rc(52,60,1,1,'cy'));
+mm.push(rc(20,18,2,2,'mg')+rc(96,44,2,2,'mg'));
+mm.push(rc(112,66,2,2,'am'));
+mm.push(rc(24,22,24,22,'cyb'));
+mm.push('<rect x="24" y="22" width="24" height="22" fill="none" stroke="#4fd1e0" stroke-width="1"/>');
+mm.push('<path d="M26 24 h6 v3 h-6 z M26 30 h10 v3 h-10 z" fill="#f2efe6" opacity="0.5"/>');
+document.getElementById('mm').innerHTML=mm.join('');
+
+/* ---------- HUD pips ---------- */
+var tp='',sp='';
+for(i=0;i<24;i++)tp+='<i class="'+(i<6?'on':'')+'"></i>';
+for(i=0;i<6;i++)sp+='<i class="'+(i<4?'on':'')+'"></i>';
+document.getElementById('tpips').innerHTML=tp;
+document.getElementById('spips').innerHTML=sp;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X-Yard — Moodboard 02: The City</title>
+    <style>
+      /* Neutral chrome: this page must not bias the comparison. */
+      :root { --ink:#14181d; --muted:#5d6874; --line:#d9dee4; --bg:#eef1f4; --card:#fff; }
+      * { box-sizing: border-box; }
+      body {
+        margin:0; background:var(--bg); color:var(--ink);
+        font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .wrap { max-width:1520px; margin:0 auto; padding:40px 28px 72px; }
+      header h1 { margin:0 0 6px; font-size:27px; letter-spacing:-.01em; }
+      header p { margin:0; color:var(--muted); max-width:92ch; }
+      .badge {
+        display:inline-block; margin-bottom:14px; padding:3px 9px; border:1px solid var(--line);
+        border-radius:999px; background:var(--card); color:var(--muted);
+        font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+      }
+      h2 { margin:44px 0 14px; font-size:18px; }
+      .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px; }
+      @media (max-width:1080px){ .grid{ grid-template-columns:1fr; } }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+      .card .shot { display:block; background:#0b0e13; }
+      .card .shot img { display:block; width:100%; height:auto; }
+      .card .meta { padding:15px 17px 17px; }
+      .card .row { display:flex; align-items:baseline; gap:9px; }
+      .key { flex:none; width:22px; height:22px; border-radius:6px; background:var(--ink); color:#fff;
+             font-size:12.5px; font-weight:700; display:grid; place-items:center; }
+      .card h3 { margin:0; font-size:16px; }
+      .card .tone { color:var(--muted); font-size:13.5px; margin:7px 0 10px; }
+      .card .note { font-size:13px; margin:0 0 12px; }
+      .tagline { display:inline-block; font-size:11px; font-weight:600; letter-spacing:.06em;
+                 text-transform:uppercase; color:var(--muted); border:1px solid var(--line);
+                 border-radius:999px; padding:1px 7px; margin-right:6px; }
+      .card a.open { color:var(--ink); font-size:13px; font-weight:600; text-decoration:none; border-bottom:1px solid var(--ink); }
+      .card a.open:hover { opacity:.6; }
+      .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 19px; max-width:104ch; }
+      .panel ul { margin:8px 0 0; padding-left:20px; color:var(--muted); }
+      table { border-collapse:collapse; margin-top:10px; font-size:13.5px; }
+      th, td { text-align:left; padding:6px 14px 6px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+      th { font-weight:600; color:var(--muted); font-size:12px; letter-spacing:.05em; text-transform:uppercase; }
+      ol.q { padding-left:22px; max-width:100ch; }
+      ol.q li { margin-bottom:11px; }
+      code { background:#e4e8ec; padding:1px 5px; border-radius:4px;
+             font:12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="badge">Exploration — not specification</div>
+        <h1>X-Yard — Moodboard 02: The City</h1>
+        <p>
+          Round 01 drew the transit <em>graph</em> and missed the point: in this genre the city
+          <em>is</em> the board. Round 02 puts the network inside an actual illustrated cityscape.
+          All four mockups render <strong>the same city and the same game state</strong> — only
+          art style and perspective change — so this is a controlled comparison, not four
+          unrelated proposals.
+        </p>
+      </header>
+
+      <h2>How to read the comparison</h2>
+      <div class="panel">
+        <table>
+          <tr><th>Mockup</th><th>Style</th><th>Perspective</th><th>Time</th></tr>
+          <tr><td>E — flat, top-down</td><td>Flat vector</td><td>Pure orthographic top-down</td><td>Day</td></tr>
+          <tr><td>F — flat, 2.5D</td><td>Flat vector</td><td>Slight 2.5D tilt</td><td>Day</td></tr>
+          <tr><td>G — pixel, 2.5D</td><td>Pixel-art tile grid</td><td>Slight 2.5D tilt</td><td>Day</td></tr>
+          <tr><td>H — painterly, night</td><td>Painterly / textured</td><td>Pure orthographic top-down</td><td>Night</td></tr>
+        </table>
+        <ul>
+          <li><strong>E vs F</strong> isolates <strong>perspective</strong> — same style, same palette, same time of day.</li>
+          <li><strong>F vs G</strong> isolates <strong>style</strong> — same perspective, same time of day.</li>
+          <li><strong>H</strong> covers the remaining style and demonstrates the day-night requirement at night, which is the hardest legibility case.</li>
+        </ul>
+      </div>
+
+      <h2>The four mockups</h2>
+      <div class="grid">
+        <div class="card">
+          <a class="shot" href="e-flat-topdown-day.html"><img src="shots/e-flat-topdown-day.png" alt="Mockup E — flat vector, pure top-down, day" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">E</span><h3>Flat vector · pure top-down · day</h3></div>
+            <p class="tone">Rooftops only, no facades. Depth from cast shadows alone. The most map-like and the easiest to read at a glance.</p>
+            <p class="note"><span class="tagline">against F</span>isolates perspective.</p>
+            <a class="open" href="e-flat-topdown-day.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="f-flat-2p5d-day.html"><img src="shots/f-flat-2p5d-day.png" alt="Mockup F — flat vector, slight 2.5D, day" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">F</span><h3>Flat vector · slight 2.5D · day</h3></div>
+            <p class="tone">Same style as E, ground plane tilted so facades show. Feels like a standing city rather than a plan. Station numbers and icons stay upright.</p>
+            <p class="note"><span class="tagline">vs E</span>same style, different perspective. <span class="tagline">vs G</span>same perspective, different style.</p>
+            <a class="open" href="f-flat-2p5d-day.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="g-pixel-2p5d-day.html"><img src="shots/g-pixel-2p5d-day.png" alt="Mockup G — pixel-art tile grid, slight 2.5D, day" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">G</span><h3>Pixel-art tile grid · 2.5D · day</h3></div>
+            <p class="tone">A deliberate SimCity 2000 homage: a real coarse tile grid, a limited palette, hard edges, no anti-aliasing — paired with a deliberately modern HUD, since the 90s chrome was declined.</p>
+            <p class="note"><span class="tagline">vs F</span>isolates style at the same perspective.</p>
+            <a class="open" href="g-pixel-2p5d-day.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="h-painterly-topdown-night.html"><img src="shots/h-painterly-topdown-night.png" alt="Mockup H — painterly, pure top-down, night" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">H</span><h3>Painterly · pure top-down · night</h3></div>
+            <p class="tone">The most illustrated of the four: textured roofs, warm window light pooling on streets, lamplit river. Carries the day-night feature, and is the hardest case for keeping the network legible.</p>
+            <a class="open" href="h-painterly-topdown-night.html">Open the mockup →</a>
+          </div>
+        </div>
+      </div>
+
+      <h2>What is identical in all four</h2>
+      <div class="panel">
+        Deliberately held constant so only style and perspective vary:
+        <ul>
+          <li>The same fictional city, <strong>Yard-Meridian</strong> — same river, park, bridges, cathedral square, Central Station, South Terminal and stadium.</li>
+          <li>The same 24 numbered stations at the same coordinates.</li>
+          <li>The same game state: turn 6 of 24, pulse fired T3 and next at T8; F1 revealed at 104, F2 hidden since T3 (last known 102), F3 hidden with heavy contraband near 112.</li>
+          <li>The same probability spread for F2: 102 40%, 111 25%, 103 20%, 105 15%.</li>
+          <li>The same five ticket-log rows, including one <em>Unknown Transport</em>.</li>
+          <li>The same HUD content and the same 1280×720 stage.</li>
+        </ul>
+      </div>
+
+      <h2>What to decide</h2>
+      <ol class="q">
+        <li><strong>Perspective</strong> — pure top-down (E, H) or slight 2.5D tilt (F, G)? Compare E against F directly: they are the same style, so any difference you feel is purely the camera.</li>
+        <li><strong>Art style</strong> — flat vector (E, F), pixel-art (G), or painterly (H)? Compare F against G, which share a perspective.</li>
+        <li><strong>Day or night as the default?</strong> H is night and looks the most atmospheric; E/F/G are day and read more easily. This is really a question about the game's tone.</li>
+        <li><strong>How much illustration before legibility suffers?</strong> G is the busiest, E the calmest. Which side of that line do you want as the default, given players will be reading it under time pressure?</li>
+      </ol>
+
+      <h2>Already decided (do not re-open here)</h2>
+      <div class="panel">
+        Recorded in <a href="../../VISUAL_DIRECTION.md">VISUAL_DIRECTION.md</a>:
+        hybrid route display (route lines appear only for the selected character's legal moves);
+        on-foot movement is node-to-node along street edges and free; ~600–900 stations per
+        ~100-player city, procedurally generated then hand-tuned; hidden Fugitives are
+        viewer-dependent; SimCity rooftops and palette plus a day-night feel, but no 1990s UI
+        chrome; ambient pedestrians and cars deliberately minimal; animation priority is
+        characters then day-night; fictional cities inspired by real ones; and mockups must show
+        both a zoomed view and a full-city overview.
+      </div>
+
+      <h2>Known gaps</h2>
+      <p style="color:var(--muted); max-width:104ch">
+        These are directional sketches. Still open: mobile and small viewports, accessibility
+        (contrast and colour-blind safety for the mode colours), hover/focus/disabled states,
+        motion-design budget, the lobby and matchmaking flow, the end-of-Yard summary, spectating,
+        and how the renderer actually behaves at ~618 stations with ~100 players — the overview
+        insets assert that scale but do not prove it.
+      </p>
+    </div>
+  </body>
+</html>

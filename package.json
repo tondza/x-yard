@@ -1,0 +1,22 @@
+{
+  "name": "x-yard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "X-Yard — asymmetric hidden-movement deduction game. pnpm workspaces monorepo.",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "test": "pnpm -r --if-present run test",
+    "test:watch": "pnpm -r --parallel --if-present run test:watch",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "build": "pnpm -r --if-present run build",
+    "dev": "pnpm -r --parallel --if-present run dev"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  }
+}

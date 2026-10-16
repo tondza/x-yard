@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X-Yard — Look &amp; Feel Moodboard 01</title>
+    <style>
+      /* Deliberately neutral chrome: this page must not bias the comparison. */
+      :root {
+        --ink: #14181d;
+        --muted: #5d6874;
+        --line: #d9dee4;
+        --bg: #eef1f4;
+        --card: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .wrap { max-width: 1500px; margin: 0 auto; padding: 40px 28px 72px; }
+      header h1 { margin: 0 0 6px; font-size: 27px; letter-spacing: -0.01em; }
+      header p { margin: 0; color: var(--muted); max-width: 90ch; }
+      .badge {
+        display: inline-block; margin-bottom: 14px; padding: 3px 9px;
+        border: 1px solid var(--line); border-radius: 999px;
+        background: var(--card); color: var(--muted);
+        font-size: 11.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+      }
+      h2 { margin: 44px 0 14px; font-size: 18px; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
+      @media (max-width: 1080px) { .grid { grid-template-columns: 1fr; } }
+      .card {
+        background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+        overflow: hidden; display: flex; flex-direction: column;
+      }
+      .card .shot { display: block; background: #0b0e13; }
+      .card .shot img { display: block; width: 100%; height: auto; }
+      .card .meta { padding: 15px 17px 17px; }
+      .card .row { display: flex; align-items: baseline; gap: 9px; }
+      .key {
+        flex: none; width: 22px; height: 22px; border-radius: 6px;
+        background: var(--ink); color: #fff;
+        font-size: 12.5px; font-weight: 700; display: grid; place-items: center;
+      }
+      .card h3 { margin: 0; font-size: 16px; }
+      .card .tone { color: var(--muted); font-size: 13.5px; margin: 7px 0 10px; }
+      .card .hidden-info { font-size: 13px; margin: 0 0 12px; }
+      .card .hidden-info b { font-weight: 600; }
+      .card a.open {
+        color: var(--ink); font-size: 13px; font-weight: 600;
+        text-decoration: none; border-bottom: 1px solid var(--ink);
+      }
+      .card a.open:hover { opacity: 0.6; }
+      ol.q { padding-left: 22px; max-width: 100ch; }
+      ol.q li { margin-bottom: 9px; }
+      ol.q b { font-weight: 600; }
+      .shared {
+        background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+        padding: 16px 19px; max-width: 100ch;
+      }
+      .shared ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); }
+      code {
+        background: #e4e8ec; padding: 1px 5px; border-radius: 4px;
+        font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="badge">Exploration — not specification</div>
+        <h1>X-Yard — Look &amp; Feel Moodboard 01</h1>
+        <p>
+          Four deliberately different art directions for the same game state, so they can be
+          compared fairly. Each is a single self-contained HTML file with no external assets.
+          React by letter — mixing across directions is welcome, these are axes rather than
+          packages.
+        </p>
+      </header>
+
+      <h2>The four directions</h2>
+      <div class="grid">
+        <div class="card">
+          <a class="shot" href="a-transit-diagram.html"><img src="shots/a-transit-diagram.png" alt="Direction A — Transit Diagram" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">A</span><h3>Transit Diagram</h3></div>
+            <p class="tone">Light, Swiss, functional. A precision instrument for deduction.</p>
+            <p class="hidden-info"><b>Unknowns shown as:</b> a quantitative heatmap — suspect nodes tinted on one hue with explicit percentages and a bar chart.</p>
+            <a class="open" href="a-transit-diagram.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="b-night-ops.html"><img src="shots/b-night-ops.png" alt="Direction B — Night Ops / Surveillance" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">B</span><h3>Night Ops / Surveillance</h3></div>
+            <p class="tone">Dark, technical, tense. An operations-room feed.</p>
+            <p class="hidden-info"><b>Unknowns shown as:</b> a radar metaphor — range rings from the last known position, contact blips, a growing search radius, entropy and confidence readouts.</p>
+            <a class="open" href="b-night-ops.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="c-paper-dossier.html"><img src="shots/c-paper-dossier.png" alt="Direction C — Paper Dossier" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">C</span><h3>Paper Dossier</h3></div>
+            <p class="tone">Warm, analog, noir. A case file being solved by hand.</p>
+            <p class="hidden-info"><b>Unknowns shown as:</b> hand-drawn deduction — pencil-hatched possible zones, circled nodes, question marks, a torn note, grease-pencil crosses.</p>
+            <a class="open" href="c-paper-dossier.html">Open the mockup →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="d-neon-metro.html"><img src="shots/d-neon-metro.png" alt="Direction D — Neon Metro" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">D</span><h3>Neon Metro</h3></div>
+            <p class="tone">Saturated, energetic, premium. An esports lobby.</p>
+            <p class="hidden-info"><b>Unknowns shown as:</b> ghost trails — luminous trails decaying per turn since the last fix, glowing probability halos, a fog-of-war gradient.</p>
+            <a class="open" href="d-neon-metro.html">Open the mockup →</a>
+          </div>
+        </div>
+      </div>
+
+      <h2>What is identical across all four</h2>
+      <div class="shared">
+        Every mockup renders the same board and the same game state, so only the art direction
+        varies:
+        <ul>
+          <li>The same 8-node / 21-edge scaffold graph — 16 taxi, 3 bus, 1 metro, 1 special.</li>
+          <li>Safe House at <code>s7</code>, Black Market at <code>s6</code>.</li>
+          <li>Turn 6 of 24. Last Reveal Pulse turn 3, next turn 8.</li>
+          <li>F1 revealed at <code>s3</code>; F2 hidden since turn 3; F3 hidden with heavy contraband.</li>
+          <li>Agents at <code>s7</code>, <code>s4</code>, <code>s8</code>.</li>
+          <li>The same five ticket-log rows, including one <code>Unknown Transport</code>.</li>
+          <li>The same probability spread for F2: s2 40%, s3 25%, s8 20%, s6 15%.</li>
+        </ul>
+      </div>
+
+      <h2>Decisions this round is asking for</h2>
+      <ol class="q">
+        <li><b>Light or dark?</b> A is light-neutral, C light-warm, B and D dark. This moves perceived tone more than anything else.</li>
+        <li><b>Tone:</b> competent tool (A), surveillance thriller (B), analog investigation (C), or competitive esports (D)?</li>
+        <li><b>How hidden information is drawn</b> — see the four treatments above. Sub-question: how much <i>math</i> belongs on screen? B shows entropy in bits; A shows percentages; C shows pencil estimates. More telemetry reads as simulator, less as board game.</li>
+        <li><b>Density:</b> A is spacious and immediately legible, B is dense and rewards mastery, C is layered, D is bold. Dense screens raise the learning cliff.</li>
+        <li><b>Typography:</b> sans (A), monospace-forward (B), serif + typewriter (C), heavy geometric sans (D).</li>
+        <li><b>Map rendering:</b> flat transit diagram (A), glowing grid (B, D), or paper chart (C)? How far should the map depart from a literal transit diagram?</li>
+        <li><b>Transport-mode colours:</b> quiet and functional (A) or a loud part of the identity (B, D)? All four chose different colours for the same four modes — the mapping is still open.</li>
+        <li><b>Faction-specific views:</b> A toggles Fugitive/Agent, B has "viewing as", D labels "faction · yours". Does the UI genuinely differ per faction, or is it one screen with an overlay?</li>
+        <li><b>Node identity:</b> the mocks use <code>s1</code>…<code>s8</code>; C invented in-world names ("Kentish Row", "Aldgate Spur"). Do nodes get real place names? That is world-building as much as UI, and it interacts with Yards being named cities.</li>
+        <li><b>Reveal Pulse prominence:</b> header countdown (A, B), paper bookkeeping (C), or a certainty meter (D)? It is the heartbeat of the game.</li>
+      </ol>
+
+      <h2>Not covered yet</h2>
+      <p style="color: var(--muted); max-width: 100ch">
+        These are directional sketches, not final screens. Still open: mobile and small viewports,
+        accessibility (contrast and colour-blind safety for the mode colours), hover/focus/disabled
+        states, motion design, lobby and matchmaking, the end-of-Yard summary, spectating, and how
+        the board behaves at the ~150-node scale the vision implies — all four mocks show 8 nodes.
+      </p>
+    </div>
+  </body>
+</html>

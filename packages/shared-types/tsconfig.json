@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /* No emit: this package is consumed as TypeScript source, like
+       @x-yard/game-core. Without `rootDir` we may import types from workspace
+       packages (a rootDir here would reject files outside src/). */
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}
