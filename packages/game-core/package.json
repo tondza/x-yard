@@ -10,7 +10,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "vitest run",
+    "//": "test uses --no-isolate: every suite here is a pure-function test with no cross-file global state, so sharing one worker is safe and cuts a ~1s run to ~0.3s. Revisit if a test ever mutates module-level state.",
+    "test": "vitest run --no-isolate",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

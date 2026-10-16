@@ -39,12 +39,12 @@ to make an error go away; fix the code.
 3. `TESTING_STRATEGY.md` and this file — authoritative for process.
 4. The code.
 
-`GAME_VISION.md` has two layers. Sections §1–§6 are the director-authored brief.
-The appendix (A–C) is derived engineering bookkeeping: implementation status,
-withdrawn concepts, and open questions. The appendix carries **no design
-authority**; an open question is not a decision. When the director answers one,
-the answer moves into the brief and the appendix entry is struck through, never
-deleted.
+`GAME_VISION.md` (§1–§6) is the director-authored brief. `GAME_VISION.appendix.md`
+is the derived engineering bookkeeping that used to be glued to the bottom of it:
+implementation status (A), withdrawn concepts (B), and open questions (C). The
+appendix carries **no design authority**; an open question is not a decision. When
+the director answers one, the answer moves into the brief and the appendix entry
+is struck through, never deleted.
 
 When the brief and the code disagree, the code is the bug. Facts the brief states
 are locked by `packages/game-core/src/spec-alignment.test.ts`; numbers it leaves
@@ -54,7 +54,8 @@ stated constant, update the brief and that test in the same change.
 Terminology is part of the contract. Players are **Fugitives** and **Agents**
 (roles `fugitive` / `agent`), a Fugitive is not singular and is not "Mr. X", time
 advances in **turns**, and an isolated game room is a **Yard** (`YardId`). The
-withdrawn vocabulary in appendix B must not reappear in prose, types, or exports.
+withdrawn vocabulary in `GAME_VISION.appendix.md` appendix B must not reappear in
+prose, types, or exports.
 
 ## 3. Architecture boundaries
 
@@ -173,7 +174,11 @@ pnpm install        # must exit 0 (no ERR_PNPM_IGNORED_BUILDS)
 pnpm typecheck      # every workspace: tsc --noEmit
 pnpm test           # every workspace: vitest run
 pnpm build          # where a build script exists
+pnpm check:docs     # links resolve, documented counts current, archive reasons present
 ```
+
+`pnpm verify` runs the whole chain. `pnpm test` remains the mandated gate — Rule 1
+is not satisfied by `check:docs` in its place.
 
 Additionally, when touching the server: boot it and exercise a route.
 
@@ -183,7 +188,7 @@ curl -s localhost:3001/health
 curl -s localhost:3001/board
 ```
 
-Expected state today: 4 test files and 83 tests, all passing. The server serves
+Expected state today: 5 test files and 88 tests, all passing. The server serves
 `/health` and `/board` and rejects every game message explicitly as
 "not implemented" — it does not pretend to play. Report what you actually ran and
 what the output was. Do not claim a check passed that you did not execute.
@@ -212,11 +217,18 @@ what the output was. Do not claim a check passed that you did not execute.
 - Do not delete or weaken a test to make a suite green. Fix the code, or change
   the brief and the test together with a PROJECT_LOG.md entry.
 - Do not invent game numbers. If the brief is silent, apply the `PROVISIONAL_`
-  rule (§4) and record or update the open question in the vision appendix rather
-  than guessing silently.
-- Do not reintroduce a withdrawn concept (vision appendix B). The
+  rule (§4) and record or update the open question in `GAME_VISION.appendix.md`
+  rather than guessing silently.
+- Do not reintroduce a withdrawn concept (`GAME_VISION.appendix.md` appendix B). The
   withdrawn-vocabulary guard in `spec-alignment.test.ts` exists to make that a red
   test rather than a code review.
+- Do not delete a superseded approach. Move it to `archive/<name>/` with a
+  `WHY_SUPERSEDED.md` recording what it was, why it was replaced, and what was
+  carried forward; `pnpm check:docs` fails if the reason file is missing. Design
+  exploration archives in place — see `archive/README.md`.
+- Do not debug an environment or tooling failure from scratch before reading
+  `docs/lessons.md`. It records measured facts about this machine, each with the
+  file that enforces the fix.
 
 ## 11. When to ask the director
 

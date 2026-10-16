@@ -12,7 +12,10 @@
     "test:watch": "pnpm -r --parallel --if-present run test:watch",
     "typecheck": "pnpm -r --if-present run typecheck",
     "build": "pnpm -r --if-present run build",
-    "dev": "pnpm -r --parallel --if-present run dev"
+    "dev": "pnpm -r --parallel --if-present run dev",
+    "check:docs": "node scripts/check-docs.mjs",
+    "test:report": "vitest run --reporter=json --outputFile=.vitest-report.json",
+    "verify": "pnpm install && pnpm typecheck && pnpm check:docs && pnpm build"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

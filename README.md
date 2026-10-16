@@ -18,10 +18,14 @@ important as the code.
 
 | File | What it is |
 | --- | --- |
-| [GAME_VISION.md](GAME_VISION.md) | Authoritative game design: core loop, Reveal Pulse, transit tiers, contraband missions, gadgets and skills, Yard scalability, plus a derived appendix of open questions and withdrawn concepts |
+| [AGENTS.md](AGENTS.md) | **Start here.** Entry point that routes a session to the authoritative document for its task |
+| [GAME_VISION.md](GAME_VISION.md) | Authoritative game design brief §1–§6: core loop, Reveal Pulse, transit tiers, contraband missions, gadgets and skills, Yard scalability |
+| [GAME_VISION.appendix.md](GAME_VISION.appendix.md) | Derived bookkeeping — implementation status, withdrawn concepts, open questions Q1–Q12. No design authority |
 | [AGENT_RULES.md](AGENT_RULES.md) | Binding rules for agent sessions, including the `PROVISIONAL_` convention, validation errors vs warnings, and this machine's constraints |
 | [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | Test layers, required suites, the vision alignment lock, Playwright plan, coverage gate |
 | [PROJECT_LOG.md](PROJECT_LOG.md) | Append-only decision and progress log |
+| [docs/status.md](docs/status.md) | Current state, edited in place — what is done, what is next |
+| [docs/lessons.md](docs/lessons.md) | Measured environment and tooling facts |
 
 ## Layout
 
@@ -61,8 +65,8 @@ foundation under the new vision — domain vocabulary for Yards, Fugitives/Agent
 transit tiers and facilities, contraband missions, gadgets and skills; xorshift128+
 RNG with golden vectors; transit graph traversal and validation with the
 errors-vs-warnings split; ticket economy with the ticket-log semantics for
-Counterfeit Identity and Alleyway Sprint; and a scaffold board. 4 test files and
-83 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
+Counterfeit Identity and Alleyway Sprint; and a scaffold board. 5 test files and
+88 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
 all exit 0. `game-core` has zero runtime dependencies.
 
 **The turn and phase machine is not implemented yet.** There is no turn machine,

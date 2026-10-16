@@ -3,7 +3,7 @@
  *
  * GAME_VISION.md is the authority. Everything the brief states as fact is
  * encoded here plainly; everything it leaves open is marked `PROVISIONAL` and
- * cross-referenced to the matching open question in the vision appendix. If a
+ * cross-referenced to the matching open question in the appendix. If a
  * `PROVISIONAL_` symbol is still here when the director answers its question,
  * that is a bug — update the brief and this file together.
  *
@@ -51,7 +51,7 @@ export type Role = 'fugitive' | 'agent';
 /**
  * Structural node tier, which determines which transit modes a node may serve.
  *
- * PROVISIONAL (vision appendix Q7): §3 describes transport tiers but no node
+ * PROVISIONAL (GAME_VISION.appendix.md Q7): §3 describes transport tiers but no node
  * taxonomy. These three classes are the engineering recommendation.
  */
 export type NodeClass = 'street' | 'hub' | 'terminal';

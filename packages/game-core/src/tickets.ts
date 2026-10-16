@@ -125,7 +125,7 @@ export function applyTicketDelta(bag: TicketBag, delta: TicketBagDelta): TicketB
 /**
  * The starting bag for a role.
  *
- * PROVISIONAL (vision appendix Q1): §3 states no ticket counts.
+ * PROVISIONAL (GAME_VISION.appendix.md Q1): §3 states no ticket counts.
  */
 export function startingTicketsFor(role: Role): TicketBag {
   return role === 'fugitive'

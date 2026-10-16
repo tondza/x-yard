@@ -91,7 +91,7 @@ describe('totals and helpers', () => {
   });
 
   it('returns the PROVISIONAL starting bag for each faction', () => {
-    // PROVISIONAL: §3 states no ticket counts (vision appendix Q1).
+    // PROVISIONAL: §3 states no ticket counts (GAME_VISION.appendix.md Q1).
     expect(startingTicketsFor('fugitive')).toEqual(PROVISIONAL_FUGITIVE_STARTING_TICKETS);
     expect(startingTicketsFor('agent')).toEqual(PROVISIONAL_AGENT_STARTING_TICKETS);
   });

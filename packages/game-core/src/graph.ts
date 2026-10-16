@@ -11,7 +11,7 @@
  *     missions and extractions).
  *   - **warnings** — PROVISIONAL playability heuristics whose numbers came from
  *     recommendations, not from the brief. Warnings must not be silently
- *     promoted to errors; see the vision appendix.
+ *     promoted to errors; see the appendix.
  *
  * @module @x-yard/game-core/graph
  */
@@ -58,7 +58,7 @@ const CLASS_MODES: Readonly<Record<NodeClass, readonly TransportMode[]>> = {
 /** Bus and metro skip standard street nodes (§3: bus "skipping standard street nodes"). */
 const MODES_AVOIDING_STREET: readonly TransportMode[] = ['bus', 'underground'];
 
-/* PROVISIONAL playability heuristics (vision appendix Q7: map scale undefined). */
+/* PROVISIONAL playability heuristics (GAME_VISION.appendix.md Q7: map scale undefined). */
 const PROVISIONAL_MIN_DEGREE = 2;
 const PROVISIONAL_MAX_DEGREE = 9;
 const PROVISIONAL_MEAN_DEGREE_RANGE: readonly [number, number] = [4.5, 6.5];

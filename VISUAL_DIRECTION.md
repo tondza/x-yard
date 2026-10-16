@@ -85,8 +85,8 @@ session does not discover them halfway through an implementation.
 - **Do stations get in-world names**, or stay numbered (101, 102…)? The round-01
   paper dossier invented names ("Kentish Row"); the round-02 brief uses numbers.
 - **Reveal Pulse interval** — still `PROVISIONAL_REVEAL_PULSE_INTERVAL` in code
-  (`GAME_VISION.md` appendix Q2).
-- **Map scale numbers** (§appendix Q7) are now partly answered: ~600–900 stations,
+  (`GAME_VISION.appendix.md` Q2).
+- **Map scale numbers** (`GAME_VISION.appendix.md` Q7) are now partly answered: ~600–900 stations,
   ~100 players. Node classes (`street` / `hub` / `terminal`) remain provisional.
 - Mobile and small viewports, accessibility (contrast and colour-blind safety for
   the mode colours), and motion-design budget all remain untouched.

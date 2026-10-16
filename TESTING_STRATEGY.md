@@ -78,7 +78,7 @@ together.
 ### Required suites
 
 These are the suites the brief and the architecture require. The first column is
-the target state; today, the first four are real.
+the target state; today, the first five are real.
 
 | Suite | Purpose | Status |
 | --- | --- | --- |
@@ -86,6 +86,7 @@ the target state; today, the first four are real.
 | `graph.test.ts` | `validateGraph` errors vs warnings, facility requirements, traversal helpers (33 tests) | ✅ done |
 | `tickets.test.ts` | spend/refund, exhaustion paths, and the ticket-log semantics of Counterfeit Identity and Alleyway Sprint (21 tests) | ✅ done |
 | `spec-alignment.test.ts` | stated facts, `PROVISIONAL_` naming, withdrawn-vocabulary absence (9 tests) | ✅ done |
+| `architecture.test.ts` | zero runtime dependencies, no forbidden imports, no banned nondeterminism APIs (5 tests) | ✅ done |
 | `rules.test.ts` | fuzz seeded Yards; terminate within 2 × turn limit; no negative tickets; no unreachable nodes | ⏳ pending engine |
 | `capture.test.ts` | occupation arrest at Capture Resolution | ⏳ pending engine |
 | `reveal.test.ts` | Reveal Pulse scheduling and Decoy Ping falsification | ⏳ pending engine |

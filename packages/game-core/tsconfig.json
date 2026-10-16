@@ -2,7 +2,24 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+
+    /*
+     * Deliberately narrow: ONLY the base config's empty `types: []` is widened
+     * here, and only so the test toolchain type-checks. Architecture tests need
+     * `node:fs`/`node:path`/`node:url` to read and scan this package's own
+     * sources, and `vitest` for the runner types.
+     *
+     * This does NOT relax the engine's purity rule, which is about *runtime*
+     * imports in shipped source, not about what the compiler is allowed to name.
+     * `src/architecture.test.ts` enforces the real contract: it scans these
+     * sources and fails if any engine file — tests excluded — imports a Node
+     * built-in, a framework, or `shared-types`.
+     *
+     * Adding a Node type here buys nothing at runtime. Adding `"node"` to a
+     * *globals* surface, or an engine file importing `node:*`, is still a bug.
+     */
+    "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*"]
 }

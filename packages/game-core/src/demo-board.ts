@@ -2,7 +2,7 @@
  * A small hand-authored board used for scaffolding and rendering work.
  *
  * This is NOT a shipped Yard map. GAME_VISION.md gives no map scale or node
- * count (appendix Q7), so this fixture exists only so the server, the canvas,
+ * count (GAME_VISION.appendix.md Q7), so this fixture exists only so the server, the canvas,
  * and `validateGraph` can be wired end-to-end.
  *
  * It is deliberately built to satisfy every non-provisional validation rule:

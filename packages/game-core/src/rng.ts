@@ -1,7 +1,7 @@
 /**
  * Deterministic, injectable randomness.
  *
- * GAME_VISION.md §8 requires xorshift128+ with its state living *inside*
+ * GAME_VISION.md §2 requires xorshift128+ with its state living *inside*
  * `GameState` as `[number, number, number, number]`, so the API here is a set of
  * PURE functions over an explicit {@link RngState} rather than a stateful
  * closure. A closure would carry hidden mutable state that replay could not

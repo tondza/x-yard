@@ -54,7 +54,7 @@ changed and *why*. Design decisions record the alternative that was rejected.
    (16 taxi, 3 bus, 1 underground), which passes connectivity and the degree
    distribution honestly.
 5. **The RNG API is pure functions over an explicit state**, not a closure.
-   GAME_VISION.md §8 requires `rngState` to live inside `GameState` so replay can
+   GAME_VISION.md §2 requires `rngState` to live inside `GameState` so replay can
    reconstruct it from the log; a stateful closure would hide the very state that
    must be serialised. Golden vectors are locked in `rng.test.ts`.
 
@@ -133,12 +133,12 @@ tests, and the other governance files were refactored to match it.
 - **black tickets** (double move) and **shadow steps** (free taxi leg) (replaced by
   Fugitive gadgets: Decoy Ping, Counterfeit Identity, Alleyway Sprint);
 - scheduled **ticket refills** at R8/R12/R16/R20 (replaced by "tickets never
-  refill mid-Yard", a provisional default — appendix Q1);
+  refill mid-Yard", a provisional default — GAME_VISION.appendix.md Q1);
 - the **`ferry`** transport mode (replaced by **Special Transport / Alleyway**,
   `special`);
 - the **accusation** mechanic;
 - "round" and "match" terminology, and the grid-coordinate authoring scale
-  (4096×3072 Meridian Central) — map scale is now undefined (appendix Q7).
+  (4096×3072 Meridian Central) — map scale is now undefined (GAME_VISION.appendix.md Q7).
 
 **Refactor performed**
 
@@ -385,3 +385,101 @@ Deliberately **deferred to the mockups**: art style, and perspective.
 **Status: awaiting mockup review** to settle art style and perspective.
 
 
+---
+
+## 2026-10-16 — Governance architecture: entry point, enforced invariants, durable records
+
+**Context**
+
+The governance *content* was strong but its information architecture was not. 63 KB
+of root documents had to be read in full or not at all, because DSH auto-loads only
+`AGENTS.md`/`CLAUDE.md` and this repository had neither. Nothing checked the
+documents, so claims had already drifted: three files cited a `GAME_VISION.md §8`
+that no longer existed after the vision was replaced, and four documents asserted
+"4 test files, 83 tests" while the suite had grown.
+
+**Done**
+
+- **`AGENTS.md` added at the root and in `packages/game-core/`.** The root file is
+  a router (non-negotiables, authority order, a "what to read when" table,
+  environment facts, verification) and the nested one carries the engine's purity
+  and determinism contract. Both are now injected automatically before a session's
+  first request; the nested one loads when a session first touches the engine.
+- **`GAME_VISION.md` split at the authority boundary** into the director-authored
+  brief (§1–§6) and `GAME_VISION.appendix.md` (derived A–C). All cross-references
+  updated.
+- **`docs/lessons.md`** — seven measured environment facts in
+  symptom → cause → fix → *enforced by* form, so the next session checks there
+  instead of rediscovering the read-only `$HOME` or the `allowBuilds` requirement.
+- **`docs/status.md`** — current state, edited in place, so re-entry does not
+  require scanning an append-only log.
+- **`docs/decisions/`** — nine records in the house format whose most valuable
+  field is the *rejected alternative*; extracted from this log so a single decision
+  is addressable without reading a whole round.
+- **`.dsh/skills/`** — two discovered-on-demand skills: a governance pre-flight
+  check and a decision-record how-to. They cost no context until loaded.
+- **`docs/briefs/_TEMPLATE.md`** and **`archive/README.md`** — the delegation-brief
+  format that made round 02 work, generalized, and the archive convention, whose
+  `WHY_SUPERSEDED.md` requirement `check:docs` enforces.
+- **Enforcement, which is the actual point:**
+  - `architecture.test.ts` (5 tests) locks `game-core`'s zero-dependency contract,
+    forbids framework/Node/`shared-types` imports, and bans `Math.random`,
+    `Date.now`, `performance.now`, `new Date`, and `require()` in engine source.
+  - `scripts/check-docs.mjs` fails on dead relative links, stale documented test
+    counts, and dangling `GAME_VISION.md §N` references.
+  - Vitest's JSON report is the single source of truth for test counts, so
+    `check:docs` verifies the documents against a real run rather than a hand count.
+
+**Decisions**
+
+1. **Split the appendix into its own file rather than keep one document with a
+   banner comment.** **Rejected:** relying on an HTML comment for authority, which
+   is what the §-reference rot already disproved. Full record:
+   [0009](docs/decisions/0009-derived-appendix-split-from-the-brief.md).
+2. **`game-core`'s `types: []` was widened to `["node", "vitest/globals"]`.** The
+   architecture test needs `node:fs`/`node:path`/`node:url` to scan the engine's own
+   sources, and `AGENT_RULES.md` §9 forbids `.js` source files, so a JavaScript
+   check was not an option. The purity rule is about *runtime imports*, and
+   `architecture.test.ts` enforces exactly that — the tsconfig change does not
+   relax it.
+3. **Documented counts are verified, not trusted.** **Rejected:** hand-maintaining
+   the numbers, which is precisely how they drifted to "83 tests".
+4. **`PROJECT_LOG.md` is exempt from count checking.** It is append-only, so an old
+   entry claiming "83 tests" was true when written; correcting it is forbidden.
+   Living documents are checked, history is not.
+5. **`game-core` runs `vitest run --no-isolate`.** Measured: ~0.9–1.1 s → ~0.28 s.
+   Safe because every suite is a pure-function test with no cross-file module
+   state. **Rejected:** `isolate: false` globally in the root config, which would
+   silently apply to suites that have not established that property.
+
+**Corrected during this work**
+
+The architecture test's `Map`/`Set` rule was nearly written as a blanket ban. The
+engine legitimately uses `Map`/`Set` for transient computation (adjacency maps in
+`graph.ts`); only *state* is banned. A blanket check would have been a false
+invariant, so the real serialization oracle is explicitly deferred, with its
+replacement test named, until `GameState` exists.
+
+**Verification (measured)**
+
+- `pnpm test` — 5 files, 88 tests, all passing, ~0.24 s.
+- `pnpm typecheck` — every workspace exits 0, including the four apps and packages.
+- `pnpm check:docs` — 29 markdown files scanned; all links resolve, all counts
+  current.
+- `pnpm check:docs` caught, in the act of writing them: a wrong relative path in
+  `archive/README.md`, a `§8` reintroduced by decision 0009 while describing the
+  §8 rot, and both skills' links being one directory too shallow.
+
+**Not yet started (tracked so it cannot be forgotten)**
+
+- `withdrawn-vocabulary.ts` as a single exported source of truth for appendix B,
+  replacing the hardcoded array in `spec-alignment.test.ts`.
+- The state-serialization oracle (`JSON.parse(JSON.stringify(state))` equality and
+  `hashState(replay(init, log))`), once `GameState` exists.
+- The first real `archive/` entry. `design/moodboard/round-01-abstract-nodes/` was
+  considered and **deliberately left in place**: `design/` is already the archive
+  for design history, the round is already marked superseded with its reasoning
+  recorded, and moving it would add link churn without adding information. The
+  concrete future entry is `packages/game-core/src/demo-board.ts` when the real map
+  lands.
+- Wiring `pnpm verify` into any CI, and Playwright behind `pnpm test:e2e`.

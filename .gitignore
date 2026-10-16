@@ -21,6 +21,10 @@ playwright-report/
 test-results/
 .vite/
 
+# Machine-readable Vitest report. Consumed by scripts/check-docs.mjs to verify
+# that the test counts claimed in the governance documents are true.
+.vitest-report.json
+
 # Environment
 .env
 .env.*

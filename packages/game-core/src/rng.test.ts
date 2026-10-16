@@ -10,7 +10,7 @@ import {
 } from './rng';
 
 /**
- * Golden vectors lock the exact xorshift128+ output. GAME_VISION.md §8 requires
+ * Golden vectors lock the exact xorshift128+ output. GAME_VISION.md §2 requires
  * them so that a future refactor which silently changes the RNG stream is
  * caught immediately — such a change would invalidate every stored replay.
  */
