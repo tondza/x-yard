@@ -483,3 +483,337 @@ replacement test named, until `GameState` exists.
   concrete future entry is `packages/game-core/src/demo-board.ts` when the real map
   lands.
 - Wiring `pnpm verify` into any CI, and Playwright behind `pnpm test:e2e`.
+
+---
+
+## 2026-10-16 — Round 03 opens: MVP scope, map representation, mobile-first
+
+The director reviewed the four city mockups (E–H) and reset the project's centre
+of gravity from *vision* to *viable minimum*.
+
+**Director feedback**
+
+- **Style narrowed to two:** F (flat vector, 2.5D tilt) and H (painterly, pure
+  top-down, night). Pixel-art (G) is out. Both are liked *together with their own*
+  perspective, so neither axis is settled on its own.
+- **The fog in H questioned.** Read as an implied visibility mechanic.
+  **Investigated and confirmed decorative:** H draws three `gFog` ellipses at
+  opacity .55–.70 that no game state drives. Recommendation recorded — remove it,
+  or reduce to a vignette; real fog-of-war must be data-driven.
+- **Diagonal movement lines rejected.** *"Movement lines drawn diagonally over
+  buildings and streets ... it should not be possible! Possible movement paths
+  should mostly follow streets!"* Only genuine off-street modes may cross blocks.
+- **Block/square field proposed.** A block-based field with a parallel coordinate
+  system, so occupancy per square and the "same square?" capture test are
+  unambiguous, with diagonal streets fitted inside a square block. The director
+  asked for this **researched**, not assumed.
+- **MVP, not vision.** The existing breadth (gadgets, agent skills, contraband,
+  safe houses, ~100 players) is "good and visionary" but not MVP. Stay close to the
+  original Scotland Yard; **on foot** and **electric scooter** are the named extras.
+- **Mobile-first and minimum UI.** Mockups are rejected as a UI starting point —
+  "the most complex possible game screen with lots of modal windows". Mobile is
+  primary; desktop is the later enhancement.
+
+**Decisions**
+
+1. **Legal-move paths follow the street network.** **Rejected:** straight
+   origin-to-destination lines — the exact defect the director saw, which renders
+   travel the city geometry forbids. Recorded as
+   [0010](docs/decisions/0010-legal-moves-follow-streets.md).
+2. **The map-representation change is gated on research.** Node-and-edge stays
+   authoritative meanwhile. **Rejected:** adopting blocks immediately on the
+   director's suggestion — they asked for research precisely because they are
+   unsure, and the migration would touch the validated graph, ticket economy, RNG
+   determinism and the test suite.
+3. **Style shortlist recorded, not closed.** **Rejected:** declaring a winner from
+   the existing desktop-oriented, panel-heavy mockups, which depict a game we have
+   now decided not to build first.
+4. **The game-rule half of the street rule is left for the director to promote**
+   into `GAME_VISION.md` §2/§3, since that brief is director-authored.
+   **Rejected:** editing the director's brief on my own initiative.
+
+**Work opened (delegated, three parallel briefs in `docs/briefs/round-03-mvp-and-map.md`)**
+
+- **R — map system research**, `docs/research/round-03-map-system.md`: node-and-edge
+  vs block/square, with migration cost, a comparison table, and a recommended
+  rejected alternative.
+- **M1 — MVP rules**, `docs/mvp/round-03-rules.md`: turn structure, ticket economy,
+  reveal schedule, capture including swaps, on-foot and scooter trade-offs, win
+  conditions, explicit cuts, and a "first playable" definition.
+- **M2 — MVP product**, `docs/mvp/round-03-product.md`: mobile-first minimum screen
+  set, portrait layout, hidden-information presentation on a small screen,
+  onboarding, accessibility, and the desktop enhancement path.
+- **V — validator**, `docs/mvp/round-03-validation.md`, to run after the three:
+  three concrete turn-by-turn transcripts, a verdict, and prioritised fixes.
+
+**Verification**
+
+- `pnpm verify` exit 0 and `pnpm test` 5 files / 88 tests, re-measured at the start
+  of this round after the governance-consolidation commits (`7e3da2e`, `0ed23cb`).
+- An earlier observation in this session that `pnpm typecheck` failed has been
+  **superseded**: the governance round widened `game-core`'s `types` to
+  `["node", "vitest/globals"]`, with the reasoning that purity concerns *runtime*
+  imports and `architecture.test.ts` enforces that contract directly. That argument
+  is sound and the repo is green; the suggested alternative (moving the check out of
+  the package) is not needed.
+
+---
+
+## 2026-10-16 — Round 03 validated: the MVP as specified is not yet interesting
+
+Four delegated workstreams ran from one brief
+([`docs/briefs/round-03-mvp-and-map.md`](docs/briefs/round-03-mvp-and-map.md)):
+R (map research), M1 (rules), M2 (product), then V (adversarial validator). Their
+deliverables and the ratified re-statement are indexed in
+[`docs/mvp/README.md`](docs/mvp/README.md).
+
+**The headline finding**
+
+> **"Worth building only if three things change."** As specified the game reduces to
+> *"don't be adjacent to an Agent at the pulse, be adjacent at the pulse"* — the
+> Reveal Pulse **is** the game, and everything else is bookkeeping around three to
+> five one-turn windows.
+
+This is the most valuable output of the round. It is not "the MVP is bad"; it is
+that the loop must be fixed **before** implementation rather than discovered after.
+
+**Research disagreed with the director's hypothesis — and that is the point**
+
+The director proposed a block/square field expecting it to make occupancy and the
+same-square capture test unambiguous. R recommended **against** it, and the argument
+is recorded in `docs/mvp/README.md` §4:
+
+- Capture is **already** one exact discrete comparison (`agent.node === fugitive.node`).
+  A square gives the same single comparison. The mockups *read* ambiguously because
+  two **continuous screen positions** were compared by eye — a **rendering bug, not a
+  representation bug**.
+- A uniform lattice would make mode stop constraining *where* a move lands and only
+  say how far, so bus/metro degenerate into "long taxi" and the four-tier ticket
+  economy collapses. It also explodes the Agent's candidate set from tens of nameable
+  stations to hundreds of interchangeable squares.
+- The real fix is **authored per-edge street geometry**: a move is an edge sequence
+  and a single move is exactly one edge, so
+  [0010](docs/decisions/0010-legal-moves-follow-streets.md) is **not sufficient on
+  its own** — without waypoint geometry, drawing that one edge straight still crosses
+  buildings.
+
+**Three P0 changes (applied in `docs/mvp/README.md`)**
+
+1. **16 turns, pulses 5/10/15** — M1's 24 turns is wrong (11 min 35 s on M2's own
+   25 s/player-round model, outside the 5–10 min phone target; M1's turn-23 pulse
+   also left a five-turn unpruned interval followed by a one-turn climax).
+2. **The scooter's exact-position reveal is cut.** M1 revealed the ending node before
+   the Agent phase while capture is an end-position test, so any Agent within one move
+   captured with no counterplay — and with 25 non-scooter moves for 24 turns the
+   scooter's tempo was never needed anyway. Validation won a transcript to the limit
+   spending zero charges. **Rejected fix:** giving Agents scooter charges, which
+   doubles the asymmetry.
+3. **Pass-and-play is not the ship mode** — one device per seat. M2 proposed hot-seat
+   to delete the whole lobby/reconnect surface, but it leaks hidden information three
+   ways: the Fugitive's move is visible to Agents alongside, three hand-offs per turn
+   is 48 transfers (~96 s) against a 25 s budget, and press-and-hold hides a glance,
+   not an unattended device. **Rejected:** shipping hot-seat and deferring netcode;
+   the compromise if the director insists is 12 turns with pulses 4/8/12.
+
+**Other findings worth keeping**
+
+- **On-foot is logged, and M2 was wrong** to default it to "no trail": silent foot
+  creates an unbounded silent branch in the Agent's candidate set, making deduction
+  unfalsifiable, and dominates every paid mode.
+- **The candidate set saturates mid-interval** (≥ 14 and up to 40 nodes before a
+  pulse, against a ≤ 12 target), so the pulse interval needs shortening and M1 §12's
+  bound should become a real solver test rather than an estimate.
+- **Starting separation must be ≥ 3 edges** — with both Agents two edges from the
+  Fugitive's start, validation captured the Fugitive on turn 2 with no play.
+- **Seat assignment** has no rule yet, and a near-complete metro terminal graph lets
+  one terminal Agent threaten every terminal.
+- **The log invariant is under-specified on the capture turn** (zero rows).
+
+**Corrected in our own records**
+
+The validator caught that `VISUAL_DIRECTION.md` still described on-foot as
+**"free" and silent**, contradicting M1's rules. Corrected there, along with the
+related claim that on-foot might widen `TransportMode` — it does not; the MVP
+introduces `MobilityOption = TransportMode | 'foot' | 'scooter'`.
+
+**Verification**
+
+- `pnpm test` — 5 files, 88 tests, passing.
+- `pnpm check:docs` — 34 markdown files, all links resolve, counts current.
+- `pnpm verify` — exit 0 before this round's document work began.
+
+---
+
+## 2026-10-16 — Director rulings: prototype phase, 20-player MVP, graph confirmed
+
+**The rulings, all applied to the records**
+
+1. **A prototype precedes the MVP:** 5 seats, **1 human + 4 bots**, single-player.
+   Its purpose is explicitly a *feeling of success* and validating what the game looks
+   like. Bots need not be clever.
+2. **The MVP is multiplayer at up to 20 players, 4 of them Fugitives.** A solo player
+   fills the remaining seats with bots, and **a human joining later takes over a bot's
+   seat.**
+3. **No same-device sharing.** One device per seat.
+4. **The map stays node-and-edge**; the block/square proposal is rejected. The **map
+   generator is a component to start early.**
+5. **Reveal Pulse dominance is accepted for now**, the proposed cycle is adopted (**16
+   turns, pulses 5 / 10 / 15**), and **starting separation ≥ 3 edges** is adopted.
+6. **Faction assignment is random**, with a prototype/testing override that always
+   lets the director play as the Fugitive.
+
+**Decisions and rejected alternatives**
+
+1. **Prototype before MVP.** **Rejected:** building the MVP directly — nothing is
+   playable until the turn machine, projection, capture, sockets and UI all land, so
+   there is no early evidence the game is worth building. Recorded as
+   [0011](docs/decisions/0011-prototype-before-multiplayer-mvp.md).
+2. **Keep the prototype single-player.** **Rejected:** a multiplayer prototype, which
+   front-loads sockets, rooms, reconnect and interest management *before* the loop and
+   the look are validated. **Also rejected:** pass-and-play as a shortcut, which the
+   director ruled out outright.
+3. **Re-scope the MVP from 3 seats to 20 players / 4 Fugitives.** **Rejected:**
+   keeping the validated 3-seat MVP, which contradicts the director's requirement that
+   the MVP be multiplayer.
+4. **Record the rulings without rewriting the director's §1–§6 prose.** The rulings
+   live in [`docs/mvp/README.md`](docs/mvp/README.md), each resolution **strikes the
+   matching entry** in [`GAME_VISION.appendix.md`](GAME_VISION.appendix.md), and the
+   legacy 3-seat documents are marked invalidated rather than quietly edited.
+   **Rejected:** editing the brief's own text on our own initiative, and
+   **rejected:** silently rewriting the agent documents to match, which would destroy
+   the evidence of what was actually validated.
+
+**What this invalidates**
+
+`round-03-rules.md`, `round-03-product.md` and `round-03-validation.md` were all
+written for **1 Fugitive vs 2 Agents** and are now stale. The 4-Fugitive model also
+changes the hidden-information problem: `projectState` must project **per viewer and
+per Fugitive**, not for a single hidden player. Bot seats must be **interchangeable
+with human seats** in the engine, or mid-Yard takeover will be impossible later.
+
+**Verification**
+
+- `pnpm test` — 5 test files, 88 tests, passing.
+- `pnpm check:docs` — 37 markdown files, all links resolve, documented counts current.
+- `shoot.mjs` — all 14 mockups across three rounds render with no page or console
+  errors. Four round-03 mockups were corrected after a legality bug in our own brief:
+  they had drawn a **bus move from a standard street node** and a walk between
+  non-adjacent stations. The brief now carries a derived legality table, and
+  [L11](docs/lessons.md) records the trap.
+
+---
+
+## 2026-10-16 — Turn model clarified: timed concurrent windows per faction
+
+**The ruling**
+
+Each faction acts inside its own **30-second window with every member moving at
+once**. A move is **visible to the rest of that faction the moment it is made**, so a
+later mover acts on more information. **Agents go first, then Fugitives**, and
+**Fugitives see each other.** 30 s is explicitly a starting value.
+
+**Decisions and rejected alternatives**
+
+1. **Timed concurrent windows replace sequential turns.** **Rejected:** the fixed
+   `detectiveOrder` rotation the rules currently specify — with up to 20 seats a
+   rotation means waiting for up to 19 other players before you may act, which is
+   unplayable inside a 5–10 minute phone session, and it removes the read-the-room
+   tension the director is asking for. Recorded as
+   [0012](docs/decisions/0012-timed-concurrent-turn-windows.md).
+2. **Moves are observable mid-window.** **Rejected:** simultaneous submission with
+   everything revealed together at the end — explicitly not what the director wants.
+3. **The timer lives in the server, not the engine.** **Rejected:** putting wall-clock
+   time inside `game-core`, which is banned from the clock. A timeout arrives at the
+   engine as an event, so *what* happens stays independent of *when*.
+4. **Arrival order is recorded and replay never re-sorts it.** **Rejected:** replaying
+   in sorted or arbitrary order — once moves are observable mid-window, order changes
+   outcomes. The append-only event log already carries it.
+
+**Consequences recorded, and deliberately not resolved unilaterally**
+
+- **Capture resolution has no rule for concurrent collisions:** two Agents reaching the
+  same node, and an Agent and a Fugitive crossing inside one window.
+- **Timeout behaviour is undefined.** `hold` is not obviously right — a player who ran
+  out of time is not the same as one with no legal move.
+- **The session arithmetic does not close:** 16 turns × two 30 s windows is up to
+  **16 minutes** against a 5–10 minute target. Windows must close early once everyone
+  has moved, and the turn limit may need to come down.
+- **Every mobile screen now needs a countdown and a "waiting for others" state**, which
+  the round-03 mockups do not show. Two new screens are being built for it.
+- `VISUAL_DIRECTION.md` decision 4 (viewer-dependent hidden information) is
+  **superseded within a faction**: Agents see all Agents, Fugitives see all Fugitives,
+  and only the other faction stays hidden.
+
+**Verification**
+
+- `pnpm test` — 5 test files, 93 tests, passing.
+- `pnpm check:docs` — 39 markdown files, all links resolve, counts current.
+
+---
+
+## 2026-10-16 — Mobile art revision: the city was lost, and why
+
+**The director's rejection**
+
+> "I don't like the mobile 'city map' mockups at all. They are not resembling the
+> earlier design options I said I liked (with actual buildings / city rooftop view and
+> some animations)."
+
+Correct, and it was our failure, not a matter of taste. Round 02's approved F and H
+screens are **illustrated cities** — individual buildings with roof faces and visible
+facades, one consistent shadow direction, kerbs and crossings, bridges with piers,
+trees, a cathedral, a station. The round-03 mobile screens degraded into large flat
+coloured rectangles and grey ribbons: a **diagram of a city**. That is the same
+"abstract nodes" mistake the director had already rejected in round 01, reintroduced one
+round later.
+
+**Root cause — a process failure, recorded as [L12](docs/lessons.md)**
+
+The round-03 mockup brief **described the style in prose** ("flat vector, slight 2.5D,
+daylight") and never **pointed at a finished example**. Adjectives do not transmit
+illustration density. Compounding it, the phrase **"minimum UI"** was read as permission
+to draw minimum *art*. The fix is structural: a delegated visual task must be pointed at
+a specific approved artifact and required to read it, with a fidelity test the author
+applies before submitting — *squint at it: does it read as a city, or as a flowchart?*
+The revision brief now carries both the reference paths and that test.
+
+**Decisions and rejected alternatives**
+
+1. **Re-brief against the artifact, not the adjectives.** The revision brief names
+   `round-02-city/f-flat-2p5d-day.html` and `h-painterly-topdown-night.html` as the
+   references and requires them to be read first, alongside an already-rebuilt sibling.
+   **Rejected:** writing a longer prose description — that is what failed the first time.
+2. **Rebuild a representative set before rolling out.** Four screens were rebuilt first
+   (both factions' views, the timed window, and the H comparison) so a second mismatch
+   would cost four rebuilds, not eight. **Rejected:** rebuilding all eight blind.
+3. **Keep the game state byte-identical.** This is an art revision: station positions,
+   cast, turn numbers, log rows and kit figures must not move. **Rejected:** taking the
+   opportunity to restage the scenes, which would have made the art change impossible to
+   judge independently of the content change.
+4. **Clean the agents' scratch output.** The tooling directory had accumulated crop
+   images and scratch scripts from the mockup authors; removed. It is git-ignored, so
+   this was hygiene rather than a repository problem.
+
+**Also corrected in passing**
+
+The prototype viewer came up blank in the harness preview. Cause: it switched screens
+with `display:none`, and the preview inlines only the resources it can see at load, so
+every hidden screen had no usable image. Rebuilt with **no hidden elements, no
+JavaScript, no iframes and no outbound links** — all eight screens laid out on one
+scrolling page with a sticky sidebar index. Verified in a real browser: 8 images, all
+loaded, 0 hidden, 0 scripts, 0 errors. The screenshot tool now skips it, since a
+scrolling document has no `.stage`.
+
+**Verification**
+
+- `pnpm test` — 5 test files, 93 tests, passing.
+- `pnpm check:docs` — 41 markdown files, all links resolve, counts current.
+- `shoot.mjs` — all eight round-03 mockups render at the correct stage sizes with no
+  page or console errors.
+- Rebuilt screens inspected as rendered PNGs, not merely asserted: `s2` reads as a day
+  city and `s5` as a night city, with station numbers and legal-move paths legible.
+
+
+
+
+

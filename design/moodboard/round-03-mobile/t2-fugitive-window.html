@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>X-Yard — T2 · the Fugitive window · style F</title>
+<style>
+  /* ============================================================
+     T2 — THE FUGITIVE WINDOW · round 03 turn-window · style F
+     flat vector · slight 2.5D · day · stage exactly 390x844
+
+     Art revision: the map is drawn from the round-02 style-F
+     reference and matches the rebuilt Agent window. Every building
+     is a footprint plus a lifted roof face plus a visible near
+     wall; roof materials vary (clay tile, slate, terracotta,
+     oxidised copper, gravel, glass); one NW-sun / SE-shadow
+     convention holds for the whole quarter; streets carry kerbs,
+     pavements, markings and crossings; the river has banks, a quay
+     and two structured bridges; the quarter has landmarks, green
+     space and street life. Layout, cast, turn, log rows and kit
+     numbers are unchanged from the file this replaces.
+     Self-contained: inline CSS only, no external resources.
+     ============================================================ */
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#0e1c26}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;color:#15293c;font-variant-numeric:tabular-nums}
+  .stage{position:relative;width:390px;height:844px;overflow:hidden;background:#dfeef8;
+         display:flex;flex-direction:column}
+
+  /* ---------------- TOP BAR (<= 92px) ---------------- */
+  .bar{position:absolute;left:0;top:0;height:92px;width:390px;padding:7px 10px 8px;overflow:hidden;
+       background:linear-gradient(180deg,#fdfefe,#eef5fa);border-bottom:1px solid #c2d3df;
+       box-shadow:0 2px 7px rgba(15,43,66,.10);z-index:6}
+  .r1{display:flex;align-items:center;gap:7px;height:24px}
+  .tl{font-size:19.5px;font-weight:800;letter-spacing:-.02em;color:#12283c;line-height:1}
+  .to{font-size:10.5px;font-weight:800;color:#7e93a6;padding-bottom:2px}
+  .me{margin-left:auto;display:flex;align-items:center;gap:5px;
+      background:#e5f0f7;border:1px solid #c7dbe8;border-radius:999px;padding:2px 8px 2px 5px}
+  .me b{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#0f4a58;text-transform:uppercase}
+  .me i{font-size:8px;font-weight:800;letter-spacing:.08em;color:#4c7f8d;font-style:normal}
+  .seg{display:flex;gap:2px;height:9px;margin:4px 0 0}
+  .seg i{flex:1;border-radius:2.5px;background:#dde6ee}
+  .seg i.done{background:linear-gradient(180deg,#8fb6d8,#6d9bc4)}
+  .seg i.pulse{background:#fdeccd;box-shadow:inset 0 0 0 1.3px #e0a33c}
+  .seg i.pulse.done{background:linear-gradient(180deg,#fbbf24,#f0a92e)}
+  .seg i.on{background:linear-gradient(180deg,#4f9cf0,#2f6fed);box-shadow:inset 0 0 0 1.6px #16283a}
+  .r2{display:flex;align-items:stretch;gap:8px;margin-top:6px;height:38px}
+
+  /* the one clock the whole faction shares */
+  .clockwrap{flex:0 0 38px;height:38px;display:flex;align-items:center}
+  .clock{position:relative;width:38px;height:38px;flex:0 0 38px}
+  .clock svg{display:block;width:38px;height:38px}
+  .ringTrack{fill:#e4ecf2;stroke:#c3d3e0;stroke-width:1}
+  .ringArc{fill:none;stroke:#b45309;stroke-width:5;stroke-linecap:round;
+           stroke-dasharray:141.4 200;transform-origin:19px 19px;transform:rotate(-90deg);
+           animation:drain 30s linear infinite}
+  @keyframes drain{from{stroke-dashoffset:0;stroke:#b45309}
+                   55%{stroke:#c2410c}
+                   90%{stroke:#b91c1c}
+                   to{stroke-dashoffset:141.4;stroke:#b91c1c}}
+  .clock .sec{position:absolute;left:0;top:8px;width:38px;text-align:center;font-size:15px;
+              font-weight:800;line-height:1;letter-spacing:-.04em;color:#7c2d12;
+              animation:url 30s linear infinite}
+  .clock .cs{position:absolute;left:0;top:24px;width:38px;text-align:center;
+             font-size:7px;font-weight:800;letter-spacing:.06em;color:#9a6a3c}
+  @keyframes url{
+    0%{width:30px}6.6667%{width:29px}13.3333%{width:28px}20%{width:27px}26.6667%{width:26px}
+    33.3333%{width:25px}40%{width:24px}46.6667%{width:23px}53.3333%{width:22px}60%{width:21px}
+    66.6667%{width:20px}73.3333%{width:19px}80%{width:18px}86.6667%{width:17px}93.3333%{width:16px}
+    100%{width:15px}}
+  .winpill{flex:1;min-width:0;height:38px;border-radius:9px;padding:4px 8px 4px 9px;overflow:hidden;
+       background:linear-gradient(180deg,#0f3a4a,#0b2c39);color:#eafcff;display:flex;flex-direction:column;justify-content:center;gap:3px}
+  .winpill .top{display:flex;align-items:center;gap:5px}
+  .winpill .live{width:6px;height:6px;border-radius:50%;background:#4ade80;flex:0 0 6px;
+       box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:blip 2.4s ease-out infinite}
+  @keyframes blip{0%{box-shadow:0 0 0 0 rgba(74,222,128,.7)}70%{box-shadow:0 0 0 7px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+  .winpill b{font-size:10.4px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+  .winpill u{font-size:8.2px;font-weight:800;letter-spacing:.03em;color:#8fd6e6;text-decoration:none;white-space:nowrap}
+  .winbar{position:relative;height:7px;border-radius:4px;background:#1d4d5e;overflow:hidden}
+  .winbar i{position:absolute;inset:0;transform-origin:left center;border-radius:4px;
+       background:linear-gradient(90deg,#fbbf24,#f97316 62%,#dc2626);
+       animation:barfill 30s linear infinite}
+  @keyframes barfill{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+  /* ---------------- MAP ---------------- */
+  .map{position:absolute;left:0;top:92px;width:390px;height:520px;z-index:2;overflow:hidden;background:#cdd9c6}
+  svg.city{position:absolute;left:0;top:0;display:block;width:390px;height:520px}
+  .mapnote{position:absolute;left:0;bottom:4px;width:390px;z-index:9;pointer-events:none;text-align:center}
+  .mapnote b{display:inline-block;padding:3px 9px;border-radius:7px;font-size:9.4px;font-weight:800;
+       letter-spacing:.05em;color:#4a2f24;background:rgba(255,252,246,.94);
+       box-shadow:0 0 0 1px rgba(120,90,70,.35),0 1px 3px rgba(30,20,10,.25)}
+  .frame{position:absolute;left:0;top:0;width:390px;height:520px;z-index:3;pointer-events:none;
+       box-shadow:inset 0 0 0 1px rgba(18,40,60,.16), inset 0 -14px 20px -12px rgba(18,40,60,.28)}
+
+  /* move-status strip: who has moved, who the clock is waiting on */
+  .desk{position:absolute;left:0;top:612px;width:390px;height:56px;z-index:5;padding:5px 6px;
+        background:linear-gradient(180deg,#0d3341,#0a2833);
+        display:grid;grid-template-columns:repeat(4,1fr);gap:4px;box-shadow:0 -2px 8px rgba(8,30,40,.22)}
+  .dc{position:relative;border-radius:8px;padding:3px 5px 3px 6px;overflow:hidden;
+      display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22)}
+  .dc .nm{font-size:8px;font-weight:800;letter-spacing:.06em;color:#eaf7fd;white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+  .dc .nm s{width:6px;height:6px;border-radius:2px;flex:0 0 6px;text-decoration:none}
+  .dc .st{display:flex;align-items:center;gap:3px;font-size:7.6px;font-weight:800;letter-spacing:.05em;white-space:nowrap}
+  .dc .st svg{width:9px;height:9px;flex:0 0 9px}
+  .dc.moved{background:rgba(34,120,72,.42);border-color:rgba(134,239,172,.6)}
+  .dc.moved .st{color:#c8f7d8}
+  .dc.wait{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.34);border-style:dashed}
+  .dc.wait .st{color:#fde9b8}
+  .dc .pos{font-size:6.8px;font-weight:800;letter-spacing:.05em;color:#9fc0cf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dc.you::after{content:"YOU";position:absolute;right:4px;top:3px;font-size:6.2px;font-weight:800;
+      letter-spacing:.08em;color:#0b2c39;background:#7fd7ea;border-radius:3px;padding:1px 3px}
+
+  /* ---------------- MAP MOTION (CSS only) ---------------- */
+  .fig{animation:bob 2.6s ease-in-out infinite}
+  .fig.d1{animation-delay:.65s}.fig.d2{animation-delay:1.3s}.fig.d3{animation-delay:1.95s}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.9px)}}
+  .sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 6.4s ease-in-out infinite}
+  .sway.d1{animation-delay:1.6s}.sway.d2{animation-delay:3.2s}.sway.d3{animation-delay:4.8s}
+  @keyframes sway{0%,100%{transform:rotate(-1.1deg)}50%{transform:rotate(1.1deg)}}
+  .shimmer{animation:shimmer 11s linear infinite}
+  @keyframes shimmer{to{stroke-dashoffset:-660}}
+  .ripple{transform-box:fill-box;transform-origin:center;animation:ripple 7.5s ease-out infinite}
+  .ripple.d1{animation-delay:3.75s}
+  @keyframes ripple{0%{opacity:.5;transform:scale(.4)}70%{opacity:.14}100%{opacity:0;transform:scale(1.9)}}
+  .bobber{transform-box:fill-box;transform-origin:center;animation:bobber 4.4s ease-in-out infinite}
+  @keyframes bobber{0%,100%{transform:translateY(0) rotate(-1.4deg)}50%{transform:translateY(-2.4px) rotate(1.4deg)}}
+  .wisp{animation:wisp 18s linear infinite}
+  @keyframes wisp{to{stroke-dashoffset:-420}}
+  .lamp{animation:lamp 5.2s ease-in-out infinite}
+  .lamp.d1{animation-delay:1.7s}.lamp.d2{animation-delay:3.4s}
+  @keyframes lamp{0%,100%{opacity:.32}50%{opacity:.95}}
+  .halo{transform-box:fill-box;transform-origin:center;animation:halo 3.4s ease-in-out infinite}
+  @keyframes halo{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.13);opacity:.9}}
+
+  /* ---------------- BOTTOM TRAY (<= 176px) ---------------- */
+  .tray{position:absolute;left:0;bottom:0;height:176px;width:390px;padding:7px 9px 8px;
+        background:linear-gradient(180deg,#f8fbfd,#eaf1f7);border-top:1px solid #bfd0dd;
+        box-shadow:0 -3px 10px rgba(15,43,66,.12);z-index:6}
+  .the{display:flex;align-items:baseline;gap:7px;height:14px;margin-bottom:4px}
+  .the b{font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#7c90a3;white-space:nowrap}
+  .the span{margin-left:auto;font-size:8.6px;font-weight:800;letter-spacing:.05em;color:#4b6a83;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .kit{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+  .kit.six{grid-template-columns:repeat(6,1fr);gap:3px}
+  .kit.six .ti .vl{font-size:10.4px}
+  .kit.six .ti .g{width:18px;height:18px}
+  .ti{position:relative;height:56px;border-radius:10px;background:#fff;border:1px solid #d3dfe9;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+      box-shadow:0 1px 2px rgba(20,48,72,.09);overflow:hidden}
+  .ti .g{width:20px;height:20px;display:block}
+  .ti .nm{font-size:7.2px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5e7488;white-space:nowrap}
+  .ti .vl{font-size:12.4px;font-weight:800;line-height:1;color:#16293c;white-space:nowrap}
+  .ti.pick{border-color:#7c3aed;background:linear-gradient(180deg,#f8f4ff,#efe6ff);
+          box-shadow:0 0 0 2px rgba(124,58,237,.22),0 2px 4px rgba(60,20,120,.16)}
+  .ti.pick .nm{color:#5b2bb0}
+  .ti.pick .vl{color:#4c1d95}
+  .ti.pick .pick{position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+      background:#7c3aed;color:#fff;font-size:6.6px;font-weight:800;letter-spacing:.08em;
+      border-radius:0 0 4px 4px;padding:1.5px 5px;white-space:nowrap}
+  .ti.off{background:#eef2f6;border-color:#dbe3ea;box-shadow:none}
+  .ti.off .nm{color:#b4593f;letter-spacing:.03em}
+  .ti.off .vl{color:#a2b1bf}
+  .tfoot{display:flex;align-items:center;gap:6px;margin-top:6px;height:26px;border-radius:8px;
+      background:#fff;border:1px solid #d3dfe9;padding:0 8px;overflow:hidden}
+  .tfoot .cap{font-size:7.6px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#8497a9;white-space:nowrap}
+  .tfoot .tx{font-size:8px;font-weight:800;color:#1f3a4f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tfoot .tx em{font-style:normal;color:#a8620c}
+  .lsep{width:1px;height:14px;background:#dde5ec;flex:0 0 1px}
+  .tlog{display:flex;align-items:center;gap:4px;margin-top:6px;height:28px;border-radius:8px;
+        background:#fff;border:1px solid #d3dfe9;padding:0 6px;overflow:hidden}
+  .tlog .cap{font-size:6.8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8497a9;white-space:nowrap}
+  .lr{display:flex;align-items:center;gap:2px;white-space:nowrap}
+  .lr .t{font-size:7.6px;font-weight:800;color:#8194a6}
+  .lr .m{font-size:8.2px;font-weight:700;color:#22394e}
+  .lr .mo{font-size:7.2px;font-weight:800;color:#9aabb9}
+  .more{margin-left:auto;font-size:7px;font-weight:800;letter-spacing:.06em;color:#8ea0b1;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- ================= TOP BAR : 92px ================= -->
+  <header class="bar">
+    <div class="r1">
+      <span class="tl">TURN 07</span><span class="to">/ 16</span>
+      <span class="me">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.6" fill="#e5484d"/>
+          <path d="M8 3.3 9.4 6.5 12.7 6.9 10.3 9.2 11 12.4 8 10.8 5 12.4 5.7 9.2 3.3 6.9 6.6 6.5z" fill="#fff"/>
+        </svg>
+        <b>Vulture</b><i>· public log</i>
+      </span>
+    </div>
+    <div class="seg" id="seg"></div>
+    <div class="r2">
+      <div class="clockwrap">
+        <div class="clock" role="img" aria-label="30 seconds left in this faction window">
+          <svg viewBox="0 0 38 38" aria-hidden="true">
+            <circle class="ringTrack" cx="19" cy="19" r="16.5"/>
+            <circle class="ringArc" cx="19" cy="19" r="16.5"/>
+          </svg>
+          <span class="sec">30</span>
+          <span class="cs">SEC</span>
+        </div>
+      </div>
+      <div class="winpill">
+        <span class="top"><i class="live"></i><b>FUGITIVE WINDOW LIVE</b><u>one clock · 4 fugitives</u></span>
+        <span class="winbar"><i></i></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAP : 390x520 world box ================= -->
+  <div class="map">
+    <span class="mapnote"><b>Fugitive-eye view — all four of you share this map</b></span>
+    <svg class="city" id="city" width="390" height="520" viewBox="0 0 390 520"
+         role="img" aria-label="Cathedral Quarter seen from above in daylight, Fugitive-eye view. The Fugitive window is live with 30 seconds left, one shared clock for all four Fugitives. Vulture, your piece, stands at n9: on foot or by taxi you can reach n6, n7 and n8, and the special alleyway link runs to n2; no bus or metro calls at a street node. Kestrel at n1 and Magpie at n4 have already landed their moves. Shrike at n5 is still deciding. All four Fugitives can see each other here; Agents cannot see this screen at all.">
+      <defs>
+        <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#b9dcf2"/><stop offset="100%" stop-color="#e2f0f9"/>
+        </linearGradient>
+        <linearGradient id="riverG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a6d9ec"/><stop offset="55%" stop-color="#7cc0e0"/>
+          <stop offset="100%" stop-color="#5fa9cd"/>
+        </linearGradient>
+        <radialGradient id="sunG" cx="14%" cy="-4%" r="62%">
+          <stop offset="0" stop-color="#fff7dd" stop-opacity=".5"/>
+          <stop offset="42%" stop-color="#fff3d4" stop-opacity=".12"/>
+          <stop offset="100%" stop-color="#fff3d4" stop-opacity="0"/>
+        </radialGradient>
+        <!-- ground: pale paving plots so the quarter is a place, not paper -->
+        <pattern id="plotTex" width="19" height="16" patternUnits="userSpaceOnUse">
+          <rect x="1.4" y="1.4" width="7.6" height="6" rx="1.1" fill="#d5dbc8" opacity=".34"/>
+          <rect x="10.6" y="7.6" width="7" height="5.4" rx="1.1" fill="#cfd6c2" opacity=".3"/>
+          <rect x="4.4" y="9.4" width="6" height="5" rx="1.1" fill="#d9dfcc" opacity=".3"/>
+        </pattern>
+        <!-- roof materials: clay tile, slate, oxidised copper, gravel, glass -->
+        <pattern id="roofTile" width="7" height="5" patternUnits="userSpaceOnUse">
+          <rect width="7" height="2.5" fill="#000" opacity=".08"/>
+          <path d="M7 0V5M3.5 0V2.5" stroke="#000" stroke-opacity=".07" stroke-width="1"/>
+        </pattern>
+        <pattern id="roofSlate" width="8" height="6" patternUnits="userSpaceOnUse">
+          <rect width="8" height="3" fill="#000" opacity=".1"/>
+          <path d="M0 3H8M4 0V3M0 3V6M8 3V6" stroke="#000" stroke-opacity=".07" stroke-width="1"/>
+        </pattern>
+        <pattern id="roofCopper" width="9" height="9" patternUnits="userSpaceOnUse">
+          <path d="M0 0H9M0 4.5H9" stroke="#0d5f4f" stroke-opacity=".2" stroke-width="1.4"/>
+          <path d="M4.5 0V9" stroke="#0d5f4f" stroke-opacity=".12" stroke-width="1"/>
+        </pattern>
+        <pattern id="roofGravel" width="9" height="9" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2.4" r="1" fill="#000" opacity=".1"/>
+          <circle cx="6.4" cy="3.2" r=".8" fill="#fff" opacity=".14"/>
+          <circle cx="4.2" cy="7" r=".9" fill="#000" opacity=".08"/>
+        </pattern>
+        <pattern id="roofGlass" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="4" fill="#fff" opacity=".22"/>
+          <path d="M0 0H8V8H0z" fill="none" stroke="#5f9db4" stroke-opacity=".34" stroke-width="1"/>
+        </pattern>
+        <clipPath id="frameClip"><rect x="0" y="0" width="390" height="520"/></clipPath>
+      </defs>
+
+      <rect x="0" y="0" width="390" height="520" fill="url(#skyG)"/>
+      <g clip-path="url(#frameClip)">
+        <g id="ground"></g>
+        <g id="blocks"></g>
+        <g id="net"></g>
+        <g id="paths"></g>
+        <g id="chr"></g>
+        <g id="stn"></g>
+        <g id="furn"></g>
+      </g>
+      <rect x="0" y="0" width="390" height="520" fill="url(#sunG)"/>
+    </svg>
+    <div class="frame"></div>
+  </div>
+
+  <!-- who has landed a move, and who the shared clock is still waiting on -->
+  <div class="desk">
+    <div class="dc wait you">
+      <span class="nm"><s style="background:#e5484d"></s>VULTURE</span>
+      <span class="st"><svg viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4.2" fill="none" stroke="#fbbf24" stroke-width="1.5"/><path d="M5 2.6 L5 5.3 L7 6.6" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/></svg>DECIDING</span>
+      <span class="pos">AT N9 · NOT YET MOVED</span>
+    </div>
+    <div class="dc wait">
+      <span class="nm"><s style="background:#0e7490"></s>SHRIKE</span>
+      <span class="st"><svg viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4.2" fill="none" stroke="#fbbf24" stroke-width="1.5"/><path d="M5 2.6 L5 5.3 L7 6.6" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/></svg>DECIDING</span>
+      <span class="pos">AT N5 · NOT YET MOVED</span>
+    </div>
+    <div class="dc moved">
+      <span class="nm"><s style="background:#be123c"></s>KESTREL</span>
+      <span class="st"><svg viewBox="0 0 10 10" aria-hidden="true"><rect x=".6" y=".6" width="8.8" height="8.8" rx="2.4" fill="#34d399"/><path d="M2.6 5.1 L4.3 6.9 L7.6 3.2" fill="none" stroke="#06281a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>moved · taxi</span>
+      <span class="pos">AT N1 · MOVE LANDED</span>
+    </div>
+    <div class="dc moved">
+      <span class="nm"><s style="background:#7c3aed"></s>MAGPIE</span>
+      <span class="st"><svg viewBox="0 0 10 10" aria-hidden="true"><rect x=".6" y=".6" width="8.8" height="8.8" rx="2.4" fill="#34d399"/><path d="M2.6 5.1 L4.3 6.9 L7.6 3.2" fill="none" stroke="#06281a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>moved · bus</span>
+      <span class="pos">AT N4 · MOVE LANDED</span>
+    </div>
+  </div>
+
+  <!-- ================= BOTTOM TRAY : 176px ================= -->
+  <footer class="tray">
+    <div class="the"><b>Vulture’s Fugitive kit</b><span id="movesum">Vulture may move now</span></div>
+    <div class="kit six" id="kit"></div>
+    <div class="tlog">
+      <span class="cap">Agents see · mode</span>
+      <span class="lsep"></span>
+      <span class="lr"><span class="t">T6</span><span class="m">Vulture</span><span class="mo">taxi</span></span><span class="lsep"></span><span class="lr"><span class="t">T5</span><span class="m">Vulture</span><span class="mo">foot</span></span><span class="lsep"></span><span class="lr"><span class="t">T4</span><span class="m">Vulture</span><span class="mo">bus</span></span>
+      <span class="more">HIDDEN</span>
+    </div>
+    <div class="tfoot"><span class="cap">Clock</span><span class="lsep"></span><span class="tx">Agents cannot see this screen · four Fugitives share one 30 s clock</span></div>
+  </footer>
+</div>
+
+<script>
+  /* ============================================================
+     STATE — unchanged from the file this replaces.
+     Move polylines are authored in the 390x520 map space and bend
+     along the street geometry (no straight line between two
+     non-adjacent stations).
+     ============================================================ */
+  var O = {"traces":[
+      {"mode":"taxi","from":"n1","to":"n2","w":4,"pts":[[36,177],[52,165],[68,160],[86,157],[104,156],[120,153],[134,151]]},
+      {"mode":"bus","from":"n10","to":"n4","w":4.6,"pts":[[370,148],[370,172],[364,198],[358,225],[351,241]]}
+    ],"chars":[
+      {"id":"n9","name":"VULTURE · YOU","col":"#e5484d","hair":"#3a2b1f","bg":"#8c1f22","you":true,"moved":false,"prefer":"beside"},
+      {"id":"n1","name":"KESTREL","col":"#be123c","hair":"#3a2b1f","bg":"#7f1d3a","moved":true},
+      {"id":"n5","name":"SHRIKE","col":"#0e7490","hair":"#1d2b33","bg":"#0b4a5b","moved":false},
+      {"id":"n4","name":"MAGPIE","col":"#7c3aed","hair":"#2b1f3a","bg":"#4c1d95","moved":true}
+    ],"kit":[
+      {"k":"taxi","nm":"Taxi","v":8,"col":"#16293c"},
+      {"k":"bus","nm":"Bus","v":4,"col":"#9dacba"},
+      {"k":"metro","nm":"Metro","v":3,"col":"#9dacba"},
+      {"k":"spec","nm":"Special","v":2,"col":"#6d28d9"},
+      {"k":"foot","nm":"Foot","v":"8 steps","col":"#22303c"},
+      {"k":"scoo","nm":"Scoot","v":"3 charges","col":"#9dacba"}
+    ],"hub":"n9","furnNote":"FACTION-INTERNAL POSITIONS · SHARED"};
+
+(function(){
+  "use strict";
+
+  /* ==========================================================
+     COORDINATE SPACE
+     The map is authored directly in the 390x520 stage space.
+     North is up; the sun sits north-west, so every shadow in the
+     quarter falls south-east — one convention for the whole city.
+       screen position = position on the ground plane
+       'lift' pixels   = a vertical rise of that many screen pixels,
+                         so a wall drawn from the footprint's near
+                         edge upwards reads as a standing structure.
+     ========================================================== */
+  var f = function(n){ return Math.round(n*100)/100; };
+  var HORIZON = 0.85;   /* wall height / footprint depth, ties walls to roof plane */
+
+  var NODE = {
+    n1 : { x:36,  y:177, cls:"street"   },
+    n2 : { x:134, y:151, cls:"street"   },
+    n3 : { x:260, y:180, cls:"street"   },
+    n4 : { x:351, y:241, cls:"hub"      },
+    n5 : { x:80,  y:293, cls:"street"   },
+    n6 : { x:205, y:311, cls:"hub"      },
+    n7 : { x:314, y:379, cls:"terminal" },
+    n8 : { x:48,  y:420, cls:"street"   },
+    n9 : { x:197, y:443, cls:"street"   },
+    n10: { x:370, y:148, cls:"terminal" }
+  };
+  var P = {};
+  Object.keys(NODE).forEach(function(k){ P[k] = { x:NODE[k].x, y:NODE[k].y, cls:NODE[k].cls }; });
+
+  /* ---------------- street network (the street geometry) ----------------
+     Edge set is unchanged: n5 reaches n1 / n6 / n8 only, n6 reaches
+     n2 / n3 / n5 / n7 / n9 plus a bus to n4, and n7 and n10 are the
+     only terminals. Every polyline bends. */
+  var STREET = {
+    "n1-n2":[ [36,177],[52,165],[68,160],[86,157],[104,156],[120,153],[134,151] ],
+    "n2-n3":[ [134,151],[150,157],[168,166],[180,175],[194,180],[208,183],[226,186],[242,182],[260,180] ],
+    "n3-n4":[ [260,180],[268,186],[280,196],[294,208],[310,224],[326,236],[351,241] ],
+    "n1-n5":[ [36,177],[46,192],[58,215],[70,240],[80,266],[86,282],[80,293] ],
+    "n2-n6":[ [134,151],[152,152],[170,155],[186,163],[200,175],[211,192],[215,210],[209,232],[201,252],[197,272],[197,292],[205,311] ],
+    "n5-n6":[ [80,293],[102,296],[124,302],[146,311],[168,319],[186,323],[198,320],[205,311] ],
+    "n3-n6":[ [260,180],[250,191],[240,203],[232,217],[226,235],[220,256],[213,278],[208,296],[205,311] ],
+    "n4-n7":[ [351,241],[345,247],[339,257],[334,269],[330,283],[322,296],[313,308],[301,319],[293,335],[288,354],[297,366],[314,379] ],
+    "n6-n7":[ [205,311],[216,322],[233,331],[252,338],[272,344],[288,354],[297,366],[314,379] ],
+    "n5-n8":[ [80,293],[76,311],[70,326],[60,336],[50,345],[45,360],[40,382],[43,404],[48,420] ],
+    "n6-n9":[ [205,311],[206,332],[208,354],[203,376],[198,398],[197,420],[197,443] ],
+    "n8-n9":[ [48,420],[62,425],[80,429],[102,428],[124,424],[146,423],[168,428],[186,437],[197,443] ],
+    "n9-n7":[ [197,443],[206,440],[224,432],[248,418],[270,404],[290,391],[303,382],[314,379] ]
+  };
+  /* approaches: they carry the grid off-frame so the quarter does not
+     stop at its own edge, and two of them bridge the river */
+  var APPROACH = [
+    [ [36,177],[24,170],[8,160],[-10,152] ],
+    [ [134,151],[140,124],[148,96],[156,66],[162,34] ],
+    [ [260,180],[292,168],[322,152],[352,140],[386,130] ],
+    [ [351,241],[372,250],[394,258] ],
+    [ [314,379],[332,398],[352,420],[372,444],[386,464] ],
+    [ [48,420],[47,438],[45,458],[46,478],[50,498],[54,514] ],
+    [ [197,443],[192,462],[186,480],[182,498],[180,514] ]
+  ];
+  var BUS = {
+    "n4-n6":[ [351,241],[334,252],[314,264],[292,276],[270,288],[248,300],[226,308],[205,311] ],
+    "n4-n10":[ [351,241],[358,225],[364,198],[370,172],[370,148] ],
+    "n10-n7":[ [370,148],[380,186],[368,232],[356,270],[340,322],[322,362],[314,379] ]
+  };
+  var METRO = [ [314,379],[336,318],[356,250],[370,178],[370,148] ];
+  var SPECIAL = [ [134,151],[163,218],[189,278],[197,336],[198,388],[197,443] ];
+  var RAIL = [ [314,379],[326,404],[336,430],[342,454],[340,474],[330,490],[320,504],[320,518],[334,522],[360,524],[396,526] ];
+  var BRIDGES = {
+    road: [ [48,420],[47,438],[45,458],[46,478],[50,498] ],
+    rail: [ [342,454],[340,474],[330,490],[320,504],[320,516] ]
+  };
+  /* the river: banks, a quay on the north side, a south bank that
+     carries the allotments and the tail of the rail viaduct */
+  var RIVER = [ [-20,428],[40,454],[105,468],[170,478],[210,484],[250,488],[290,492],[330,494],[370,492],[410,486] ];
+
+  /* ---------------- drawing helpers ---------------- */
+  function poly(pts){ return "M" + pts.map(function(p){ return f(p[0])+","+f(p[1]); }).join(" L"); }
+  function distSeg(px,py,ax,ay,bx,by){
+    var vx=bx-ax, vy=by-ay, wx=px-ax, wy=py-ay;
+    var L=vx*vx+vy*vy, t=L?Math.max(0,Math.min(1,(wx*vx+wy*vy)/L)):0;
+    return Math.hypot(px-(ax+t*vx), py-(ay+t*vy));
+  }
+  function distPoly(px,py,pts){
+    var d=Infinity, i;
+    for(i=0;i<pts.length-1;i++) d=Math.min(d, distSeg(px,py,pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]));
+    return d;
+  }
+  /* sample a polyline finely: ordering candidates along a road must use
+     distance to its centreline, not to the few authored vertices */
+  function densify(pts, step){
+    var out=[pts[0]], i, j, n, dx, dy, L, k;
+    for(i=0;i<pts.length-1;i++){
+      dx=pts[i+1][0]-pts[i][0]; dy=pts[i+1][1]-pts[i][1];
+      L=Math.hypot(dx,dy); n=Math.max(1, Math.ceil(L/step));
+      for(j=1;j<=n;j++) out.push([pts[i][0]+dx*j/n, pts[i][1]+dy*j/n]);
+    }
+    return out;
+  }
+  function svgEl(x,y,inner){ return '<g transform="translate('+f(x)+','+f(y)+')">'+inner+'</g>'; }
+  function shade(hex, amt){
+    var n=parseInt(hex.slice(1),16);
+    var r=Math.max(0,Math.min(255,(n>>16)+amt)),
+        g=Math.max(0,Math.min(255,((n>>8)&255)+amt)),
+        b=Math.max(0,Math.min(255,(n&255)+amt));
+    return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  }
+  /* deterministic pseudo-random: the quarter is stable frame to frame */
+  var seed = 0x2f6e2b1;
+  function rnd(){ seed = (seed*1664525 + 1013904223) >>> 0; return seed/4294967296; }
+  function rr(a,b){ return a + (b-a)*rnd(); }
+
+  var roads = [];
+  Object.keys(STREET).forEach(function(k){ roads.push(STREET[k]); });
+  APPROACH.forEach(function(p){ roads.push(p); });
+  var densed = roads.map(function(p){ return densify(p, 2); });
+  var riverSamples = densify(RIVER, 3);
+  var railSamples = densify(RAIL, 3);
+  var ROAD_HALF = 4.6, WATER_HALF = 20;
+  function riverYAt(x){
+    var i;
+    for(i=0;i<RIVER.length-1;i++){
+      if(x >= RIVER[i][0] && x <= RIVER[i+1][0]){
+        var t = (x-RIVER[i][0])/(RIVER[i+1][0]-RIVER[i][0]);
+        return RIVER[i][1] + t*(RIVER[i+1][1]-RIVER[i][1]);
+      }
+    }
+    return RIVER[0][1];
+  }
+
+  /* ==========================================================
+     GROUND — land, river with banks and quay, streets, bridges, rail
+     ========================================================== */
+  var G = [], C = [], N = [], PA = [], CH = [], ST = [], FU = [];
+  var problems = [];
+
+  G.push('<rect x="0" y="0" width="390" height="520" fill="#dee3d2"/>');
+  G.push('<rect x="0" y="0" width="390" height="520" fill="url(#plotTex)"/>');
+
+  /* --- the river: banks, quay wall, embankment, water --- */
+  var riverD = poly(RIVER);
+  G.push('<path d="'+riverD+'" fill="none" stroke="#8fa69c" stroke-width="'+(WATER_HALF*2+15)+'" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>');
+  G.push('<path d="'+riverD+'" fill="none" stroke="#ddd9c4" stroke-width="'+(WATER_HALF*2+9)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+riverD+'" fill="none" stroke="#9aa79f" stroke-width="'+(WATER_HALF*2+2.4)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+riverD+'" fill="none" stroke="#5fa9cd" stroke-width="'+(WATER_HALF*2)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+riverD+'" fill="none" stroke="url(#riverG)" stroke-width="'+(WATER_HALF*2-5)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+  /* quay: a lit coping stone along the north bank, a hard edge south */
+  G.push('<path d="'+poly(RIVER.map(function(p){ return [p[0], p[1]-WATER_HALF-1.6]; }))+'" fill="none" stroke="#f4f0e2" stroke-width="3" stroke-linecap="round" opacity=".95"/>');
+  G.push('<path d="'+poly(RIVER.map(function(p){ return [p[0], p[1]+WATER_HALF+1.4]; }))+'" fill="none" stroke="#7d8a80" stroke-width="3.4" stroke-linecap="round" opacity=".6"/>');
+  G.push('<path d="'+poly(RIVER.map(function(p){ return [p[0], p[1]+WATER_HALF+5]; }))+'" fill="none" stroke="#cfd3bd" stroke-width="2.6" stroke-linecap="round" opacity=".65"/>');
+  /* water detail: current lines and a moving shimmer */
+  G.push('<path d="'+riverD+'" fill="none" stroke="#e6f6fd" stroke-width="2" stroke-dasharray="26 62" opacity=".7" class="shimmer"/>');
+  G.push('<path d="'+poly(RIVER.map(function(p){ return [p[0], p[1]+7]; }))+'" fill="none" stroke="#5aa9cd" stroke-width="2.4" stroke-dasharray="44 110" opacity=".38"/>');
+  G.push('<path d="'+poly(RIVER.map(function(p){ return [p[0], p[1]+12]; }))+'" fill="none" stroke="#96d3ec" stroke-width="1.6" stroke-dasharray="10 26" opacity=".42" class="shimmer"/>');
+  /* mooring posts, a quay ladder and a moored barge on the north bank */
+  [[86,442],[150,456],[238,466],[300,472]].forEach(function(m){
+    G.push('<circle cx="'+m[0]+'" cy="'+m[1]+'" r="1.7" fill="#4c5a52" opacity=".6"/>');
+  });
+  G.push('<g class="bobber">'+
+    '<path d="M212,452 L240,454 L236,463 L216,461 Z" fill="#8a6a52"/>'+
+    '<path d="M212,452 L240,454 L239,457 L213,455 Z" fill="#a9866a"/>'+
+    '<rect x="222" y="443" width="2" height="10" fill="#6d5540"/>'+
+    '<path d="M223,443 L232,449 L223,452 Z" fill="#f4f1e6"/></g>');
+
+  /* --- streets: pavement, kerb, asphalt, markings --- */
+  function roadLine(pts, w, col, extra){
+    return '<path d="'+poly(pts)+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-linejoin="round" stroke-linecap="round"'+(extra||'')+'/>';
+  }
+  roads.forEach(function(p){ G.push(roadLine(p, ROAD_HALF*2+5.2, '#e7e6d4')); });          /* pavement */
+  roads.forEach(function(p){ G.push(roadLine(p, ROAD_HALF*2+1.6, '#c3c8bd')); });          /* kerb */
+  roads.forEach(function(p){ G.push(roadLine(p, ROAD_HALF*2, '#9aa4ac')); });              /* asphalt */
+  roads.forEach(function(p){ G.push(roadLine(p, ROAD_HALF*2-3.4, '#a4aeb5')); });          /* wear */
+  Object.keys(STREET).forEach(function(k){                                                  /* lane centreline */
+    G.push(roadLine(STREET[k], 1.5, '#f3f5ef', ' stroke-dasharray="6 7" opacity=".72"'));
+  });
+  /* pedestrian crossings at the junctions the player reads most */
+  function crossing(x,y,a){
+    var bars='';
+    for(var i=-2;i<=2;i++){
+      bars += '<rect x="'+f(i*4.4-1.4)+'" y="-3.4" width="2.8" height="6.8" rx=".6" fill="#f4f6f1" opacity=".9"/>';
+    }
+    return svgEl(x,y,'<g transform="rotate('+a+')">'+bars+'</g>');
+  }
+  G.push(crossing(80,276,10));
+  G.push(crossing(196,268,-72));
+  G.push(crossing(146,150,4));
+  G.push(crossing(288,340,-24));
+  /* street lamps: warm beads, pulsing */
+  function lamp(x,y,i){
+    return '<circle cx="'+f(x)+'" cy="'+f(y)+'" r="3.4" fill="#ffe6a8" class="lamp'+(i?' d'+i:'')+'"/>'+
+           '<circle cx="'+f(x)+'" cy="'+f(y)+'" r="1.4" fill="#fff8e2"/>';
+  }
+  [[64,166],[110,186],[174,196],[240,206],[300,232],[36,298],[112,306],[168,318],[196,338],[252,352],[300,362],[62,352],[52,392],[208,400],[280,428],[322,410],[158,392],[130,430]].forEach(function(m,i){ G.push(lamp(m[0],m[1],i%3)); });
+
+  /* --- two structured bridges: piers, abutments, deck, parapets --- */
+  function bridgeStr(pts, w, kind){
+    var d = poly(pts), o = '', pierN = 3, i, p, q;
+    for(i=1;i<=pierN;i++){
+      p = pts[0][0] + (pts[pts.length-1][0]-pts[0][0])*(i/(pierN+1));
+      q = pts[0][1] + (pts[pts.length-1][1]-pts[0][1])*(i/(pierN+1));
+      o += '<rect x="'+f(p-w/2-2)+'" y="'+f(q-3.6)+'" width="'+(w+4)+'" height="7.2" rx="1.8" fill="#76838a"/>';
+      o += '<rect x="'+f(p-w/2-2)+'" y="'+f(q-3.6)+'" width="'+(w+4)+'" height="2" fill="#9aa6ac"/>';
+    }
+    [0,1].forEach(function(e){
+      o += '<rect x="'+f(pts[e][0]-w/2-3.4)+'" y="'+f(pts[e][1]-(e?-5:0))+'" width="'+(w+6.8)+'" height="10" rx="2" fill="#8b969c"/>';
+    });
+    o += '<path d="'+d+'" fill="none" stroke="#7f8b92" stroke-width="'+(w+8)+'" stroke-linecap="butt"/>';
+    o += '<path d="'+d+'" fill="none" stroke="#e2e7e8" stroke-width="'+(w+3)+'" stroke-linecap="butt"/>';
+    o += '<path d="'+d+'" fill="none" stroke="'+(kind==='rail' ? '#a49e90' : '#b8c1c5')+'" stroke-width="'+w+'" stroke-linecap="butt"/>';
+    o += '<path d="'+d+'" fill="none" stroke="#f6f8f6" stroke-width="2.2" stroke-linecap="butt" stroke-dasharray="'+(kind==='rail'?'2 3':'3.4 4.4')+'"/>';
+    o += '<path d="'+d+'" fill="none" stroke="#ffffff" stroke-opacity=".9" stroke-width="1.6" stroke-dasharray="14 5"/>';
+    if(kind==='rail'){
+      o += '<path d="'+d+'" fill="none" stroke="#6f6a60" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      o += '<path d="'+d+'" fill="none" stroke="#6f6a60" stroke-width="1.5" stroke-dasharray="5 4" transform="translate(0,3)"/>';
+    }
+    [-1,1].forEach(function(sgn){
+      var ox = sgn*(w/2+2.4);
+      o += '<path d="M'+f(pts[0][0]+ox)+','+f(pts[0][1])+' L'+f(pts[1][0]+ox)+','+f(pts[1][1])+'" fill="none" stroke="#f0f3f0" stroke-width="2.6" stroke-linecap="round"/>';
+      for(i=0;i<=4;i++){
+        var pp = pts[0][0] + (pts[pts.length-1][0]-pts[0][0])*(i/4);
+        var qq = pts[0][1] + (pts[pts.length-1][1]-pts[0][1])*(i/4);
+        o += '<circle cx="'+f(pp+ox)+'" cy="'+f(qq)+'" r="1.5" fill="#cfd6d6"/>';
+      }
+    });
+    return o;
+  }
+  G.push(bridgeStr(BRIDGES.road, 9.4, 'road'));
+  G.push(bridgeStr(BRIDGES.rail, 9.6, 'rail'));
+
+  /* --- rail: the terminal viaduct, crossing the water south-east --- */
+  G.push('<path d="'+poly(RAIL)+'" fill="none" stroke="#b7ab97" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+poly(RAIL)+'" fill="none" stroke="#cfc6b2" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+poly(RAIL)+'" fill="none" stroke="#8c8375" stroke-width="1.5" stroke-dasharray="5 4"/>');
+  G.push('<path d="'+poly(RAIL.map(function(p){ return [p[0], p[1]+2.6]; }))+'" fill="none" stroke="#8c8375" stroke-width="1.2" stroke-dasharray="5 4" opacity=".7"/>');
+  /* siding fan + wagons where the viaduct meets the terminal */
+  [[322,410],[340,420],[358,430]].forEach(function(s,si){
+    G.push('<path d="M'+s[0]+','+s[1]+' L392,'+(s[1]+8+si*3)+'" fill="none" stroke="#bcb2a0" stroke-width="6.4" stroke-linecap="round"/>');
+    G.push('<path d="M'+s[0]+','+s[1]+' L392,'+(s[1]+8+si*3)+'" fill="none" stroke="#8c8375" stroke-width="1" stroke-dasharray="5 4"/>');
+    G.push('<rect x="'+f(s[0]+16)+'" y="'+f(s[1]-3)+'" width="13" height="6" rx="1.4" fill="#8a6f5e"/>');
+    G.push('<rect x="'+f(s[0]+36)+'" y="'+f(s[1]+1)+'" width="12" height="5.6" rx="1.4" fill="#6f7c83"/>');
+  });
+
+  /* --- forecourts and squares --- */
+  function plaza(x,y,w,h,r1,r2){
+    return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+r1+'" fill="#ddd6c4"/>'+
+           '<rect x="'+(x+4)+'" y="'+(y+4)+'" width="'+(w-8)+'" height="'+(h-8)+'" rx="'+r2+'" fill="#e7e0cd"/>';
+  }
+  G.push(plaza(232,87,74,42,9,6));            /* cathedral close */
+  G.push('<rect x="240" y="93" width="58" height="30" rx="4" fill="#cfc7b2" opacity=".55"/>');
+  G.push(plaza(148,276,70,28,8,5));           /* station forecourt */
+  G.push('<path d="M154,284 H212 M154,292 H212" stroke="#e0d9c6" stroke-width="3"/>');
+  G.push(plaza(52,258,72,40,8,5));            /* market square */
+  G.push('<rect x="58" y="264" width="60" height="28" rx="3" fill="#e2dbc8"/>');
+  G.push('<path d="M236,24 H300" stroke="#cfc7b2" stroke-width="2" opacity=".8"/>');
+
+  /* --- street-level life: kerbside parking, loading bays, planters --- */
+  function parked(x,y,a,col){
+    return svgEl(x,y,'<g transform="rotate('+a+')">'+
+      '<rect x="-4.6" y="-2.4" width="9.2" height="4.8" rx="1.4" fill="'+col+'"/>'+
+      '<rect x="-2" y="-4.4" width="5.2" height="2.6" rx="1" fill="'+shade(col,-16)+'"/></g>');
+  }
+  [[66,206,26,"#c9d2d8"],[98,214,-14,"#b7c1c8"],[146,222,180,"#d8cfc0"],
+   [232,222,14,"#8fa8b3"],[266,216,-20,"#cbbfae"],[318,232,36,"#a9b8be"],
+   [104,300,8,"#cfd6da"],[168,308,190,"#c2b6a4"],[212,300,-6,"#b9c4c9"],
+   [246,306,4,"#cfc6b8"],[290,314,12,"#9fb0b8"],[330,300,182,"#c6c0b2"],
+   [62,330,24,"#cbd4d9"],[44,364,-12,"#b3bdc4"],[352,264,8,"#c9c2b4"],
+   [300,398,190,"#bcc6cb"],[270,412,4,"#cfc8ba"],[150,430,4,"#c3ccd0"],
+   [110,410,-8,"#c6cfd4"],[236,394,10,"#cfc8ba"]].forEach(function(v){
+    G.push(parked(v[0],v[1],v[2],v[3]));
+  });
+  G.push('<rect x="196" y="286" width="22" height="11" rx="2" fill="#b9b3a4" opacity=".9"/>');   /* loading bay */
+  G.push('<rect x="199" y="289" width="16" height="5" rx="1" fill="#8f8a7c" opacity=".8"/>');
+
+  /* --- trees (swaying), hedges, planting beds, park, allotments --- */
+  function treeStr(x,y,r,i,lit){
+    var cls = 'sway'+(i%3===1?' d1':i%3===2?' d2':'');
+    return '<ellipse cx="'+f(x+3)+'" cy="'+f(y+3)+'" rx="'+f(r*0.95)+'" ry="'+f(r*0.58)+'" fill="#4f7a55" opacity=".2"/>'+
+      '<g class="'+cls+'">'+
+        (lit ? '<circle cx="'+f(x-r*0.34)+'" cy="'+f(y-r-9-r*0.3)+'" r="'+f(r*0.58)+'" fill="#8fcd86"/>' : '')+
+        '<rect x="'+f(x-1.4)+'" y="'+f(y-r-5)+'" width="2.8" height="'+f(r+6)+'" fill="#8a6a52"/>'+
+        '<circle cx="'+f(x)+'" cy="'+f(y-r-6)+'" r="'+f(r)+'" fill="#6fb46a"/>'+
+        '<circle cx="'+f(x-r*0.3)+'" cy="'+f(y-r-8-r*0.22)+'" r="'+f(r*0.52)+'" fill="#86c77f"/>'+
+        '<circle cx="'+f(x+r*0.36)+'" cy="'+f(y-r-5)+'" r="'+f(r*0.4)+'" fill="#63a75f"/>'+
+      '</g>';
+  }
+  var TREES = [
+    [294,93,6.5],[318,97,6],[264,123,6],[300,121,8],[322,135,7],[276,143,6.5],[300,157,9],[330,165,7],[258,173,7.5],[286,189,6.5],
+    [156,282,6],[178,282,5.6],[198,284,5.6],[210,272,5.4],
+    [150,196,7],[122,208,6.5],[166,214,7.5],[98,214,6],[136,232,6.5],[196,244,7],[212,258,6],
+    [242,238,6.5],[272,224,7],[300,246,6.5],[322,268,7],[352,300,6.5],[330,330,7],[262,300,6],
+    [108,338,7],[120,334,6.5],[176,338,7],[182,360,6.5],[112,394,7],[128,392,6.5],
+    [20,300,7.5],[30,326,7],[44,352,7.5],[26,372,7],[60,394,6.5],[92,416,7],
+    [128,426,6.5],[188,430,7],[214,442,6.5],[140,496,6],[180,506,5.6],[228,514,5.4],[318,462,6]
+  ];
+  TREES.forEach(function(t,i){ G.push(treeStr(t[0],t[1],t[2],i,i%2===0)); });
+  /* hedge along the cathedral close + a planting bed in the market square */
+  G.push('<path d="M228,40 L228,60" stroke="#5f9a58" stroke-width="4" stroke-linecap="round" opacity=".9"/>');
+  G.push('<rect x="60" y="270" width="30" height="10" rx="4" fill="#8fc47f"/>');
+  G.push('<circle cx="68" cy="275" r="3.4" fill="#6fa862"/><circle cx="80" cy="275" r="3.4" fill="#6fa862"/>');
+  /* riverside park with a boating pond, holding the west bank */
+  G.push('<rect x="100" y="342" width="86" height="56" rx="10" fill="#7cbb78"/>');
+  G.push('<rect x="104" y="346" width="78" height="48" rx="8" fill="#93cf8c"/>');
+  G.push('<ellipse cx="142" cy="368" rx="26" ry="13" fill="#63bcd8"/>');
+  G.push('<ellipse cx="142" cy="368" rx="26" ry="13" fill="none" stroke="#dfeae3" stroke-width="2.6"/>');
+  G.push('<ellipse cx="133" cy="363" rx="10" ry="4.4" fill="#9fdcec" opacity=".75"/>');
+  G.push('<ellipse cx="142" cy="368" rx="30" ry="16" fill="none" stroke="#bfe6f2" stroke-width="1" class="ripple"/>');
+  G.push('<path d="M108,382 Q126,372 146,378 T178,372" fill="none" stroke="#e6d9b4" stroke-width="4.6" stroke-linecap="round"/>');
+  G.push('<path d="M110,352 Q130,360 150,352 T180,356" fill="none" stroke="#e6d9b4" stroke-width="4" stroke-linecap="round"/>');
+  /* allotments on the south bank, reached across the road bridge */
+  G.push('<rect x="44" y="492" width="74" height="24" rx="6" fill="#dcd9c6"/>');
+  for(var ay=0;ay<2;ay++) for(var ax=0;ax<4;ax++){
+    G.push('<rect x="'+(50+ax*17)+'" y="'+(496+ay*11)+'" width="13" height="8" rx="2" fill="'+(rnd()<.5?'#9ccf87':'#b6d79a')+'"/>');
+  }
+  G.push('<path d="M44,489 H120" stroke="#c9c3ae" stroke-width="1.6" opacity=".8"/>');
+
+  /* ==========================================================
+     BUILDINGS — footprint + lifted roof face + visible near wall
+     Placed on a grid that keeps clear of roads, water and the
+     landmarks, then painted back-to-front.
+     ========================================================== */
+  var ROOFS = [
+    {c:"#cd7a55",k:"tile"},   {c:"#c2643f",k:"tile"},  {c:"#b8563c",k:"tile"},
+    {c:"#d99a5c",k:"tile"},   {c:"#8a97a1",k:"slate"}, {c:"#6e8494",k:"slate"},
+    {c:"#9aa8b4",k:"slate"},  {c:"#5f7d86",k:"cup"},   {c:"#4f9c86",k:"cup"},
+    {c:"#a9a596",k:"grav"},   {c:"#bdbaa8",k:"grav"},  {c:"#c9b9a0",k:"grav"},
+    {c:"#8fa8b3",k:"glass"},  {c:"#7d8f9b",k:"glass"}, {c:"#c98f5f",k:"tile"},
+    {c:"#dfc07f",k:"tile"},   {c:"#a8896f",k:"grav"},  {c:"#6b7c88",k:"slate"}
+  ];
+  var WALLS = ["#f7e2c6","#f3d8b6","#f0e8da","#f6dbc8","#efcfba","#e5ecf1","#dce5eb","#eef2f5",
+               "#f7ebd0","#ebd8ba","#f0e7de","#e3d8c8","#f5dec6","#e8ded0","#f0d3c0","#dfe3e8"];
+  var LANDMARKS = [
+    {x:238,y:95,w:60,h:32},   /* cathedral */
+    {x:146,y:254,w:76,h:24},  /* station hall */
+    {x:58, y:264,w:58,h:30}   /* market hall */
+  ];
+  var occ = {};
+  function markOcc(x,y,w,h){
+    var i,j;
+    for(i=Math.floor((x-3)/10);i<=Math.floor((x+w+3)/10);i++)
+      for(j=Math.floor((y-3)/10);j<=Math.floor((y+h+3)/10);j++) occ[i+","+j]=1;
+  }
+  function occFree(x,y,w,h){
+    var i,j;
+    for(i=Math.floor((x-4)/10);i<=Math.floor((x+w+4)/10);i++)
+      for(j=Math.floor((y-4)/10);j<=Math.floor((y+h+4)/10);j++) if(occ[i+","+j]) return false;
+    return true;
+  }
+  LANDMARKS.forEach(function(L){ markOcc(L.x,L.y,L.w,L.h); });
+  function hardClear(x,y,w,h){
+    var pts=[[x,y],[x+w,y],[x+w,y+h],[x,y+h],[x+w/2,y+h/2]], i, r;
+    for(i=0;i<pts.length;i++){
+      for(r=0;r<densed.length;r++) if(distPoly(pts[i][0],pts[i][1],densed[r]) < ROAD_HALF+5) return false;
+      if(distPoly(pts[i][0],pts[i][1],riverSamples) < WATER_HALF+5) return false;
+      if(distPoly(pts[i][0],pts[i][1],railSamples) < 11) return false;
+    }
+    /* a roof is lifted, so a block is drawn up to 34px above its own
+       footprint: on the south bank that lift must still clear the water */
+    for(i=0;i<2;i++){
+      if(distPoly(i ? x+w : x, y-34, riverSamples) < WATER_HALF+5) return false;
+    }
+    var j;
+    for(j=0;j<LANDMARKS.length;j++){
+      var L=LANDMARKS[j];
+      if(!(x+L.w+3<=L.x || L.x+L.w+3<=x || y+L.h+3<=L.y || L.y+L.h+3<=y)) return false;
+    }
+    return true;
+  }
+  var BRIEF = [ /* [x,y,w,h,ridge-rise,storeys] hand-set so key streets read as terraces */
+    [100,120,26,16,7,2],[130,116,22,17,9,3],[156,124,24,15,6,2],[184,131,22,16,10,3],
+    [228,120,24,16,7,2],[256,124,22,15,8,3],[284,133,26,17,6,2],[314,143,24,15,9,3],
+    [342,152,22,16,7,2],[148,166,20,15,11,3],[64,196,22,16,8,2],[92,272,20,14,7,2],
+    [124,272,22,15,9,2],[150,240,20,14,8,2],[182,226,20,15,7,3],[222,238,22,15,9,3],
+    [250,254,20,14,6,2],[54,318,22,16,10,3],[26,300,20,15,7,2],[14,252,22,16,8,3],
+    [60,236,20,14,9,2],[86,222,20,15,10,3],[110,228,22,14,7,2],[136,206,20,15,8,2],
+    [164,190,22,15,9,3],[192,172,20,14,7,2],[220,166,22,15,8,2],[248,164,20,14,6,2],
+    [278,180,22,15,10,3],[306,190,20,14,7,2],[330,196,22,15,8,2],[356,204,20,14,6,2],
+    [198,292,20,14,9,2],[228,282,22,15,7,2],[256,272,20,14,8,2],[282,262,22,15,10,3],
+    [308,244,20,14,6,2],[332,228,22,15,9,2],[356,262,20,14,7,2],[338,300,22,15,8,2],
+    [300,320,20,14,6,2],[270,336,22,15,9,2],[240,352,20,14,7,2],[210,376,22,15,8,2],
+    [178,404,20,14,9,2],[150,414,22,15,6,2],[120,412,20,14,8,2],[92,436,20,14,7,2],
+    [318,340,22,15,9,2],[346,344,20,14,6,2],[366,318,22,15,8,2],[352,164,20,14,7,2],
+    [16,410,20,14,8,2],[40,458,22,15,7,2],[70,470,20,14,9,2]
+  ];
+  function specClear(s){
+    return hardClear(s[0],s[1],s[2],s[3]) && occFree(s[0],s[1],s[2],s[3]);
+  }
+  /* SPECS carries every block: its footprint, its ridge, its storey count and
+     the drawn string, so paint order can be sorted by footprint depth later */
+  var SPECS = [];
+  function addSpec(s){
+    if(!specClear(s)) return false;
+    markOcc(s[0],s[1],s[2],s[3]);
+    SPECS.push([s[0],s[1],s[2],s[3],s[4], genBuilding(s[0],s[1],s[2],s[3],s[5]||2, s[4]||7)]);
+    return true;
+  }
+  /* curated rows first, then infill on a grid so every gap becomes a roof */
+  var bi;
+  for(bi=0;bi<BRIEF.length;bi++) addSpec(BRIEF[bi]);
+  var filled = 0;
+  for(var pass=0; pass<2; pass++){
+    var step = pass ? 14 : 18;
+    var maxw = pass ? 17 : 26, minw = pass ? 11 : 14;
+    var maxh = pass ? 14 : 19, minh = pass ? 9 : 10;
+    for(var gy=12; gy<512; gy+=step){
+      for(var gx=6; gx<380; gx+=step){
+        var w = Math.round(minw + rnd()*(maxw-minw));
+        var h = Math.round(minh + rnd()*(maxh-minh));
+        var x = Math.round(gx + rnd()*3), y = Math.round(gy + rnd()*3);
+        if(x<4 || y<6 || x+w>386 || y+h>512) continue;
+        var s = [x,y,w,h, Math.round(4+rnd()*6), 1 + Math.floor(rnd()*3.2)];
+        if(!specClear(s)) continue;
+        markOcc(x,y,w,h);
+        SPECS.push([x,y,w,h,s[4], genBuilding(x,y,w,h,s[5],s[4])]);
+        filled++;
+      }
+    }
+  }
+
+  /* ---- the renderer: this is the reference's building grammar ---- */
+  function windowsStr(x,y,w,wallTop,ny,tag,seedA){
+    var out="", c, r, cols=Math.max(1,Math.floor((w-5)/9)), stepX=(w-3)/cols;
+    var plinth=Math.min((ny-wallTop)*0.3, 5.5);
+    var base=ny-plinth-2.6;
+    var rows=Math.floor((ny-wallTop-plinth-5)/9);
+    if(rows<1 || w<15) return "";
+    var glass = seedA<0.35 ? "#5f96b8" : (seedA<0.7 ? "#79acc9" : "#93c1d8");
+    for(r=0;r<rows;r++){
+      var wy = base-(r+1)*9+1.4;
+      if(wy < wallTop+2.4) break;
+      for(c=0;c<cols;c++){
+        out += '<rect x="'+f(x+2+c*stepX+(stepX-5)/2)+'" y="'+f(wy)+'" width="5" height="5.6" rx="1" fill="'+glass+'"/>';
+      }
+    }
+    return out;
+  }
+  function roofTex(x,y,w,h,kind,seedA){
+    var pat = kind==="tile" ? "roofTile" : kind==="slate" ? "roofSlate"
+            : kind==="cup" ? "roofCopper" : kind==="grav" ? "roofGravel" : "roofGlass";
+    var op = kind==="tile" ? ".55" : kind==="slate" ? ".5" : kind==="cup" ? ".6" : kind==="grav" ? ".55" : ".9";
+    var o = "";
+    if(w>7 && h>5) o += '<rect x="'+f(x+1)+'" y="'+f(y+1)+'" width="'+f(w-2)+'" height="'+f(h-2)+'" fill="url(#'+pat+')" opacity="'+op+'"/>';
+    if(kind==="tile" || kind==="slate"){
+      var rows = Math.max(1, Math.floor(h/5));
+      for(var r=1;r<rows;r++){
+        o += '<path d="M'+f(x+1)+','+f(y+r*5)+' H'+f(x+w-1)+'" stroke="#000" stroke-opacity=".12" stroke-width="1"/>';
+      }
+    }
+    if(kind==="cup"){
+      o += '<path d="M'+f(x+2)+','+f(y+h*0.5)+' H'+f(x+w-2)+'" stroke="#0d5f4f" stroke-opacity=".3" stroke-width="1.6"/>';
+      o += '<path d="M'+f(x+w*0.5)+','+f(y+1)+' V'+f(y+h-1)+'" stroke="#0d5f4f" stroke-opacity=".22" stroke-width="1.2"/>';
+    }
+    if(kind==="glass"){
+      o += '<path d="M'+f(x+w*0.32)+','+f(y+1)+' V'+f(y+h-1)+' M'+f(x+w*0.66)+','+f(y+1)+' V'+f(y+h-1)+'" stroke="#5f9db4" stroke-opacity=".4" stroke-width="1.4"/>';
+    }
+    if(kind==="grav" && w>16 && h>12){
+      o += '<rect x="'+f(x+4)+'" y="'+f(y+4)+'" width="6" height="5" rx="1" fill="#c3ccd2"/>'+
+           '<rect x="'+f(x+w-10)+'" y="'+f(y+h-9)+'" width="5" height="4" rx="1" fill="#b0bac1"/>';
+    }
+    return o;
+  }
+  function genBuilding(x,y,w,h,storeys,ridge,seedTag){
+    var seedA = rnd(), seedB = rnd(), seedC = rnd();
+    var lift = Math.min(Math.max(h*HORIZON*(0.7+storeys*0.3), 8.5), 32);
+    var ny = y+h, wallTop = ny-lift;
+    var R = ROOFS[Math.floor(seedA*ROOFS.length)%ROOFS.length];
+    var wall = WALLS[Math.floor(seedB*WALLS.length)%WALLS.length];
+    var roof = R.c, kind = R.k;
+    var shx = 2.5 + 0.13*lift, shy = 2 + 0.1*lift;
+    var o = "";
+    /* cast shadow, thrown south-east from the north-west sun */
+    o += '<rect x="'+f(x+2)+'" y="'+f(y+2)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".1"/>';
+    o += '<rect x="'+f(x+shx)+'" y="'+f(y+shy)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".22"/>';
+    o += '<rect x="'+f(x+shx+2.6)+'" y="'+f(y+shy+2.4)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".1"/>';
+    /* near wall + plinth + cornice */
+    var plinth = Math.min(lift*0.3, 6);
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="'+wall+'"/>';
+    o += windowsStr(x,y,w,wallTop,ny,seedTag,seedA);
+    o += '<rect x="'+f(x)+'" y="'+f(ny-plinth)+'" width="'+f(w)+'" height="'+f(plinth)+'" fill="'+shade(wall,-26)+'"/>';
+    if(w>18 && seedB>0.45){
+      o += '<rect x="'+f(x+3+seedC*(w-12))+'" y="'+f(ny-plinth*0.8)+'" width="4.4" height="'+f(plinth*0.8)+'" rx="1" fill="#8a6a52"/>';
+    }
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop)+'" width="'+f(w)+'" height="2.4" fill="'+shade(roof,-36)+'" opacity=".9"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop+2.4)+'" width="'+f(w)+'" height="1.2" fill="#ffffff" opacity=".32"/>';
+    if(seedC<0.24 && w>20 && plinth>4){
+      o += '<rect x="'+f(x+1.4)+'" y="'+f(ny-plinth-4)+'" width="'+f(w-2.8)+'" height="4" rx="1.3" fill="'+(seedA<0.5?"#c85a52":"#3f7f8c")+'"/>';
+    }
+    /* roof face: the footprint, lifted */
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(h)+'" fill="'+roof+'"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="2.2" fill="'+shade(roof,26)+'" opacity=".72"/>';
+    o += roofTex(x, y-lift, w, h, kind, seedA);
+    /* ridge: a gable or hip rising above the roof face */
+    if(ridge>0 && w>16){
+      o += '<rect x="'+f(x+2)+'" y="'+f(wallTop-ridge)+'" width="'+f(w-4)+'" height="'+f(ridge+2)+'" fill="'+shade(roof,-14)+'"/>';
+      o += '<rect x="'+f(x+2)+'" y="'+f(wallTop-ridge)+'" width="'+f(w-4)+'" height="1.8" fill="'+shade(roof,-40)+'"/>';
+    }
+    /* roof furniture: chimneys, tanks, a roof garden */
+    var nch = 1 + Math.floor(seedB*2.4);
+    for(var i=0;i<nch;i++){
+      var cx = x + 4 + (((seedC*7 + i*0.37)%1) * Math.max(4, w-11));
+      var cy = (y-lift) + 3 + (((seedA*5 + i*0.53)%1) * Math.max(2, h-9));
+      var ch = 6 + seedC*5;
+      o += '<rect x="'+f(cx)+'" y="'+f(cy-ch)+'" width="4.6" height="'+f(ch+2.5)+'" fill="#c08a6b"/>'+
+           '<rect x="'+f(cx-0.8)+'" y="'+f(cy-ch-1.8)+'" width="6.2" height="2.4" fill="#a9724f"/>';
+    }
+    if(w>26 && h>18){
+      o += '<rect x="'+f(x+w-13)+'" y="'+f(y-lift+4)+'" width="6" height="4.4" rx="1" fill="#c3ccd2"/>';
+    }
+    if(seedA>0.78 && w>24 && h>16){
+      o += '<rect x="'+f(x+4)+'" y="'+f(y-lift+h-12)+'" width="'+f(Math.min(13,w-9))+'" height="7" rx="2" fill="#8ec47f"/>';
+    }
+    return o;
+  }
+  /* ---------- landmarks, in the same grammar but with identity ---------- */
+  function cathedral(){
+    var L=LANDMARKS[0], x=L.x, y=L.y, w=L.w, h=L.h, lift=34, ny=y+h, wallTop=ny-lift, o="";
+    o += '<rect x="'+f(x+5)+'" y="'+f(y+5)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#5d7a70" opacity=".2"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#f2e7d3"/>';
+    for(var c=0;c<6;c++){
+      o += '<rect x="'+f(x+8+c*9)+'" y="'+f(wallTop+5)+'" width="4.4" height="'+f(lift-11)+'" rx="2.2" fill="#6d9ec0"/>';
+    }
+    o += '<rect x="'+f(x)+'" y="'+f(ny-4)+'" width="'+f(w)+'" height="4" fill="#ded0b8"/>';
+    for(var b=0;b<5;b++){
+      o += '<rect x="'+f(x+12+b*11)+'" y="'+f(wallTop-4)+'" width="3" height="'+f(lift+4)+'" fill="#e6d9c1"/>';
+    }
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#63737f"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="2.2" fill="#8194a0"/>';
+    o += roofTex(x,y-lift,w,h,"slate",0.2);
+    o += '<rect x="'+f(x+3)+'" y="'+f(y-lift-9)+'" width="'+f(w-6)+'" height="11" fill="#6f808c"/>';
+    o += '<rect x="'+f(x+3)+'" y="'+f(y-lift-9)+'" width="'+f(w-6)+'" height="1.8" fill="#8b9da8"/>';
+    /* crossing tower with a spire, then the west bell tower in front of it */
+    var tx = x+w*0.54, tw = 15, tl = 30, top = y-lift-9-tl;
+    o += '<rect x="'+f(tx-tw/2)+'" y="'+f(y-lift)+'" width="'+tw+'" height="'+f(tl+11)+'" fill="#f6efe2"/>';
+    o += '<rect x="'+f(tx-tw/2)+'" y="'+f(y-lift)+'" width="'+tw+'" height="2.4" fill="#ffffff" opacity=".55"/>';
+    o += '<rect x="'+f(tx-3.4)+'" y="'+f(top+9)+'" width="6.8" height="9.6" rx="3.4" fill="#6d9ec0"/>';
+    o += '<rect x="'+f(tx-tw/2-2)+'" y="'+f(top)+'" width="'+f(tw+4)+'" height="4" rx="1" fill="#e2d5bd"/>';
+    o += '<polygon points="'+f(tx-tw/2-2)+','+f(top)+' '+f(tx+tw/2+2)+','+f(top)+' '+f(tx)+','+f(top-26)+'" fill="#4f5d68"/>';
+    o += '<polygon points="'+f(tx-1.6)+','+f(top-24)+' '+f(tx+1.6)+','+f(top-24)+' '+f(tx)+','+f(top-27)+'" fill="#4f5d68"/>';
+    o += '<rect x="'+f(tx-0.9)+'" y="'+f(top-35)+'" width="1.8" height="10" fill="#e8c46a"/>';
+    o += '<path d="M'+f(tx-4)+','+f(top-31)+' H'+f(tx+4)+'" stroke="#e8c46a" stroke-width="1.4"/>';
+    /* nave rose window on the near wall */
+    o += '<circle cx="'+f(x+w*0.2)+'" cy="'+f(wallTop+11)+'" r="5" fill="#6d9ec0"/>';
+    o += '<circle cx="'+f(x+w*0.2)+'" cy="'+f(wallTop+11)+'" r="5" fill="none" stroke="#f2e7d3" stroke-width="1.4"/>';
+    return o;
+  }
+  function stationHall(){
+    var L=LANDMARKS[1], x=L.x, y=L.y, w=L.w, h=L.h, lift=24, ny=y+h, wallTop=ny-lift, o="";
+    o += '<rect x="'+f(x+4)+'" y="'+f(y+4)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".2"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#eae4d8"/>';
+    for(var c=0;c<6;c++){
+      o += '<rect x="'+f(x+6+c*11)+'" y="'+f(wallTop+7)+'" width="7" height="8" rx="1.6" fill="#7fb0cd"/>';
+    }
+    o += '<rect x="'+f(x)+'" y="'+f(ny-4)+'" width="'+f(w)+'" height="4" fill="#d9d2c2"/>';
+    /* the train shed: three glazed barrel roofs, seen from above */
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#8b9aa6"/>';
+    for(var b=0;b<3;b++){
+      var ry = y-lift+3+b*7.4;
+      o += '<rect x="'+f(x+3)+'" y="'+f(ry)+'" width="'+f(w-6)+'" height="5.4" rx="2.4" fill="'+(b===1?"#c4d0d9":"#a7b6c1")+'"/>';
+      o += '<rect x="'+f(x+3)+'" y="'+f(ry)+'" width="'+f(w-6)+'" height="1.6" rx=".8" fill="#dbe4ea" opacity=".85"/>';
+      o += '<path d="M'+f(x+6)+','+f(ry+2.7)+' H'+f(x+w-6)+'" stroke="#6f8593" stroke-opacity=".4" stroke-width="1"/>';
+    }
+    o += '<rect x="'+f(x+3)+'" y="'+f(y-lift)+'" width="'+f(w-6)+'" height="2.2" fill="#c9d5dd"/>';
+    /* clock over the forecourt + a pair of canopies */
+    o += '<circle cx="'+f(x+w/2)+'" cy="'+f(wallTop+5)+'" r="5" fill="#f6f1e4"/>';
+    o += '<circle cx="'+f(x+w/2)+'" cy="'+f(wallTop+5)+'" r="5" fill="none" stroke="#9aa5ad" stroke-width="1"/>';
+    o += '<path d="M'+f(x+w/2)+','+f(wallTop+5)+' V'+f(wallTop+2.4)+' M'+f(x+w/2)+','+f(wallTop+5)+' H'+f(x+w/2+2.6)+'" stroke="#3b4a55" stroke-width="1"/>';
+    o += '<rect x="'+f(x+8)+'" y="'+f(ny-3)+'" width="26" height="6" rx="2" fill="#dfe6ea"/>';
+    o += '<rect x="'+f(x+w-34)+'" y="'+f(ny-3)+'" width="26" height="6" rx="2" fill="#dfe6ea"/>';
+    return o;
+  }
+  function marketHall(){
+    var L=LANDMARKS[2], x=L.x, y=L.y, w=L.w, h=L.h, lift=20, ny=y+h, wallTop=ny-lift, o="";
+    o += '<rect x="'+f(x+4)+'" y="'+f(y+4)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".2"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(wallTop)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#f0e7de"/>';
+    for(var c=0;c<5;c++){
+      o += '<rect x="'+f(x+5+c*11)+'" y="'+f(wallTop+4)+'" width="5" height="11" rx="2.4" fill="#6d9ec0"/>';
+    }
+    o += '<rect x="'+f(x)+'" y="'+f(ny-3)+'" width="'+f(w)+'" height="3" fill="#ded0b8"/>';
+    o += '<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#7f8f99"/>';
+    o += '<rect x="'+f(x+3)+'" y="'+f(y-lift)+'" width="'+f(w-6)+'" height="'+f(h-3)+'" fill="#9fb2bd"/>';
+    o += roofTex(x+3,y-lift,w-6,h-3,"glass",0.8);
+    o += '<rect x="'+f(x+3)+'" y="'+f(y-lift)+'" width="'+f(w-6)+'" height="2" fill="#d5e2e8"/>';
+    /* ridge lantern + a market stall line on the square */
+    o += '<rect x="'+f(x+8)+'" y="'+f(y-lift-4)+'" width="'+f(w-16)+'" height="5" rx="2" fill="#c7d6dc"/>';
+    o += '<rect x="'+f(x+8)+'" y="'+f(y-lift-4)+'" width="'+f(w-16)+'" height="1.6" fill="#e4eef2"/>';
+    o += '<rect x="'+f(x+2)+'" y="'+f(ny+4)+'" width="14" height="7" rx="1.6" fill="#e8e2d2"/>';
+    o += '<rect x="'+f(x+2)+'" y="'+f(ny+4)+'" width="14" height="2.6" rx="1.2" fill="#c85a52"/>';
+    o += '<rect x="'+f(x+20)+'" y="'+f(ny+4)+'" width="14" height="7" rx="1.6" fill="#e8e2d2"/>';
+    o += '<rect x="'+f(x+20)+'" y="'+f(ny+4)+'" width="14" height="2.6" rx="1.2" fill="#3f7f8c"/>';
+    return o;
+  }
+  /* painter's algorithm: every block and landmark paints back-to-front by the
+     depth of its own footprint, so a nearer roof covers the one behind it */
+  function shadowFor(x,y,w,h,lift,op){
+    var shx = 2.5 + 0.13*lift, shy = 2 + 0.1*lift;
+    return '<rect x="'+f(x+2)+'" y="'+f(y+2)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".1"/>'+
+           '<rect x="'+f(x+shx)+'" y="'+f(y+shy)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity="'+(op||".22")+'"/>'+
+           '<rect x="'+f(x+shx+2.6)+'" y="'+f(y+shy+2.4)+'" width="'+f(w)+'" height="'+f(h)+'" fill="#3d5a66" opacity=".1"/>';
+  }
+  var ORDERED = [];
+  for(bi=0;bi<SPECS.length;bi++){
+    ORDERED.push({ y:SPECS[bi][1]+SPECS[bi][3], s:SPECS[bi][5] });
+  }
+  ORDERED.push({ y:LANDMARKS[0].y+LANDMARKS[0].h, s:shadowFor(LANDMARKS[0].x,LANDMARKS[0].y,LANDMARKS[0].w,LANDMARKS[0].h,34,".22")+cathedral() });
+  ORDERED.push({ y:LANDMARKS[1].y+LANDMARKS[1].h, s:shadowFor(LANDMARKS[1].x,LANDMARKS[1].y,LANDMARKS[1].w,LANDMARKS[1].h,24,".22")+stationHall() });
+  ORDERED.push({ y:LANDMARKS[2].y+LANDMARKS[2].h, s:shadowFor(LANDMARKS[2].x,LANDMARKS[2].y,LANDMARKS[2].w,LANDMARKS[2].h,20,".22")+marketHall() });
+  ORDERED.sort(function(a,b){ return a.y-b.y; });
+  for(bi=0;bi<ORDERED.length;bi++) C.push(ORDERED[bi].s);
+
+  /* ---------------- shared glyph vocabulary ---------------- */
+  function casing(d,w,op){ return '<path d="'+d+'" fill="none" stroke="#ffffff" stroke-opacity="'+(op||.78)+'" stroke-width="'+(w+4.6)+'" stroke-linejoin="round" stroke-linecap="round"/>'; }
+  function darkside(d,w){ return '<path d="'+d+'" fill="none" stroke="#2b3d4c" stroke-opacity=".16" stroke-width="'+(w+1.6)+'" stroke-linejoin="round" stroke-linecap="round"/>'; }
+  function along(pts, t){
+    var segs=[], total=0, i;
+    for(i=0;i<pts.length-1;i++){
+      var L = Math.hypot(pts[i+1][0]-pts[i][0], pts[i+1][1]-pts[i][1]);
+      segs.push(L); total += L;
+    }
+    var want = total*t, acc=0;
+    for(i=0;i<segs.length;i++){
+      if(acc+segs[i] >= want || i===segs.length-1){
+        var k = segs[i]? (want-acc)/segs[i] : 0;
+        k = Math.max(0, Math.min(1, k));
+        return { x: pts[i][0]+(pts[i+1][0]-pts[i][0])*k,
+                 y: pts[i][1]+(pts[i+1][1]-pts[i][1])*k,
+                 a: Math.atan2(pts[i+1][1]-pts[i][1], pts[i+1][0]-pts[i][0])*180/Math.PI };
+      }
+      acc += segs[i];
+    }
+    return { x:pts[0][0], y:pts[0][1], a:0 };
+  }
+  function glyph(x,y,a,path,fill,scale){
+    var s = scale||1;
+    return '<g transform="translate('+f(x)+','+f(y)+') rotate('+f(a)+') scale('+s+')">'+
+           '<circle r="8.6" fill="#ffffff" fill-opacity=".93"/>'+
+           '<circle r="8.6" fill="none" stroke="'+fill+'" stroke-width="1.5"/>'+
+           '<g transform="translate(-5.4,-5.4)"><path d="'+path+'" fill="'+fill+'"/></g></g>';
+  }
+  var GLYPH_PATH = {
+    taxi:"M2.4 4.6h11.2l-1-3.1a1.5 1.5 0 0 0-1.4-1H4.8a1.5 1.5 0 0 0-1.4 1zM1.6 6.9h12.8v3.1H1.6zM6.1 1.4h3.8v1.6H6.1zM4.7 11.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6zM11.3 11.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z",
+    bus:"M3.2 1.6h9.6a2.1 2.1 0 0 1 2.1 2.1v6.9H1.1V3.7a2.1 2.1 0 0 1 2.1-2.1zM1.1 6h13.8v2H1.1zM4.2 12.6a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zM11.8 12.6a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z",
+    metro:"M2.2 3.2a2 2 0 0 1 2-2h7.6a2 2 0 0 1 2 2v6.4a2 2 0 0 1-2 2H4.2a2 2 0 0 1-2-2zM4.3 4.2h7.4v3.4H4.3zM3.6 13.4 1.6 16M12.4 13.4l2 2.6",
+    spec:"M2.6 2h3.4l8.6 14h-3.4zM12.2 2.6h6.2l-2.2 3.6h-2.6l1-1.7h-3.1z",
+    foot:"M4.6 2.6c.95 0 1.6.85 1.6 2 0 1.35-.5 2.2-.4 3.55.1 1.35-1.5 1.7-2.3 1.15-.85-.55-1.05-1.7-.95-2.85.1-1.45.2-2.1.6-2.95.3-.6.85-.9 1.45-.9zM11 7.4c.95 0 1.6.85 1.6 2 0 1.35-.5 2.2-.4 3.55.1 1.35-1.5 1.7-2.3 1.15-.85-.55-1.05-1.7-.95-2.85.1-1.45.2-2.1.6-2.95.3-.6.85-.9 1.45-.9z",
+    scoo:"M2.6 1.6h3.6l3.9 9.4h4l1.2-4.6h2.6l-1.8 7.1h-5.6L6.4 4.1H2.6zM4.8 13a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8z"
+  };
+
+  /* ---------------- already-landed moves ----------------
+     Kestrel's taxi and Magpie's bus are drawn faint and tagged as traces,
+     so a move is visible on the map from the instant its owner lands it,
+     while the bright rings below remain "still available to you". All four
+     Fugitives see these because positions are shared inside the faction. */
+  var TRACE_INK = { taxi:"#b45309", bus:"#1d4ed8", metro:"#0e7490", foot:"#33475c", spec:"#6d28d9", scoo:"#6d28d9" };
+  var TRACED = [];
+  (O.traces||[]).forEach(function(t){
+    var d = poly(t.pts);
+    PA.push('<path d="'+d+'" fill="none" stroke="#ffffff" stroke-opacity=".8" stroke-width="'+(t.w+2.6)+'" stroke-linejoin="round" stroke-linecap="round"/>');
+    PA.push('<path d="'+d+'" fill="none" stroke="'+(TRACE_INK[t.mode]||"#33475c")+'" stroke-opacity=".5" stroke-width="'+t.w+
+            '" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3.4 4.2"/>');
+    var p = along(t.pts, .56);
+    PA.push('<g transform="translate('+f(p.x)+','+f(p.y)+')" opacity=".8">'+
+      '<circle r="8" fill="#ffffff" fill-opacity=".9" stroke="'+(TRACE_INK[t.mode]||"#33475c")+'" stroke-width="1.3"/>'+
+      '<g transform="translate(-6.4,-6.4)"><path d="'+GLYPH_PATH[t.mode]+'" fill="'+(TRACE_INK[t.mode]||"#33475c")+'" transform="scale(.64)"/></g></g>');
+    TRACED.push({ mode:t.mode, from:t.from, to:t.to, pts:t.pts.map(function(q){ return q.slice(); }), trace:true });
+  });
+
+  /* ==========================================================
+     LEGAL MOVES — derived, never hand-written.
+     A move exists exactly when the viewer's node is an endpoint of
+     an edge in that mode's set:
+       foot / taxi  follow the street edges (a taxi costs a ticket)
+       bus          follows the bus corridors
+       metro        runs terminal to terminal
+       special      the alleyway links, which exist only on n2..n9
+     From n9 — a standard street node — that is foot and taxi to
+     n6 / n7 / n8 and the special link to n2. No bus edge touches a
+     street node, so bus is empty; n9 is not a terminal, so metro is
+     empty. Every tray tile below reports this same derivation.
+     ========================================================== */
+  var SETS = {
+    foot:    STREET,
+    taxi:    STREET,
+    bus:     BUS,
+    metro:   { "n7-n10": METRO },
+    special: { "n2-n9": SPECIAL }
+  };
+  var MODE_ORDER = ["foot","taxi","bus","metro","special"];
+  var MOVE_INK  = { foot:"#22303c", taxi:"#f59e0b", bus:"#2563eb", metro:"#0e7490", special:"#6d28d9" };
+  var MOVE_W    = { foot:3.4, taxi:5, bus:4.6, metro:4, special:3.6 };
+  var GLYPH_KEY = { foot:"foot", taxi:"taxi", bus:"bus", metro:"metro", special:"spec" };
+  var KIT_MODE  = { taxi:"taxi", bus:"bus", metro:"metro", spec:"special", foot:"foot" };
+  var VIEWER = O.hub || "";
+
+  function edgeKey(set, a, b){
+    if(set[a+"-"+b]) return a+"-"+b;
+    if(set[b+"-"+a]) return b+"-"+a;
+    return null;
+  }
+  function edgeNodes(set){
+    var out = [];
+    Object.keys(set).forEach(function(k){
+      k.split("-").forEach(function(n){ if(out.indexOf(n)<0) out.push(n); });
+    });
+    return out;
+  }
+  function neighbours(set, id){
+    var out = [];
+    Object.keys(set).forEach(function(k){
+      var e = k.split("-");
+      if(e[0]===id) out.push(e[1]);
+      else if(e[1]===id) out.push(e[0]);
+    });
+    return out.sort();
+  }
+  function routeFor(set, id, other){
+    var k = edgeKey(set, id, other), pts;
+    if(!k) return null;
+    pts = set[k].map(function(q){ return [q[0], q[1]]; });
+    return k.split("-")[0] === id ? pts : pts.reverse();
+  }
+
+  var MOVES = [];
+  MODE_ORDER.forEach(function(mode){
+    neighbours(SETS[mode], VIEWER).forEach(function(to){
+      var pts = routeFor(SETS[mode], VIEWER, to);
+      if(!pts){ problems.push("no "+mode+" geometry for "+VIEWER+" to "+to); return; }
+      MOVES.push({ mode:mode, from:VIEWER, to:to, w:MOVE_W[mode], col:MOVE_INK[mode], pts:pts });
+    });
+  });
+  var LEGAL_BY_MODE = {};
+  MODE_ORDER.forEach(function(mode){ LEGAL_BY_MODE[mode] = 0; });
+  MOVES.forEach(function(m){ LEGAL_BY_MODE[m.mode]++; });
+
+  var LEGAL = {};
+  /* One ribbon per destination. Foot and taxi follow the same street edges
+     here, so a destination is painted in the strongest mode that reaches it
+     (a ticket beats a walk) and the corridor keeps a single clean line. Every
+     legal move is still counted on its tray tile and exposed on the wire. */
+  var PAINT_RANK = { foot:0, taxi:1, bus:2, metro:3, special:4 };
+  var PAINTED = {};
+  MOVES.forEach(function(m){
+    var best = PAINTED[m.to];
+    if(best === undefined || PAINT_RANK[m.mode] > PAINT_RANK[best]) PAINTED[m.to] = m.mode;
+  });
+  MOVES.forEach(function(m){
+    if(!P[m.to]) problems.push("move to unknown node "+m.to);
+    if(!P[m.from]) problems.push("move from unknown node "+m.from);
+    if(neighbours(SETS[m.mode], m.from).indexOf(m.to) < 0)
+      problems.push("illegal "+m.mode+" move "+m.from+" to "+m.to);
+    if(PAINTED[m.to] !== m.mode) return;      /* legal, but drawn in a stronger mode */
+    var d = poly(m.pts);
+    LEGAL[m.to] = m.col;
+    PA.push(darkside(d, m.w));
+    PA.push(casing(d, m.w));
+    var dash = (m.mode==="foot") ? ' stroke-dasharray="1.2 6.4"'
+             : (m.mode==="special") ? ' stroke-dasharray="7 5"' : '';
+    PA.push('<path d="'+d+'" fill="none" stroke="'+m.col+'" stroke-width="'+m.w+
+            '" stroke-linejoin="round" stroke-linecap="round"'+dash+'/>');
+    if(m.mode==="taxi"){
+      PA.push('<path d="'+d+'" fill="none" stroke="#fff3dd" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="1.5 22"/>');
+    }
+    if(m.mode==="foot"){
+      [0.24,0.62,0.9].forEach(function(t){
+        var q = along(m.pts,t);
+        PA.push(glyph(q.x, q.y, q.a, GLYPH_PATH.foot, "#22303c", 0.78));
+      });
+    } else {
+      var q1 = along(m.pts, 0.52);
+      PA.push(glyph(q1.x, q1.y, q1.a, GLYPH_PATH[GLYPH_KEY[m.mode]], m.col));
+    }
+  });
+
+  /* ---------------- service furniture: bus, metro and the alley ----------------
+     The lines are drawn because they are real city services; whether this
+     character can board here is read off the same edge sets as the moves.
+     From n9 no bus edge and no metro edge calls, so both are drawn in muted
+     ink with a single indicator disc: no floating "not here" chips. */
+  var hub = VIEWER;
+  var KIND_INK = { bus:"#2563eb", metro:"#0e7490" };
+  var MODE_NODES = {
+    bus:   edgeNodes(BUS),
+    metro: edgeNodes({ "n7-n10": METRO }),
+    spec:  edgeNodes({ "n2-n9": SPECIAL })
+  };
+  function boardable(id){ return (MODE_NODES[id]||[]).indexOf(hub) >= 0; }
+  function svcLine(pts, kind, dash, id, at){
+    var d = poly(pts), ok = boardable(id), ink = ok ? KIND_INK[kind] : "#8d9ba8";
+    N.push('<path d="'+d+'" fill="none" stroke="#ffffff" stroke-opacity=".62" stroke-width="8.6" stroke-linecap="round"/>');
+    N.push('<path d="'+d+'" fill="none" stroke="'+ink+'" stroke-opacity="'+(ok?".94":".8")+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+dash+'"/>');
+    var p = along(pts, at||.5);
+    N.push(svgEl(p.x, p.y,
+      '<circle r="10" fill="#ffffff" fill-opacity=".95" stroke="'+ink+'" stroke-width="1.6"/>'+
+      '<g transform="translate(-8,-8)"><path d="'+GLYPH_PATH[id]+'" fill="'+ink+'" transform="scale(.8)"/></g>'));
+  }
+  svcLine(BUS["n4-n6"],  "bus",   "8 6",   "bus",   .54);
+  svcLine(BUS["n4-n10"], "bus",   "8 6",   "bus",   .42);
+  svcLine(BUS["n10-n7"], "bus",   "8 6",   "bus",   .62);
+  svcLine(METRO,         "metro", "2.6 9", "metro", .70);
+  /* the alleyway: a real link, and the one service n9 sits on. Where it is
+     available it is already drawn as a bright legal move, so only the muted
+     version is drawn — no duplicate line, no second disc. */
+  if(!boardable("spec")){
+    var alleyD = poly(SPECIAL);
+    N.push('<path d="'+alleyD+'" fill="none" stroke="#ffffff" stroke-opacity=".5" stroke-width="7.4" stroke-linecap="round"/>');
+    N.push('<path d="'+alleyD+'" fill="none" stroke="#9a8bb5" stroke-opacity=".65" stroke-width="3.2" stroke-dasharray="6 7" stroke-linecap="round" stroke-linejoin="round"/>');
+    var alleyP = along(SPECIAL, .90);
+    N.push(svgEl(alleyP.x, alleyP.y,
+      '<circle r="10" fill="#ffffff" fill-opacity=".95" stroke="#9a8bb5" stroke-width="1.6"/>'+
+      '<g transform="translate(-8,-8)"><path d="'+GLYPH_PATH.spec+'" fill="#7d6b9c" transform="scale(.8)"/></g>'));
+  }
+
+  /* ---------------- destination rings ---------------- */
+  Object.keys(LEGAL).forEach(function(id){
+    var p = P[id], c = LEGAL[id];
+    /* the ring clears its own marker: a terminal tile is wider than a
+       street disc, so the radius follows the node class */
+    var r0 = p.cls === "terminal" ? 20 : (p.cls === "hub" ? 17.5 : 15);
+    PA.push('<circle cx="'+p.x+'" cy="'+p.y+'" r="'+r0+'" fill="'+c+'" fill-opacity=".1"/>');
+    PA.push('<circle cx="'+p.x+'" cy="'+p.y+'" r="'+r0+'" fill="none" stroke="'+c+'" stroke-width="2.6"/>');
+    PA.push('<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(r0+4)+'" fill="none" stroke="#ffffff" stroke-opacity=".65" stroke-width="1.2"/>');
+  });
+
+  /* ==========================================================
+     CHARACTERS — ring on the token, one plate that points at it.
+     All four Fugitives are drawn: positions are shared in-faction.
+     ========================================================== */
+  function figStr(col, hair, kind){
+    var leg = kind==="moved" ? 'fill="#243444"' : 'fill="#2b3a4a"';
+    return '<rect x="-3.2" y="-10.4" width="2.6" height="10.4" rx="1.3" '+leg+'/>'+
+           '<rect x="0.6" y="-10.4" width="2.6" height="10.4" rx="1.3" '+leg+'/>'+
+           '<path d="M-5,-22.6 q1.3,-3.3 5,-3.3 q3.7,0 5,3.3 l1.1,12.8 q-6,1.9 -12.2,0 z" fill="'+col+'"/>'+
+           '<path d="M-2.2,-25 q2.2,-1.2 4.4,0 l0.6,2.6 q-2.8,1.1 -5.6,0 z" fill="#ffffff" fill-opacity=".2"/>'+
+           '<circle cx="0" cy="-26" r="3.5" fill="#f0c9a2"/>'+
+           '<path d="M-3.5,-27 a3.5,3.5 0 0 1 7,0 z" fill="'+hair+'"/>';
+  }
+  function tokStr(o, p, figCls){
+    var sc = o.you ? 1.14 : 0.96;
+    var g = [];
+    g.push('<ellipse cx="3" cy="3" rx="14" ry="7" fill="#33475c" opacity=".22"/>');
+    g.push('<ellipse rx="14.5" ry="11.4" fill="'+o.col+'" fill-opacity=".2"/>');
+    g.push('<ellipse rx="14.5" ry="11.4" fill="none" stroke="'+o.col+'" stroke-width="'+(o.you?3.2:2.6)+'"/>');
+    g.push('<ellipse rx="14.5" ry="11.4" fill="none" stroke="#ffffff" stroke-opacity=".72" stroke-width="1.1"/>');
+    if(o.you){
+      g.push('<ellipse rx="20.5" ry="16.2" fill="none" stroke="'+o.col+'" stroke-width="1.9" stroke-dasharray="5 4" class="halo"/>');
+    }
+    /* the figure stands just behind the token's north edge, so the station
+       number at the token's centre is never covered */
+    g.push('<g transform="translate(0,-11)"><g class="'+figCls+'" transform="scale('+sc+')">'+figStr(o.col,o.hair,(o.moved?"moved":"deciding"))+'</g></g>');
+    return svgEl(p.x, p.y, g.join(""));
+  }
+  function charPlate(o, p, w, h, rect){
+    var cx = rect[0]+w/2, cy = rect[1]+h/2;
+    /* a hairline from the plate's edge to the token's rim: the plate always
+       belongs to exactly one token and never floats */
+    var ux = cx-p.x, uy = cy-p.y, L = Math.hypot(ux,uy)||1;
+    var sx = p.x + ux/L*15.5, sy = p.y + uy/L*15.5;
+    var ex = cx - ux/L*Math.min(w,h)/2 - ux/L*1.5, ey = cy - uy/L*Math.min(w,h)/2 - uy/L*1.5;
+    var out = '<path d="M'+f(sx)+','+f(sy)+' L'+f(ex)+','+f(ey)+'" stroke="#ffffff" stroke-opacity=".72" stroke-width="2.4" stroke-linecap="round"/>';
+    out += '<path d="M'+f(sx)+','+f(sy)+' L'+f(ex)+','+f(ey)+'" stroke="'+o.bg+'" stroke-opacity=".85" stroke-width="1.1" stroke-dasharray="2 2.4" stroke-linecap="round"/>';
+    out += '<rect x="'+f(rect[0])+'" y="'+f(rect[1])+'" width="'+f(w)+'" height="'+f(h)+'" rx="'+(h/2)+'" fill="'+o.bg+'" fill-opacity=".97" stroke="#ffffff" stroke-opacity=".55" stroke-width="1"/>';
+    out += '<text x="'+f(rect[0]+8.5)+'" y="'+f(cy+0.4)+'" dominant-baseline="central" font-size="8.2" font-weight="800" letter-spacing=".05em" fill="#ffffff">'+o.name+'</text>';
+    var mx = rect[0]+w-11.5;
+    if(o.moved){
+      out += '<circle cx="'+f(mx)+'" cy="'+f(cy)+'" r="5.1" fill="#34d399"/>';
+      out += '<path d="M'+f(mx-2.1)+','+f(cy+0.2)+' L'+f(mx-0.5)+','+f(cy+1.9)+' L'+f(mx+2.4)+','+f(cy-1.9)+'" fill="none" stroke="#06281a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    } else {
+      out += '<circle cx="'+f(mx)+'" cy="'+f(cy)+'" r="5.1" fill="none" stroke="#fbbf24" stroke-width="1.6"/>';
+      out += '<path d="M'+f(mx)+','+f(cy-2.7)+' L'+f(mx)+','+f(cy+0.3)+' L'+f(mx+1.9)+','+f(cy+1.5)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>';
+    }
+    return out;
+  }
+  var CHARS = O.chars||[];
+  /* station-number keep-out boxes, in the same space the plates live in */
+  var KEEPOUT = Object.keys(P).map(function(id){
+    var p=P[id], r = (p.cls==="terminal"?15.6:p.cls==="hub"?15:12.5);
+    return [p.x, p.y, r];
+  });
+  function hitsKeepOut(r){
+    var x0=r[0], y0=r[1], x1=r[0]+r[2], y1=r[1]+r[3], i;
+    for(i=0;i<KEEPOUT.length;i++){
+      var k=KEEPOUT[i], cx=Math.max(x0, Math.min(k[0], x1)), cy=Math.max(y0, Math.min(k[1], y1));
+      if(Math.hypot(cx-k[0], cy-k[1]) < k[2]+1.5) return true;
+    }
+    return false;
+  }
+  function rectsHit(a,b,pad){
+    return !(a[0]+a[2]+pad<=b[0] || b[0]+b[2]+pad<=a[0] || a[1]+a[3]+pad<=b[1] || b[1]+b[3]+pad<=a[1]);
+  }
+  var plateRects = [];
+  var chrBody = [], plateBody = [];
+  CHARS.forEach(function(o, idx){
+    var p = P[o.id];
+    if(!p){ problems.push("character at unknown node "+o.id); return; }
+    var figCls = "fig" + (idx===1?" d1":idx===2?" d2":idx===3?" d3":"");
+    chrBody.push(tokStr(o, p, figCls));
+    var w = o.name.length*5.3 + 27, h = 17;
+    /* candidate anchors fan out from the token in every direction; the first
+       that clears the map edge, every station number and every other plate
+       wins, so the plate always belongs to its own token and reads as one */
+    var below = [
+      [p.x-w/2, p.y+22], [p.x-w/2-2, p.y+30], [p.x-w/2+2, p.y-48], [p.x-w/2, p.y-40],
+      [p.x+18, p.y-h/2], [p.x-18-w, p.y-h/2], [p.x+13, p.y+19], [p.x-13-w, p.y+19],
+      [p.x+13, p.y-36], [p.x-13-w, p.y-36], [p.x-w/2+6, p.y+38], [p.x-w/2-6, p.y-56]
+    ];
+    /* beside the token: used where a plate under or over the token would sit
+       on top of the token's own figure or on the river */
+    var beside = [
+      [p.x+20, p.y-h/2], [p.x-20-w, p.y-h/2], [p.x+15, p.y+19], [p.x-15-w, p.y+19],
+      [p.x+15, p.y-36], [p.x-15-w, p.y-36], [p.x-w/2, p.y+22], [p.x-w/2, p.y-40],
+      [p.x+18, p.y-h/2], [p.x-18-w, p.y-h/2], [p.x-w/2+4, p.y+30], [p.x-w/2-4, p.y-48]
+    ];
+    var cands = o.prefer === "beside" ? beside : below;
+    var pick = null, i;
+    for(i=0;i<cands.length;i++){
+      var r = [Math.round(cands[i][0]), Math.round(cands[i][1]), w, h];
+      if(r[0]<4 || r[0]+w>386 || r[1]<6 || r[1]+h>504) continue;
+      if(hitsKeepOut(r)) continue;
+      var bad=false, j;
+      for(j=0;j<plateRects.length;j++) if(rectsHit(r, plateRects[j], 3)){ bad=true; break; }
+      if(bad) continue;
+      pick = r; break;
+    }
+    if(!pick){
+      pick = [Math.max(4,Math.min(386-w,p.x-w/2)), Math.max(6,Math.min(504-h,p.y+22)), w, h];
+      problems.push("plate fallback for "+o.name);
+    }
+    plateRects.push(pick);
+    plateBody.push(charPlate(o, p, w, h, pick));
+  });
+  chrBody.forEach(function(s){ CH.push(s); });
+  /* plates go above the figures but below the station numbers */
+  plateBody.forEach(function(s){ CH.push(s); });
+
+  /* ==========================================================
+     STATIONS — numbers are the navigation aid, so nothing covers them
+     ========================================================== */
+  var MARK = {
+    n1:{r:11.6}, n2:{r:12.6}, n3:{r:11.6}, n4:{r:15, bus:true},
+    n5:{r:12.4}, n6:{r:15.6, bus:true}, n7:{r:15.4, term:true},
+    n8:{r:11.6}, n9:{r:12.6}, n10:{r:15.4, term:true}
+  };
+  Object.keys(P).forEach(function(id){
+    var p=P[id], m=MARK[id], g=[];
+    if(m.term){
+      g.push('<rect x="-16" y="-14" width="32" height="28" rx="9" fill="#12314a"/>');
+      g.push('<rect x="-16" y="-14" width="32" height="28" rx="9" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-opacity=".9"/>');
+      g.push('<g transform="translate(9.5,-9)"><circle r="5.8" fill="#ffffff"/><rect x="-2.9" y="-3.2" width="5.8" height="6.4" rx="1.5" fill="#0e7490"/><rect x="-2" y="-2.3" width="4" height="2" rx=".5" fill="#ffffff"/></g>');
+      g.push('<text x="-1.5" y="0.8" text-anchor="middle" dominant-baseline="central" font-size="11.4" font-weight="800" fill="#ffffff">'+id.slice(1)+'</text>');
+    } else if(m.bus){
+      g.push('<rect x="-12.6" y="-12.6" width="25.2" height="25.2" rx="8.2" fill="#2563eb"/>');
+      g.push('<rect x="-12.6" y="-12.6" width="25.2" height="25.2" rx="8.2" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity=".85"/>');
+      g.push('<g transform="translate(7.6,-7.6)"><circle r="5.2" fill="#ffffff"/><rect x="-2.7" y="-2.6" width="5.4" height="5.2" rx="1.3" fill="#2563eb"/><rect x="-1.8" y="-1.7" width="3.6" height="1.4" rx=".4" fill="#ffffff"/></g>');
+      g.push('<text x="-1.2" y="0.8" text-anchor="middle" dominant-baseline="central" font-size="11.2" font-weight="800" fill="#ffffff">'+id.slice(1)+'</text>');
+    } else {
+      g.push('<circle r="'+f(m.r*0.6)+'" fill="#ffffff"/>');
+      g.push('<circle r="'+f(m.r*0.6)+'" fill="none" stroke="#2b415a" stroke-width="1.7"/>');
+      g.push('<text x="0" y="0.5" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="800" fill="#1b2f42">'+id.slice(1)+'</text>');
+      g.push('<circle r="'+(m.r*0.6+2.6)+'" fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.1"/>');
+    }
+    ST.push(svgEl(p.x, p.y, g.join("")));
+  });
+
+  /* ==========================================================
+     MAP FURNITURE — compass, district label, scale
+     ========================================================== */
+  FU.push('<g transform="translate(26,24)">'+
+    '<circle r="14" fill="#ffffff" fill-opacity=".9"/><circle r="14" fill="none" stroke="#93a3b4" stroke-width="1.1"/>'+
+    '<path d="M0,-9 3.2,2.4 0,0.4 -3.2,2.4z" fill="#1e3d5c"/><path d="M0,0.4 3.2,2.4 0,9 -3.2,2.4z" fill="#b7c3ce"/>'+
+    '<text x="0" y="-17.5" text-anchor="middle" font-size="8" font-weight="800" fill="#31465d">N</text></g>');
+  FU.push('<text x="48" y="20" font-size="8.8" font-weight="800" letter-spacing=".11em" fill="#41586e" stroke="#ffffff" stroke-width="3" stroke-opacity=".92" paint-order="stroke">CATHEDRAL QUARTER · 9 STATIONS</text>');
+  FU.push('<text x="48" y="33" font-size="8.4" font-weight="800" letter-spacing=".11em" fill="#77879a" stroke="#ffffff" stroke-width="2.6" stroke-opacity=".92" paint-order="stroke">'+(O.furnNote||"")+'</text>');
+  FU.push('<g transform="translate(300,44)">'+
+    '<rect x="0" y="0" width="72" height="3" rx="1.5" fill="#31465d" opacity=".45"/>'+
+    '<rect x="0" y="0" width="36" height="3" rx="1.5" fill="#31465d"/>'+
+    '<rect x="0" y="-4" width="2" height="11" fill="#31465d" opacity=".65"/>'+
+    '<rect x="35" y="-4" width="2" height="11" fill="#31465d" opacity=".65"/>'+
+    '<rect x="70" y="-4" width="2" height="11" fill="#31465d" opacity=".65"/>'+
+    '<text x="0" y="-8" font-size="7.4" font-weight="800" letter-spacing=".1em" fill="#41586e" stroke="#ffffff" stroke-width="2.6" stroke-opacity=".92" paint-order="stroke">600 M</text></g>');
+
+  /* ---------------- ambient city life, moved by the document ----------------
+     Two vehicles loop the quarter on their own real routes — a car doing the
+     n1-n5-n6-n9 circuit and a tram on the metro viaduct — each on the same
+     30-second cadence as the shared Fugitive clock. */
+  (function(){
+    var carPath = "M36,177 L46,192 L58,215 L70,240 L80,266 L80,293 L102,296 L124,302 L146,311 L168,319 L186,323 L198,320 L205,311 L206,332 L208,354 L203,376 L198,398 L197,420 L197,443 L186,437 L168,428 L146,423 L124,424 L102,428 L80,429 L62,425 L48,420";
+    FU.push('<g>'+
+      '<rect x="-9" y="-4.6" width="18" height="9.2" rx="2.6" fill="#b9c2c7"/>'+
+      '<rect x="-4" y="-8.6" width="10" height="5" rx="1.7" fill="#a4aeb4"/>'+
+      '<rect x="-2.6" y="-8.1" width="7" height="4" rx="1" fill="#d5e7f0"/>'+
+      '<circle cx="-5" cy="4.6" r="1.9" fill="#6d757b"/><circle cx="5" cy="4.6" r="1.9" fill="#6d757b"/>'+
+      '<animateMotion dur="30s" repeatCount="indefinite" rotate="auto" path="'+carPath+'"/>'+
+      '</g>');
+    FU.push('<g opacity=".92">'+
+      '<rect x="-10" y="-3.6" width="20" height="7.2" rx="2" fill="#8f9ea8"/>'+
+      '<rect x="-8" y="-2.8" width="16" height="2.2" rx="1" fill="#eef4f7" opacity=".8"/>'+
+      '<circle cx="-4.6" cy="3.8" r="1.3" fill="#69737a"/><circle cx="4.6" cy="3.8" r="1.3" fill="#69737a"/>'+
+      '<animateMotion dur="30s" repeatCount="indefinite" rotate="auto" path="M314,379 L336,318 L356,250 L370,178 L370,148"/>'+
+      '</g>');
+  })();
+  G.push('<g class="wisp"><path d="M0,436 Q60,452 120,462 T240,482 T390,494" fill="none" stroke="#cfe6f2" stroke-opacity=".28" stroke-width="1.6" stroke-dasharray="8 14"/></g>');
+
+  document.getElementById("ground").innerHTML = G.join("");
+  document.getElementById("blocks").innerHTML = C.join("");
+  document.getElementById("net").innerHTML    = N.join("");
+  document.getElementById("paths").innerHTML  = PA.join("");
+  document.getElementById("chr").innerHTML    = CH.join("");
+  document.getElementById("stn").innerHTML    = ST.join("");
+  document.getElementById("furn").innerHTML   = FU.join("");
+
+  /* ---------------- top-bar turn ruler ---------------- */
+  var seg = document.getElementById("seg"), sh = "", t;
+  for(t=1;t<=16;t++){
+    var cls = [];
+    if(t===5||t===10||t===15) cls.push("pulse");
+    if(t<7) cls.push("done");
+    if(t===7) cls.push("on");
+    sh += '<i class="'+cls.join(" ")+'"></i>';
+  }
+  if(seg) seg.innerHTML = sh;
+
+  /* ---------------- tray ---------------- */
+  var kitEl = document.getElementById("kit");
+  if(kitEl){
+    kitEl.innerHTML = (O.kit||[]).map(function(it){
+      /* the tile is available iff the viewer's node sits on an edge of that
+         mode, and it counts the legal destinations the derivation found */
+      var mode = KIT_MODE[it.k], n = mode ? (LEGAL_BY_MODE[mode]||0) : 0;
+      var on = n > 0, badge = on ? n + " LEGAL" : "";
+      var cls = "ti" + (on ? (badge ? " pick" : "") : " off");
+      return '<div class="'+cls+'" title="'+it.nm+' — '+it.v+'">'+
+        (badge ? '<span class="pick">'+badge+'</span>' : '')+
+        '<svg class="g" viewBox="0 0 20 20" aria-hidden="true" fill="'+(on?it.col:"#9dacba")+'" '+(on?'':'opacity=".75"')+'>'+GLYPH_PATH[it.k]+'</svg>'+
+        '<span class="vl">'+it.v+'</span>'+
+        '<span class="nm">'+(on?it.nm:"NO LINE")+'</span></div>';
+    }).join("");
+  }
+  var sumEl = document.getElementById("movesum");
+  if(sumEl){
+    var byNode = {};
+    MOVES.forEach(function(m){ (byNode[m.to] = byNode[m.to] || []).push(m.mode); });
+    var groups = {};
+    Object.keys(byNode).forEach(function(node){
+      var sig = byNode[node].slice().sort().join("+");
+      (groups[sig] = groups[sig] || []).push(node);
+    });
+    var parts = Object.keys(groups).map(function(sig){
+      return sig + " " + groups[sig].sort().join(" ");
+    });
+    sumEl.textContent = parts.length ? "Now: " + parts.join(" · ") : "No legal move from " + VIEWER;
+  }
+
+  /* ---------------- self-test ------------------------------------------
+     Endpoints of every drawn move must be a real node, and every drawn
+     street edge must join two real nodes. */
+  MOVES.concat(TRACED).forEach(function(m){
+    var a = m.pts[0], b = m.pts[m.pts.length-1];
+    function atNode(q){
+      return Object.keys(P).some(function(k){
+        return Math.hypot(P[k].x-q[0], P[k].y-q[1]) < 2.5;
+      });
+    }
+    if(!atNode(a)) problems.push("move "+m.from+"→"+m.to+" starts off-node");
+    if(!atNode(b)) problems.push("move "+m.from+"→"+m.to+" ends off-node");
+  });
+  Object.keys(STREET).forEach(function(k){
+    var ends = k.split("-");
+    if(!P[ends[0]] || !P[ends[1]]) problems.push("street edge "+k+" names an unknown node");
+  });
+  (O.chars||[]).forEach(function(c){
+    if(!P[c.id]) problems.push("character "+c.name+" has no node");
+  });
+  if(!(O.kit||[]).length) problems.push("kit tray is empty");
+  /* bus and metro must never call at a standard street node, and metro must
+     stay terminal-to-terminal — both checked against the edge sets */
+  Object.keys(P).forEach(function(id){
+    if(P[id].cls === "street"){
+      if(neighbours(BUS, id).length) problems.push("bus calls at street node "+id);
+      if(neighbours({ "n7-n10": METRO }, id).length) problems.push("metro calls at street node "+id);
+    }
+  });
+  ["n7","n10"].forEach(function(t){
+    if(P[t] && P[t].cls !== "terminal") problems.push("metro node "+t+" is not a terminal");
+  });
+  if(MOVES.length !== LEGAL_BY_MODE.foot + LEGAL_BY_MODE.taxi + LEGAL_BY_MODE.bus + LEGAL_BY_MODE.metro + LEGAL_BY_MODE.special)
+    problems.push("move derivation and per-mode counts disagree");
+
+  window.__XYARD_MOVES__ = MOVES.map(function(m){
+    return { mode:m.mode, from:m.from, to:m.to, pts:m.pts, live:true };
+  }).concat(TRACED);
+  window.__XYARD_POS__ = (O.chars||[]).map(function(c){ return { id:c.id, who:c.name, moved:!!c.moved }; });
+  window.__XYARD_GEOM__ = { street:STREET, bus:BUS, metro:{ "n7-n10":METRO }, special:{ "n2-n9":SPECIAL } };
+  window.__XYARD_EDGES__ = { street:Object.keys(STREET), bus:Object.keys(BUS), metro:["n7-n10"], special:["n2-n9"] };
+  window.__XYARD_SELFTEST__ = { stage:"390x844", problems:problems.slice(0),
+    blocks:{ placed:C.length, requested:BRIEF.length, infill:filled },
+    nodes:Object.keys(P).length, reach:Object.keys(LEGAL), plates:plateRects.slice(0),
+    legal:MOVES.map(function(m){ return m.mode+" "+m.from+"→"+m.to; }),
+    legalByMode:LEGAL_BY_MODE, viewer:VIEWER };
+
+  window.__XYARD_MEASURE__ = function(){
+    var st = document.getElementById("stage");
+    var r = st.getBoundingClientRect();
+    var out = { stage:[r.width, r.height], over:[], clipped:[] };
+    /* an element only counts as overflowing if nothing between it and the stage
+       clips it — the map is deliberately cropped, so SVG inside .map is exempt */
+    function clipper(el){
+      for(var p=el.parentElement; p && p!==st.parentElement; p=p.parentElement){
+        var ov = getComputedStyle(p).overflow;
+        if(ov==="hidden"||ov==="clip"||ov==="auto"||ov==="scroll") return p;
+      }
+      return null;
+    }
+    Array.prototype.forEach.call(st.querySelectorAll("*"), function(el){
+      var b = el.getBoundingClientRect(), c = clipper(el);
+      if(c){
+        var cb = c.getBoundingClientRect();
+        if(b.bottom > cb.bottom + 0.6 || b.top < cb.top - 0.6 ||
+           b.right > cb.right + 0.6 || b.left < cb.left - 0.6){
+          out.clipped.push({ tag:el.tagName, at:c.className,
+            cls:el.className && el.className.baseVal !== undefined ? el.className.baseVal : (el.className||""),
+            box:[f(b.left),f(b.top),f(b.width),f(b.height)] });
+        }
+        return;
+      }
+      if(b.bottom > r.bottom + 0.6 || b.top < r.top - 0.6 ||
+         b.right > r.right + 0.6 || b.left < r.left - 0.6){
+        out.over.push({ tag:el.tagName,
+          cls:el.className && el.className.baseVal !== undefined ? el.className.baseVal : (el.className||""),
+          box:[f(b.left),f(b.top),f(b.width),f(b.height)] });
+      }
+    });
+    var mp = document.querySelector(".map");
+    out.mapSlot = mp.getBoundingClientRect().width + "x" + mp.getBoundingClientRect().height;
+    var tb = document.querySelector(".bar").getBoundingClientRect();
+    var tr = document.querySelector(".tray").getBoundingClientRect();
+    out.barH = tb.height; out.trayH = tr.height;
+    out.scroll = [document.documentElement.scrollWidth, document.documentElement.scrollHeight];
+    return out;
+  };
+})();
+</script>
+</body>
+</html>

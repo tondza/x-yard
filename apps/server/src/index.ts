@@ -17,10 +17,10 @@ import { Server as SocketServer } from 'socket.io';
 
 import {
   DEMO_BOARD,
-  PROVISIONAL_REVEAL_PULSE_TURNS,
-  PROVISIONAL_YARD_TURN_LIMIT,
+  REVEAL_PULSE_TURNS,
   SENSOR_SWEEP_RADIUS,
   TRANSPORT_MODES,
+  YARD_TURN_LIMIT,
 } from '@x-yard/game-core';
 import {
   SOCKET_EVENTS,
@@ -60,9 +60,9 @@ export function buildServer(): FastifyInstance {
     mapId: DEMO_BOARD.mapId,
     transportModes: TRANSPORT_MODES,
     sensorSweepRadius: SENSOR_SWEEP_RADIUS,
-    // PROVISIONAL: see the open questions in GAME_VISION.md.
-    turnLimit: PROVISIONAL_YARD_TURN_LIMIT,
-    revealPulseTurns: PROVISIONAL_REVEAL_PULSE_TURNS,
+    // Ratified 2026-10-16; see GAME_VISION.appendix.md C.2.
+    turnLimit: YARD_TURN_LIMIT,
+    revealPulseTurns: REVEAL_PULSE_TURNS,
   }));
 
   app.get('/board', () => toBoardDto());

@@ -66,7 +66,7 @@ transit tiers and facilities, contraband missions, gadgets and skills; xorshift1
 RNG with golden vectors; transit graph traversal and validation with the
 errors-vs-warnings split; ticket economy with the ticket-log semantics for
 Counterfeit Identity and Alleyway Sprint; and a scaffold board. 5 test files and
-88 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
+93 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
 all exit 0. `game-core` has zero runtime dependencies.
 
 **The turn and phase machine is not implemented yet.** There is no turn machine,

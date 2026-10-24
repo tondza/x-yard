@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X-Yard — Moodboard 03: Mobile-first MVP</title>
+    <style>
+      :root { --ink:#14181d; --muted:#5d6874; --line:#d9dee4; --bg:#eef1f4; --card:#fff; }
+      * { box-sizing:border-box; }
+      body { margin:0; background:var(--bg); color:var(--ink);
+        font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+      .wrap { max-width:1500px; margin:0 auto; padding:40px 28px 72px; }
+      header h1 { margin:0 0 6px; font-size:27px; letter-spacing:-.01em; }
+      header p { margin:0; color:var(--muted); max-width:92ch; }
+      .badge { display:inline-block; margin-bottom:14px; padding:3px 9px; border:1px solid var(--line);
+        border-radius:999px; background:var(--card); color:var(--muted);
+        font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; }
+      h2 { margin:44px 0 14px; font-size:18px; }
+      .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+      @media (max-width:1200px){ .grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+      @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+        display:flex; flex-direction:column; }
+      .card .shot { display:block; background:#0b0e13; }
+      .card .shot img { display:block; width:100%; height:auto; }
+      .card .meta { padding:14px 16px 16px; }
+      .card .row { display:flex; align-items:baseline; gap:8px; }
+      .key { flex:none; width:22px; height:22px; border-radius:6px; background:var(--ink); color:#fff;
+        font-size:12.5px; font-weight:700; display:grid; place-items:center; }
+      .card h3 { margin:0; font-size:15.5px; }
+      .card p { margin:8px 0 10px; font-size:13.5px; color:var(--muted); }
+      .card a.open { color:var(--ink); font-size:12.5px; font-weight:600;
+        text-decoration:none; border-bottom:1px solid var(--ink); }
+      .panel { background:var(--card); border:1px solid var(--line); border-radius:12px;
+        padding:16px 19px; max-width:104ch; }
+      .panel ul { margin:8px 0 0; padding-left:20px; color:var(--muted); }
+      code { background:#e4e8ec; padding:1px 5px; border-radius:4px;
+        font:12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="badge">Exploration — not specification</div>
+        <h1>X-Yard — Moodboard 03: Mobile-first MVP</h1>
+        <p>
+          Six scenarios from the <strong>ratified MVP</strong> — not from the broad vision. The
+          previous rounds drew the most complex possible screen; these draw the minimum that works
+          on a phone in a 5–10 minute session. Phone mockups are a real
+          <strong>390 × 844</strong> device viewport, and the desktop one is
+          <strong>1440 × 900</strong>.
+        </p>
+      </header>
+
+      <div class="panel" style="margin-top:22px; border-left:3px solid #b8860b">
+        <strong>If the links below appear to do nothing, that is the preview — not the files.</strong>
+        This page is rendered in a sandboxed frame (<code>sandbox="allow-scripts"</code>, no popups,
+        no same-origin), so navigation to a sibling document is blocked there. Images still appear
+        because they are loaded as related resources. Open the file named under each card directly.
+        Paths, relative to the repository root:
+        <ul>
+          <li><code>design/moodboard/round-03-mobile/s1-fugitive-turn.html</code></li>
+          <li><code>design/moodboard/round-03-mobile/s2-agent-deduction.html</code></li>
+          <li><code>design/moodboard/round-03-mobile/s3-reveal-pulse.html</code></li>
+          <li><code>design/moodboard/round-03-mobile/s4-capture-result.html</code></li>
+          <li><code>design/moodboard/round-03-mobile/s5-agent-deduction-night-H.html</code></li>
+          <li><code>design/moodboard/round-03-mobile/s6-desktop-enhancement.html</code></li>
+          <li><code>docs/mvp/README.md</code> — the ratified MVP these are built from</li>
+        </ul>
+      </div>
+
+      <h2>The six scenarios</h2>
+      <div class="grid">
+        <div class="card">
+          <a class="shot" href="s1-fugitive-turn.html"><img src="shots/s1-fugitive-turn.png" alt="S1 — the Fugitive's own turn" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">1</span><h3>The Fugitive's turn</h3></div>
+            <p>Vulture sees <em>their own</em> icon — no ghost, no belief shading. The viewer-dependent rule, from the hidden side. Foot, taxi, bus and a scooter double-move are all drawn along the streets; metro is visibly disabled because n6 is a hub. The log strip shows only what opponents have publicly seen.</p>
+            <a class="open" href="s1-fugitive-turn.html"><code>s1-fugitive-turn.html</code> →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="s2-agent-deduction.html"><img src="shots/s2-agent-deduction.png" alt="S2 — an Agent deducing" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">2</span><h3>Agent deducing</h3></div>
+            <p>The most important screen. No Fugitive is drawn: a <strong>ghost</strong> at the last-known node, <strong>belief shading</strong> whose intensity is likelihood, and a <strong>top-3 badge</strong>. Never a candidate list. The public log — mode only, destination hidden — is the deduction input.</p>
+            <a class="open" href="s2-agent-deduction.html"><code>s2-agent-deduction.html</code> →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="s3-reveal-pulse.html"><img src="shots/s3-reveal-pulse.png" alt="S3 — the Reveal Pulse firing" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">3</span><h3>The Reveal Pulse</h3></div>
+            <p>The dramatic beat: the pulse runs <em>before</em> the Agent phase, so Falcon can still act — and n6 is now reachable this turn. Belief shading is gone because knowledge is exact. This is the tension the whole design rests on.</p>
+            <a class="open" href="s3-reveal-pulse.html"><code>s3-reveal-pulse.html</code> →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="s4-capture-result.html"><img src="shots/s4-capture-result.png" alt="S4 — capture resolved and the result" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">4</span><h3>Capture and result</h3></div>
+            <p>A full-screen surface, <strong>not a modal</strong> — the MVP has zero modals. Capture at turn 12 of 16, pulses survived 2, capture range 1 edge, and tickets spent per seat. Two actions, nothing else.</p>
+            <a class="open" href="s4-capture-result.html"><code>s4-capture-result.html</code> →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="s5-agent-deduction-night-H.html"><img src="shots/s5-agent-deduction-night-H.png" alt="S5 — the same Agent screen in style H at night" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">5</span><h3>Same screen, style H</h3></div>
+            <p>Deliberately the <em>same state</em> as scenario 2, rendered painterly at night, so the F-versus-H choice can be made on the real MVP screen rather than on a showcase. <strong>No fog layer</strong> — the director rejected the original H fog as implying a mechanic that does not exist.</p>
+            <a class="open" href="s5-agent-deduction-night-H.html"><code>s5-agent-deduction-night-H.html</code> →</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <a class="shot" href="s6-desktop-enhancement.html"><img src="shots/s6-desktop-enhancement.png" alt="S6 — the additive desktop layout" /></a>
+          <div class="meta">
+            <div class="row"><span class="key">6</span><h3>Desktop enhancement</h3></div>
+            <p>The additive path, proving mobile-first does not paint us into a corner: the same phone Board grown, with the tray becoming a side rail, the log a persistent panel, and the extra width buying <strong>map</strong> (22 stations around the unmoved original 9) rather than a different game. No hover-only or drag-only affordance.</p>
+            <a class="open" href="s6-desktop-enhancement.html"><code>s6-desktop-enhancement.html</code> →</a>
+          </div>
+        </div>
+      </div>
+
+      <h2>The design decision these exist to settle</h2>
+      <div class="panel">
+        <p style="margin-top:0">
+          Scenarios <strong>2</strong> and <strong>5</strong> are the same screen in the two surviving
+          art directions. Everything else — layout, information, interaction — is identical, so the
+          only variable is the look.
+        </p>
+        <ul>
+          <li><strong>F (scenario 2)</strong> is flat vector, 2.5D and daylight. More explicit: paths are labelled, the kit shows which modes have a legal move, and it reads at a glance.</li>
+          <li><strong>H (scenario 5)</strong> is painterly, top-down and night. Far more atmospheric; the trade is that belief badges sit further from their stations and the city detail competes with the markers.</li>
+          <li>The product recommendation on file is to <strong>ship F and treat H as a later art pass</strong> — but that is an engineering convenience argument, and this is ultimately a taste call for the director.</li>
+        </ul>
+      </div>
+
+      <h2>What is not settled</h2>
+      <p style="color:var(--muted); max-width:104ch">
+        The validator's verdict on the MVP loop is <em>"worth building only if three things
+        change"</em> — as specified the game reduces to pulse-adjacency. The three P0 changes are
+        already applied to these mockups, but the deeper question (is the loop interesting enough,
+        or does it need more Agents, a bigger map, or a second lever between pulses?) is a design
+        call and is recorded in <code>docs/mvp/README.md</code> §5. Also still open: the Reveal Pulse
+        interval (5/10/15 versus 4/8/12/16), starting separation of at least 3 edges, seat
+        assignment, and the fact that nothing yet mechanically enforces that drawn paths follow
+        streets.
+      </p>
+    </div>
+  </body>
+</html>

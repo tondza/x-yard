@@ -1,12 +1,12 @@
 # VISUAL_DIRECTION.md
 
 Visual and presentation decisions for X-Yard, as answered by the product director
-on **2026-10-15**.
+on **2026-10-15** and **2026-10-16**.
 
 **Authority:** this file *refines* `GAME_VISION.md`; it never overrides it. Where a
-decision here changes a rule, `GAME_VISION.md` must be updated too. Two decisions
-remain **open** (art style, perspective) and are being settled by comparison of
-the mockups in `design/moodboard/round-02-city/`.
+decision here changes a rule, `GAME_VISION.md` must be updated too. On 2026-10-16
+the art style was **narrowed to two directions** and the screen-first, minimum-UI
+and street-following directives were added — see §1 decisions 10–15 and §4.
 
 ---
 
@@ -15,7 +15,7 @@ the mockups in `design/moodboard/round-02-city/`.
 | # | Question | Decision |
 | --- | --- | --- |
 | 1 | **Route display** | **Hybrid.** The city is a real illustrated cityscape. Stations are numbered markers. Route lines are drawn **only for the selected character's legal moves** — never permanently on the map. |
-| 2 | **On-foot movement** | **Node-to-node along street edges, and free.** A fifth movement option alongside taxi / bus / metro / alleyway. Chosen specifically because it preserves the node-based engine, the capture rule and ticket-log deduction. |
+| 2 | **On-foot movement** | **Node-to-node along street edges.** *Revised 2026-10-16:* on-foot **is logged** — it leaves a public trail row — and costs one of a finite pool of foot steps, **not** a ticket. The earlier "free / silent" phrasing in this file was **wrong** and contradicted the MVP rules; see `docs/mvp/README.md`. |
 | 3 | **Map scale** | **~600–900 stations** for a ~100-player city, **procedurally generated from a seed and then hand-tuned**. Chosen to keep many Yards (London, Berlin…) affordable for a solo developer. |
 | 4 | **Hidden Fugitives** | **Viewer-dependent.** A Fugitive sees their own animated character icon. Agents and spectators see only ghost / last-known markers plus probability shading. |
 | 5 | **SimCity 2000 flavour** | **Illustrated dense rooftops and its palette**, plus a **living-city / day-night** feel. The 1990s beveled UI chrome was explicitly **declined** — the HUD stays modern. |
@@ -23,8 +23,12 @@ the mockups in `design/moodboard/round-02-city/`.
 | 7 | **Animation priority** | 1) Characters (idle, walk, arrest/reveal). 2) Day-night cycle. Everything else is secondary. |
 | 8 | **City identity** | **Fictional cities inspired by real ones.** No real-world landmarks. |
 | 9 | **Camera** | Both a **zoomed gameplay view** and a **full-city overview**. Mockups must show both. |
-| 10 | **Art style** | **OPEN** — to be decided from mockups. |
-| 11 | **Perspective** | **OPEN** — to be decided from mockups. |
+| 10 | **Art style** | **Narrowed to two (2026-10-16): F — flat vector**, and **H — painterly**. Pixel-art (G) is out. Both are liked *with their own* perspective, so this is not yet a single choice. |
+| 11 | **Perspective** | **Narrowed to two (2026-10-16): 2.5D tilt (F)** and **pure top-down (H)**. Not yet resolved independently of art style. |
+| 12 | **Movement path display** | **Paths follow the street network.** Straight lines across blocks are forbidden except for genuine off-street modes (metro / special) — see [decision 0010](docs/decisions/0010-legal-moves-follow-streets.md). |
+| 13 | **Screen-first** | **Mobile-first, portrait-primary.** The MVP must be playable on a phone in a ~5–10 minute session; richer detail is added for large screens later. |
+| 14 | **Screen complexity** | **Minimal.** The round-02 mockups are explicitly rejected as an MVP starting point — they are "the most complex possible game screen with lots of modal windows and different options". |
+| 15 | **MVP scope** | **Close to the original Scotland Yard**, plus **on foot** and **electric scooter**. Gadgets, agent skills, contraband missions, safe houses, multi-Yard instances and ~100-player cities are **not MVP**. |
 
 ### The ambient-actor rule (from decision 6)
 
@@ -75,18 +79,56 @@ session does not discover them halfway through an implementation.
 
 ## 3. Open items
 
-- **Art style** and **perspective** — being decided from
-  `design/moodboard/round-02-city/` (mockups E–H: flat-vector top-down,
-  flat-vector 2.5D, pixel-art 2.5D, painterly top-down night).
-- **Is on-foot a `TransportMode` or a separate concept?** Affects the wire
-  protocol and the ticket log (an on-foot move presumably leaves no ticket trail,
-  which would make it a deduction-relevant stealth option — worth deciding
-  deliberately, since that is a balance lever, not an implementation detail).
+- **Art style and perspective** — shortlisted to **F** (flat vector, 2.5D tilt) and
+  **H** (painterly, pure top-down, night) in `design/moodboard/round-02-city/`.
+  New mobile-first mockups are being built before this is closed.
+- **The fog layer in H.** H renders three large soft `gFog` ellipses at opacity
+  .55–.70. It is purely decorative — **nothing in the game state drives it** — and
+  the director read it as an implied visibility mechanic, which is the problem.
+  Recommended: remove it, or reduce it to a faint vignette. Any genuine fog-of-war
+  must be data-driven from what a viewer has actually observed.
+- **Map representation — closed 2026-10-16.** The research
+  (`docs/research/round-03-map-system.md`) recommends against a block/square field and
+  the director **confirmed node-and-edge** for movement. The block/square question is
+  no longer open; see §4 directive 6.
+- **Is on-foot a `TransportMode` or a separate concept?** *Answered 2026-10-16:*
+  neither — do **not** widen `TransportMode`. The MVP rules introduce
+  `MobilityOption = TransportMode | 'foot' | 'scooter'` and
+  `LoggedTransport | 'hold'`, leaving the four transport tiers intact. On-foot is
+  **logged**, so the "silent stealth option" framing that used to be here was
+  wrong.
 - **Do stations get in-world names**, or stay numbered (101, 102…)? The round-01
   paper dossier invented names ("Kentish Row"); the round-02 brief uses numbers.
-- **Reveal Pulse interval** — still `PROVISIONAL_REVEAL_PULSE_INTERVAL` in code
-  (`GAME_VISION.appendix.md` Q2).
+- **Reveal Pulse interval — ratified 2026-10-16.** Now `REVEAL_PULSE_TURNS = [5, 10, 15]`
+  in code, with `YARD_TURN_LIMIT = 16`. The old `PROVISIONAL_REVEAL_PULSE_INTERVAL`
+  constant was removed as redundant once the cycle became a fixed list.
 - **Map scale numbers** (`GAME_VISION.appendix.md` Q7) are now partly answered: ~600–900 stations,
   ~100 players. Node classes (`street` / `hub` / `terminal`) remain provisional.
-- Mobile and small viewports, accessibility (contrast and colour-blind safety for
-  the mode colours), and motion-design budget all remain untouched.
+- Accessibility (contrast and colour-blind safety for the mode colours) and
+  motion-design budget remain untouched. Small viewports are **no longer** an open
+  item — see §4 directive 3.
+
+## 4. Directives of 2026-10-16
+
+Recorded because they change what "done" means for the next rounds.
+
+1. **MVP before vision.** The broad vision — gadgets, agent skills, contraband
+   missions, safe houses, ~100-player cities — is *good but not MVP*. Work now
+   targets a buildable, balanced MVP with logical mechanics.
+2. **Stay close to the original Scotland Yard**, adding only what earns its place.
+   The director names **on foot** and **electric scooter**.
+3. **Mobile-first.** Mobile play is treated as primary and desktop is the later
+   enhancement — not the reverse. The MVP must work on a small screen.
+4. **Start from the minimum screen.** The round-02 mockups are rejected as an MVP
+   UI starting point: they represent the most complex possible screen.
+5. **Movement follows streets** — recorded as
+   [decision 0010](docs/decisions/0010-legal-moves-follow-streets.md). This was the
+   director's sharpest visual objection, and it is both a rendering rule and a game
+   rule. The game-rule half still needs promoting into `GAME_VISION.md` §2/§3 by
+   the director.
+6. **Map representation — resolved 2026-10-16: node-and-edge stays.** The
+   block/square proposal was researched and rejected: it does not make capture more
+   unambiguous (capture is already one discrete comparison) and it would collapse the
+   four transport tiers into "how far". The **map generator is confirmed as early
+   work** — the prototype may use a small hand-authored map, but generator work starts
+   before the MVP.

@@ -61,9 +61,11 @@ Requirements:
    three named Agent skills and nothing else).
 2. **The `PROVISIONAL_` convention.** Every number the brief does not state must
    be exported under a `PROVISIONAL_` name, and the test asserts both that the
-   expected provisional exports exist and that no ticket, turn, grace, or payout
-   constant exists *without* the prefix. This is what keeps
-   `grep -rn PROVISIONAL_` a complete inventory of unratified defaults.
+   expected provisional exports exist and that no ticket, turn, grace, payout, or
+   seat constant exists *without* either the prefix or an entry in its explicit
+   list of ratified names. A ratified answer must also have no `PROVISIONAL_`
+   alias left behind. This is what keeps `grep -rn PROVISIONAL_` a complete
+   inventory of unratified defaults.
 3. **The withdrawn vocabulary.** The test asserts that the superseded design
    cannot creep back into the public API: no `MR_X_*` / `DETECTIVE_*` /
    contract / cache exports, no `ferry` transport mode, no cache-node helpers.
@@ -85,7 +87,7 @@ the target state; today, the first five are real.
 | `rng.test.ts` | xorshift128+ golden vectors; snapshot/restore round-trip (20 tests) | ✅ done |
 | `graph.test.ts` | `validateGraph` errors vs warnings, facility requirements, traversal helpers (33 tests) | ✅ done |
 | `tickets.test.ts` | spend/refund, exhaustion paths, and the ticket-log semantics of Counterfeit Identity and Alleyway Sprint (21 tests) | ✅ done |
-| `spec-alignment.test.ts` | stated facts, `PROVISIONAL_` naming, withdrawn-vocabulary absence (9 tests) | ✅ done |
+| `spec-alignment.test.ts` | stated facts, ratified numbers, `PROVISIONAL_` naming, withdrawn-vocabulary absence (14 tests) | ✅ done |
 | `architecture.test.ts` | zero runtime dependencies, no forbidden imports, no banned nondeterminism APIs (5 tests) | ✅ done |
 | `rules.test.ts` | fuzz seeded Yards; terminate within 2 × turn limit; no negative tickets; no unreachable nodes | ⏳ pending engine |
 | `capture.test.ts` | occupation arrest at Capture Resolution | ⏳ pending engine |

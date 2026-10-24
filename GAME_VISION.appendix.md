@@ -68,9 +68,13 @@ blocking. None of these are director-approved.
 2. **Reveal Pulse interval.** §2 says "every N turns (e.g., 3, 8, 13, 18)",
    which is neither a constant interval nor a closed list. *Recommend:* fixed
    interval of 5, first pulse on turn 3 → 3, 8, 13, 18, 23.
+   **RULED 2026-10-16:** superseded — a 16-turn Yard with pulses on **5 / 10 / 15**.
 3. **How a Yard ends.** §2 defines capture but no match end. *Recommend:* a Yard
    runs a fixed number of turns (24), after which surviving Fugitives extract.
 4. **Player counts per Yard.** *Recommend:* 1–4 Fugitives, 2–6 Agents, ≤10 seats.
+   **RULED 2026-10-16:** up to **20 players**, **4 of them Fugitives** (4 + up to 16
+   Agents); a solo player fills the remaining seats with bots, and a human joining
+   later may **take over a bot's seat**.
 5. **Are Fugitives human?** The MMO framing implies human, but AI decoys are
    mentioned. *Recommend:* human in MVP; only the logoff decoy is AI.
 6. **Contraband weight → transport restriction.** §4 says heavy contraband "may
@@ -91,6 +95,49 @@ blocking. None of these are director-approved.
     also fools Sensor Sweep. *Recommend:* it does not.
 12. **Does a captured Fugitive end the Yard?** *Recommend:* no — capture removes
     that Fugitive; the Yard continues until the turn limit.
+
+### C.2 Questions surfaced by the round-03 MVP work (2026-10-16)
+
+These came out of specifying and validating a *concrete* MVP. They are kept separate
+from Q1–Q12 because two of them are **contradictions to resolve** rather than missing
+numbers, and none has a `PROVISIONAL_` constant yet. Full reasoning:
+[`docs/mvp/README.md`](docs/mvp/README.md) §5 and
+[`docs/mvp/round-03-validation.md`](docs/mvp/round-03-validation.md).
+
+- **Q1 is stale; Q2 is now answered.** The director ruled the pulse cycle (16 turns,
+  pulses 5/10/15), which supersedes Q2 above. The ticket economy (Q1) is **still
+  unratified** and must be rewritten for the 20-player scale: the MVP rules propose
+  8/4/3/2 for a single Fugitive, and the scale has changed.
+- **R13 — Is the loop interesting enough to build?** The validator's verdict was
+  *"worth building only if three things change"*, because as specified the game
+  reduces to *"don't be adjacent at the pulse, be adjacent at the pulse"*. Options:
+  ship the thin loop to validate the pipeline; restore tension by scale (1v3 and/or a
+  larger map); or add a second Agent lever between pulses. *Recommend:* ship the thin
+  loop first — but this is a design call, not an engineering one.
+  **RULED 2026-10-16:** accepted for the beginning. The pulse-dominant loop is a
+  **known limitation, not a blocker**; revisit after the prototype.
+- **R14 — Reveal Pulse interval, a second conflict.** The validator ruled 5/10/15 for
+  a 16-turn Yard, then separately recommended 4/8/12/16 because the Agent candidate
+  set saturates mid-interval (≥ 14 and up to 40 nodes). These contradict each other.
+  *Recommend:* 4/8/12/16, plus a real solver test over the shipped map rather than an
+  estimate.
+  **RULED 2026-10-16:** the ruling stands at **5 / 10 / 15**; the saturation finding
+  is set aside as **playtest tuning**, not a blocker.
+- **R15 — Starting separation.** Validation captured the Fugitive on turn 2 with no
+  play at all when both Agents started two edges away. *Recommend:* adopt a
+  map-authoring requirement of **≥ 3 edges** between every Agent start and the
+  Fugitive's start.
+  **RULED 2026-10-16:** adopted.
+- **R16 — Seat assignment.** No rule states who becomes the Fugitive. *Recommend:*
+  assigned from the Yard seed.
+  **RULED 2026-10-16:** random, **plus a testing/prototype override that always lets
+  the director play as the Fugitive.**
+- **R17 — Metro topology.** A near-complete terminal graph lets a single terminal
+  Agent threaten every terminal, which produced a free kill in validation.
+  *Recommend:* bound terminal degree, or require the metro path to be indirect.
+- **R18 — The log invariant on the capture turn.** "Exactly one public row per living
+  Fugitive per turn" holds on resolving turns, but the capture turn currently emits
+  zero rows. *Recommend:* pin the rule to the turn sequence unconditionally.
 
 Answers should be applied by editing the brief above and striking the matching
 entry here.

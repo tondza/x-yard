@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>X-Yard — Round 03 · S6 · additive desktop Board (style F, day)</title>
+<style>
+  /* Style delta A ("F"): flat vector, slight 2.5D tilt, daylight.
+     Mobile-first: this desktop screen is the SAME screen grown, not a new one.
+     Art revision (round 03): the board is an illustrated city quarter — every
+     station sits in a built block, the canvas is filled with individually drawn
+     buildings (footprint + lifted roof face + near wall), varied roof materials,
+     kerbed streets, a river with two structured bridges, trees and landmarks. */
+  :root {
+    color-scheme: light;
+    --ink: #22303a;
+    --ink-soft: #55636d;
+    --ink-faint: #7d8a93;
+    --paper: #f2ecdf;
+    --panel: #fffdf7;
+    --line: #ded3bd;
+    --line-soft: #ece3d1;
+    --rail: #eae1cd;
+    --accent: #b45309;
+    --accent-soft: #fff2d2;
+    --you: #b43135;
+    --ghostc: #6b7d8c;
+    --radius: 12px;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #cdc3ae; }
+  body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  .stage {
+    width: 1440px;
+    height: 900px;
+    overflow: hidden;
+    background: #e7dfcd;
+    display: grid;
+    grid-template-rows: 88px 740px 72px;
+  }
+
+  /* ---- top bar: stays a top bar (phone layout, widened) ---- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 20px;
+    background: var(--paper);
+    border-bottom: 3px solid #cbbb9c;
+    box-shadow: 0 3px 0 rgba(72, 54, 38, .12);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand h1, .brand p { white-space: nowrap; }
+  .brand .mark {
+    width: 38px; height: 38px; border-radius: 9px; background: #12314a;
+    display: grid; place-items: center; color: #fff2d2; font: 700 17px/1 var(--mono);
+  }
+  .brand h1 { margin: 0; font-size: 17.5px; letter-spacing: .2px; }
+  .brand p { margin: 2px 0 0; font-size: 10px; color: var(--ink-faint); }
+
+  .brand { width: 322px; flex: 0 0 auto; }
+  .turnmeter { display: flex; flex-direction: column; gap: 7px; flex: 1 1 auto; min-width: 260px; max-width: 440px; }
+  .turnmeter .row { display: flex; align-items: baseline; gap: 14px; }
+  .turnmeter .turn { font: 700 16px/1 var(--mono); white-space: nowrap; }
+  .pip { font-size: 12px; color: var(--ink-soft); }
+  .pip b { color: var(--accent); font-weight: 700; }
+  .track {
+    position: relative; height: 14px; border-radius: 7px; background: #ddd0b4;
+    border: 1px solid #c8b995; overflow: hidden;
+  }
+  .track .fill { position: absolute; inset: 0 auto 0 0; width: 43.75%; background: #2563eb; }
+  .track .pulse { position: absolute; top: -3px; bottom: -3px; width: 3px; background: #12314a; }
+  .track .pulse.reached { background: #6b7a86; }
+  .track .ticks { position: absolute; inset: 0; display: flex; justify-content: space-between; }
+  .track .ticks span { width: 1px; background: rgba(255, 255, 255, .55); }
+  .track-label { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-faint); font-family: var(--mono); }
+
+  .phase { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex: 0 0 auto; }
+  .chip-phase {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; white-space: nowrap;
+    border-radius: 10px; background: var(--accent-soft); border: 1px solid #e3c489;
+    font-size: 12.5px; font-weight: 600; color: #7a3c05;
+  }
+  .chip-phase .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+  .seats { display: flex; gap: 8px; }
+  .seat {
+    display: flex; align-items: center; gap: 7px; height: 40px; padding: 0 11px;
+    border-radius: 10px; background: #fff; border: 1px solid var(--line); font-size: 12px;
+  }
+  .seat .swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .seat.you { border-color: var(--you); box-shadow: 0 0 0 2px rgba(180, 49, 53, .14); }
+  .seat.you .name { font-weight: 700; }
+
+  /* ---- middle: rail | map | log panel ---- */
+  .middle { display: grid; grid-template-columns: 312px minmax(0, 1fr) 312px; gap: 8px; padding: 10px; min-width: 0; }
+
+  .rail {
+    background: var(--rail); border: 1px solid #d5c6a8; border-radius: var(--radius);
+    min-width: 0; padding: 11px; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+  }
+  .rail h2, .panel h2 { margin: 0; font-size: 11px; letter-spacing: 1.1px; text-transform: uppercase; color: #7a6a52; }
+  .rail .who { display: flex; align-items: center; gap: 8px; }
+  .who .swatch { width: 14px; height: 14px; border-radius: 4px; background: var(--you); }
+  .who strong { font-size: 13.5px; }
+  .who span { font-size: 11px; color: var(--ink-faint); }
+
+  .moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .move {
+    display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 7px;
+    height: 56px; padding: 5px 7px; border-radius: 9px;
+    background: #fffdf7; border: 1.5px solid #d8c9a9; text-align: left; overflow: hidden;
+    font: inherit; color: inherit; cursor: pointer;
+  }
+  .move .icon {
+    width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center;
+    background: #efe6d2; border: 1px solid #d8caa9;
+  }
+  .move .icon svg { width: 22px; height: 22px; }
+  .move .name { font-size: 12px; font-weight: 650; display: block; line-height: 1.15; }
+  .move .sub { font-size: 9.5px; color: var(--ink-faint); font-family: var(--mono); margin-top: 2px; line-height: 1.2; }
+  .move .cost { font: 700 9.5px/1 var(--mono); color: #4b5a64; }
+  .move.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 2px 0 rgba(122, 60, 5, .18); }
+  .move.selected .icon { background: #ffe6b0; border-color: #dcae5e; }
+  .move[aria-disabled="true"] { opacity: .48; cursor: default; }
+  .move[aria-disabled="true"] .cost { color: #8a7a6a; }
+  .move-note { font-size: 10.5px; color: var(--ink-faint); line-height: 1.4; margin: 0; }
+
+  .kit { border-top: 1px dashed #cdbc99; padding-top: 8px; }
+  .kit .row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; margin-top: 4px; }
+  .kit .row .k { flex: 1; }
+  .kit .row .v { font-family: var(--mono); font-weight: 700; }
+
+  .legend { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+  .legend .row { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 6px; font-size: 10.5px; color: var(--ink-soft); min-width: 0; }
+  .legend .row .nm { font-weight: 650; white-space: nowrap; grid-column: 2; line-height: 1.2; }
+  .legend svg { flex: 0 0 auto; }
+  .legend .meta { color: var(--ink-faint); font-family: var(--mono); font-size: 7.6px; white-space: nowrap; grid-column: 2; line-height: 1.15; letter-spacing: -.2px; }
+  .legend .row svg { grid-row: 1 / span 2; }
+
+  /* ---- map column: the phone's map slot, grown outward ---- */
+  .mapcol {
+    position: relative; min-width: 0; background: #f6efe2; border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .mapcol svg.city { display: block; width: 100%; height: 100%; }
+  .map-badge {
+    position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 8px;
+    background: rgba(255, 253, 247, .93); border: 1px solid var(--line);
+    border-radius: 9px; padding: 5px 10px; font-size: 11px; color: var(--ink-soft);
+  }
+  .map-badge b { color: var(--ink); }
+  .map-badge .grown { color: #1d6f4a; font-weight: 700; }
+  .zoom {
+    position: absolute; right: 10px; bottom: 10px; display: grid; gap: 6px;
+    grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px);
+  }
+  .zoom button {
+    width: 46px; height: 46px; border-radius: 9px; border: 1.5px solid #d8c9a9;
+    background: rgba(255, 253, 247, .9); color: var(--ink); font: 700 16px/1 var(--mono);
+  }
+  .zoom .zoom-out { grid-area: 1 / 1; }
+  .zoom .zoom-in { grid-area: 1 / 3; }
+  .zoom .pan-n { grid-area: 1 / 2; }
+  .zoom .pan-w { grid-area: 2 / 1; }
+  .zoom .pan-e { grid-area: 2 / 3; }
+  .zoom .pan-s { grid-area: 2 / 2; }
+  .zoom .lbl {
+    position: absolute; right: 0; top: -20px; width: 150px; text-align: right;
+    font-size: 10px; color: #ffffff; white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(30,40,50,.75);
+  }
+  .desktop-note {
+    position: absolute; left: 10px; right: 176px; bottom: 10px;
+    background: rgba(255, 253, 247, .95); border: 1px solid var(--line);
+    border-left: 4px solid #1d6f4a; border-radius: 9px; padding: 6px 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .desktop-note .tagline { font: 700 10.5px/1 var(--mono); color: #1d6f4a; letter-spacing: .6px; white-space: nowrap; }
+  .desktop-note p { margin: 2px 0 0; font-size: 10.5px; color: var(--ink-soft); line-height: 1.3; }
+  .desktop-note .mini { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+  .mini-phone {
+    width: 30px; height: 50px; border-radius: 6px; border: 1.5px solid #8d8577;
+    background: #efe7d5; display: grid; grid-template-rows: 8px 1fr 11px; padding: 1.5px; gap: 1.5px;
+  }
+  .mini-phone i { display: block; background: #b9ad95; border-radius: 2px; }
+  .mini-phone i.map { background: #cfd8c9; }
+  .mini-phone i.tray { background: #c8a06a; }
+  .mini-arrow { font: 700 12px/1 var(--mono); color: #8d8577; }
+  .mini-desk {
+    width: 40px; height: 50px; border-radius: 6px; border: 1.5px solid #4f7f63;
+    background: #eef4ea; display: grid; grid-template-columns: 11px 1fr 12px; grid-template-rows: 8px 1fr; padding: 1.5px; gap: 1.5px;
+  }
+  .mini-desk i { display: block; background: #b9ad95; border-radius: 2px; }
+  .mini-desk i.map { background: #cfd8c9; grid-column: 2; }
+  .mini-desk i.rail { background: #c8a06a; grid-row: 2; grid-column: 1; }
+  .mini-desk i.panel { background: #9db4c9; grid-row: 2; grid-column: 3; }
+  .mini-desk i.top { grid-column: 1 / span 3; }
+
+  /* ---- persistent log panel: the phone's log strip, standing up ---- */
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    min-width: 0; padding: 12px; display: flex; flex-direction: column; gap: 9px; overflow: hidden;
+  }
+  .panel .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .panel .head .scope { font-size: 10.5px; color: var(--ink-faint); font-family: var(--mono); }
+  table.log { width: 100%; border-collapse: collapse; font-size: 11px; }
+  table.log caption { caption-side: top; text-align: left; font-size: 10px; color: var(--ink-faint); padding-bottom: 4px; }
+  table.log th {
+    height: 18px; font: 600 9.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .7px;
+    color: #8a7a62; text-align: left; padding: 3px 4px; border-bottom: 1px solid var(--line);
+  }
+  table.log td { padding: 0 4px; height: 25px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  table.log td.t { font-family: var(--mono); font-weight: 700; color: #6a7780; width: 26px; }
+  table.log tr.now { background: var(--accent-soft); }
+  table.log tr.now td { border-bottom-color: #e8cf9d; }
+  table.log tr.now td.t { color: var(--accent); }
+  table.log tr.future td { color: #b6ada0; }
+  table.log .pending { font-size: 10.5px; color: var(--accent); font-weight: 650; }
+  table.log .hold { font-size: 10.5px; color: #8a7a62; font-style: italic; }
+  .modecell { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .modecell .n { font-size: 10px; color: var(--ink-faint); font-family: var(--mono); }
+  .totals { margin-top: auto; border-top: 1px solid var(--line); padding-top: 8px; }
+  .totals h3 { margin: 0 0 5px; font-size: 10px; letter-spacing: .9px; text-transform: uppercase; color: #8a7a62; }
+  .totals .trow { display: flex; align-items: baseline; gap: 8px; font-size: 11px; padding: 2.5px 0; }
+  .totals .trow .nm { width: 58px; flex: 0 0 auto; font-weight: 650; }
+  .totals .trow .v { font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); }
+  .totals .trow .v b { color: var(--ink); }
+  .totals .trow.no .v b { color: #b43135; }
+
+  /* ---- footer: the required additive-layout annotation ---- */
+  .foot {
+    display: flex; align-items: center; gap: 14px; padding: 0 18px;
+    background: #e2d9c4; border-top: 1px solid #d0c3a6; font-size: 11px; color: #5c5245;
+    line-height: 1.35; overflow: hidden;
+  }
+  .foot .pill {
+    font: 700 10.5px/1 var(--mono); letter-spacing: .8px; color: #14532d;
+    background: #d9ecdd; border: 1px solid #a9ceb4; border-radius: 999px; padding: 5px 10px;
+  }
+  .foot b { color: #3d372d; }
+  .foot .sep { width: 1px; height: 26px; background: #c6b899; }
+  .foot .right { margin-left: auto; font-family: var(--mono); font-size: 10px; color: #6d6252; max-width: 330px; text-align: right; }
+
+  /* ---- map paint + calm, looping motion (CSS only) ---- */
+  .city text { font-family: var(--sans); }
+  .city .fig { animation: figBob 3.4s ease-in-out infinite; }
+  .city .fig.d1 { animation-delay: 1.1s; }
+  .city .ghostfig { animation: ghostBob 4.6s ease-in-out infinite; }
+  .city .sway { transform-box: fill-box; transform-origin: 50% 99%; animation: sway 6.4s ease-in-out infinite; }
+  .city .sway.d1 { animation-delay: 1.8s; }
+  .city .sway.d2 { animation-delay: 3.4s; }
+  .city .shimmer { animation: shimmer 9s linear infinite; }
+  .city .car { animation: carRun 16s linear infinite; }
+  .city .car.d1 { animation-name: carRun2; animation-duration: 24s; }
+  .city .barge { animation: bargeRun 42s linear infinite; }
+  .city .crane { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 9.5s ease-in-out infinite; }
+  .city .flag { transform-box: fill-box; transform-origin: 0% 100%; animation: sway 4.6s ease-in-out infinite; }
+  @keyframes figBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.2px); } }
+  @keyframes ghostBob { 0%, 100% { transform: translateY(0); opacity: .72; } 50% { transform: translateY(-2.6px); opacity: 1; } }
+  @keyframes sway { 0%, 100% { transform: rotate(-1.8deg); } 50% { transform: rotate(1.8deg); } }
+  @keyframes shimmer { to { stroke-dashoffset: -640; } }
+  @keyframes carRun { 0% { transform: translate(0, 0); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { transform: translate(300px, 14px); opacity: 0; } }
+  @keyframes carRun2 { 0% { transform: translate(0, 0); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { transform: translate(0, 236px); opacity: 0; } }
+  @keyframes bargeRun { 0% { transform: translate(0, 0); opacity: 0; } 7% { opacity: 1; } 93% { opacity: 1; } 100% { transform: translate(470px, -8px); opacity: 0; } }
+  .pdot { position: relative; width: 11px; height: 11px; border-radius: 50%; border: 1.6px solid rgba(180, 83, 9, .7); flex: 0 0 auto; }
+  .pdot::after { content: ""; position: absolute; left: 2.8px; top: 2.8px; width: 3.4px; height: 3.4px; border-radius: 50%; background: var(--accent); }
+  .pdot::before { content: ""; position: absolute; left: -1.7px; top: -1.7px; width: 11px; height: 11px; border-radius: 50%; border: 1.6px solid rgba(180, 83, 9, .8); animation: pulseRing 2.9s ease-out infinite; }
+  @keyframes pulseRing { 0% { transform: scale(.55); opacity: .9; } 70% { opacity: .1; } 100% { transform: scale(2.15); opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- ============================ TOP BAR ============================ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">XY</div>
+      <div>
+        <h1>Yard · Meridian Quarter</h1>
+        <p>Round 03 · S6 &nbsp;—&nbsp; Agent view, Falcon (A1) · 2 Agents vs 1 Fugitive</p>
+      </div>
+    </div>
+
+    <div class="turnmeter">
+      <div class="row">
+        <span class="turn">Turn 7 <span style="color:#7d8a93">/ 16</span></span>
+        <span class="pip">phase <b>agent-phase</b></span>
+        <span class="pip"><span class="pdot"></span> next reveal pulse <b>turn 10</b></span>
+      </div>
+      <div class="track">
+        <div class="fill"></div>
+        <div class="ticks"><span></span><span></span><span></span></div>
+        <div class="pulse reached" style="left: 28%"></div>
+        <div class="pulse" style="left: 59%"></div>
+        <div class="pulse" style="left: 91%"></div>
+      </div>
+      <div class="track-label"><span>T1</span><span>T5 pulse</span><span>T10 pulse</span><span>T15 pulse</span><span>T16</span></div>
+    </div>
+
+    <div class="phase">
+      <span class="chip-phase"><span class="dot"></span> agent-phase · Falcon to move</span>
+      <div class="seats">
+        <span class="seat you"><span class="swatch" style="background:#b43135"></span><span class="name">Falcon</span><span style="color:#7d8a93">n5</span></span>
+        <span class="seat"><span class="swatch" style="background:#3643b6"></span><span class="name">Harrier</span><span style="color:#7d8a93">n10</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================== RAIL | MAP | PANEL ====================== -->
+  <div class="middle">
+
+    <!-- the phone's bottom tray, stood up as a side rail -->
+    <aside class="rail" aria-label="Move tray">
+      <div class="who">
+        <span class="swatch"></span>
+        <div>
+          <strong>Falcon</strong> <span>A1 · n5 · agent-phase</span>
+        </div>
+      </div>
+
+      <h2>Move — pick one</h2>
+      <div class="moves">
+        <button class="move selected" type="button" data-mode="foot" aria-pressed="true">
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="on foot">
+              <path d="M10 5.5c2.1 0 3.2 1.5 3 3.4l-.4 4.2 2.6 3.5c.5.7.3 1.6-.4 2s-1.5.2-2-.5l-2.4-3.2-3.2 1.2-1.6 3.1c-.4.8-1.4 1-2 .6-.7-.4-.9-1.3-.4-2l2-3.9 1-5.7c.3-1.7 1.4-2.7 3.8-2.7z" fill="#14532d"/>
+            </svg>
+          </span>
+          <span><span class="name">On foot</span><div class="sub">n1 · n6 · n8 · <span class="cost">6 steps</span></div></span>
+        </button>
+
+        <button class="move selected" type="button" data-mode="taxi" aria-pressed="true">
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="taxi">
+              <rect x="5" y="10" width="16" height="7" rx="2" fill="#7a4405"/>
+              <rect x="8" y="6" width="10" height="5" rx="1.6" fill="#7a4405"/>
+              <rect x="10" y="7.2" width="6" height="2.6" rx="0.8" fill="#fff2d2"/>
+              <circle cx="9" cy="18" r="2" fill="#7a4405"/><circle cx="17" cy="18" r="2" fill="#7a4405"/>
+            </svg>
+          </span>
+          <span><span class="name">Taxi</span><div class="sub">n1 · n6 · n8 · <span class="cost">10 tickets</span></div></span>
+        </button>
+
+        <button class="move" type="button" aria-pressed="false" aria-disabled="true" disabled>
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="bus">
+              <rect x="4" y="5" width="18" height="14" rx="2.4" fill="#b45309"/>
+              <rect x="6.6" y="7.4" width="12.8" height="4.6" rx="1" fill="#fff2d2"/>
+              <rect x="6.6" y="14" width="4" height="3" rx="0.8" fill="#fff2d2"/>
+              <rect x="15.4" y="14" width="4" height="3" rx="0.8" fill="#fff2d2"/>
+              <circle cx="8" cy="20.5" r="1.8" fill="#22303a"/><circle cx="18" cy="20.5" r="1.8" fill="#22303a"/>
+            </svg>
+          </span>
+          <span><span class="name">Bus</span><div class="sub">n/a — street node · 5 held</div></span>
+        </button>
+
+        <button class="move" type="button" aria-pressed="false" aria-disabled="true" disabled>
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="metro">
+              <path d="M4 9h18v8H4z" fill="#3f4a52"/>
+              <path d="M7 20l2-3M17 20l-2-3" stroke="#3f4a52" stroke-width="2" stroke-linecap="round"/>
+              <path d="M11 5.5 L15 5.5 L13 11 L16 11 L10.5 19 L12 12.5 L9.5 12.5 Z" fill="#cfe6ea"/>
+            </svg>
+          </span>
+          <span><span class="name">Metro</span><div class="sub">n/a — not a terminal · 3 held</div></span>
+        </button>
+
+        <button class="move" type="button" aria-pressed="false" aria-disabled="true" disabled>
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="special">
+              <path d="M5 19 L13 6 L21 19" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linejoin="round"/>
+              <circle cx="13" cy="6" r="2.2" fill="#7c3aed"/>
+            </svg>
+          </span>
+          <span><span class="name">Special</span><div class="sub">n/a — no secret link · 0 held</div></span>
+        </button>
+
+        <button class="move" type="button" aria-pressed="false" aria-disabled="true" disabled>
+          <span class="icon">
+            <svg width="26" height="26" viewBox="0 0 26 26" role="img" aria-label="electric scooter">
+              <circle cx="7" cy="18.5" r="3.4" fill="none" stroke="#0e7490" stroke-width="2"/>
+              <circle cx="19.5" cy="18.5" r="3.4" fill="none" stroke="#0e7490" stroke-width="2"/>
+              <path d="M7 18.5 L12 10 L17 10 M17 10 L19.5 18.5" fill="none" stroke="#0e7490" stroke-width="2" stroke-linecap="round"/>
+              <path d="M14.6 5.2 L17.4 5.2 L16 8.6 L18.4 8.6 L14 15 L15.1 10.6 L13 10.6 Z" fill="#0e7490"/>
+            </svg>
+          </span>
+          <span><span class="name">Scooter</span><div class="sub">n/a — Fugitive extra · 0 held</div></span>
+        </button>
+      </div>
+
+      <p class="move-note">Every legal path reuses the street polyline — never a straight line between stations. Bus, metro and special never serve n5, a standard street node, so no such path is drawn from it.</p>
+
+      <div class="kit">
+        <h2>Falcon's kit · turn 7</h2>
+        <div class="row"><span class="k">Taxi</span><span class="v">10 · 3 departures</span></div>
+        <div class="row"><span class="k">Bus</span><span class="v">5 · no line here</span></div>
+        <div class="row"><span class="k">Metro</span><span class="v">3 · no terminal here</span></div>
+        <div class="row"><span class="k">Special</span><span class="v">0 · none held</span></div>
+        <div class="row"><span class="k">Foot steps</span><span class="v">6 · 3 departures</span></div>
+        <div class="row"><span class="k">Scooter</span><span class="v">0 · Fugitive only</span></div>
+      </div>
+
+      <h2>Mode identity</h2>
+      <div class="legend">
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h12M21 6h12" stroke="#22303a" stroke-width="2.4"/></svg><span class="nm">Taxi</span><span class="meta">solid · street edges</span></div>
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h13M20 6h13" stroke="#b45309" stroke-width="4.6" stroke-dasharray="9 4"/></svg><span class="nm">Bus</span><span class="meta">long dash · hub only</span></div>
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h32" stroke="#3f4a52" stroke-width="5"/><path d="M1 6h32" stroke="#cfe6ea" stroke-width="2" stroke-dasharray="4 4"/></svg><span class="nm">Metro</span><span class="meta">casing · terminal only</span></div>
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h32" stroke="#7c3aed" stroke-width="3" stroke-dasharray="1.4 4.6" stroke-linecap="round"/></svg><span class="nm">Special</span><span class="meta">dots · crosses blocks</span></div>
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h32" stroke="#14532d" stroke-width="4" stroke-dasharray="1.4 5" stroke-linecap="round"/></svg><span class="nm">On foot</span><span class="meta">steps · 1 step / edge</span></div>
+        <div class="row"><svg width="34" height="12" viewBox="0 0 34 12"><path d="M1 6h32" stroke="#0e7490" stroke-width="3" stroke-dasharray="10 3 2 3" stroke-linecap="round"/></svg><span class="nm">Scooter</span><span class="meta">long-short · charge</span></div>
+      </div>
+    </aside>
+
+    <!-- the phone's map slot, grown outward -->
+    <section class="mapcol" aria-label="Quarter map">
+      <svg id="city" class="city" viewBox="0 0 778 718" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="Meridian Quarter seen from above: an illustrated city of individually drawn roofs, kerbed streets, a river with two bridges, a cathedral, a market hall, a stadium and a rail terminus. 22 numbered stations. Falcon A1 at n5, Harrier A2 at n10, a ghost at last-known n3.">
+        <defs>
+          <pattern id="plotTex" width="26" height="22" patternUnits="userSpaceOnUse">
+            <rect x="1.6" y="1.6" width="10.6" height="8.4" rx="1.2" fill="#d5dbc5" opacity=".55"/>
+            <rect x="15" y="6.6" width="9" height="7" rx="1.2" fill="#cfd6bd" opacity=".45"/>
+            <rect x="5.4" y="13" width="8.4" height="6.6" rx="1.2" fill="#d9dfcb" opacity=".45"/>
+          </pattern>
+          <pattern id="paveTex" width="13" height="13" patternUnits="userSpaceOnUse">
+            <path d="M0 .5H13M.5 0V13" stroke="#c8c0a6" stroke-width=".7" opacity=".4"/>
+          </pattern>
+          <linearGradient id="waterG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#68b7da"/>
+            <stop offset="100%" stop-color="#4ea3cc"/>
+          </linearGradient>
+          <radialGradient id="belGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffb43c" stop-opacity=".92"/>
+            <stop offset="52%" stop-color="#ff9420" stop-opacity=".4"/>
+            <stop offset="100%" stop-color="#ff8a12" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="belCore" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fff2cf" stop-opacity=".95"/>
+            <stop offset="60%" stop-color="#ffab2e" stop-opacity=".42"/>
+            <stop offset="100%" stop-color="#ff9d1f" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="belCool" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#17334f" stop-opacity=".46"/>
+            <stop offset="70%" stop-color="#1b3b5b" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="#1e3f61" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="scrimG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4f1e4" stop-opacity=".1"/>
+            <stop offset="40%" stop-color="#f4f1e4" stop-opacity=".02"/>
+            <stop offset="100%" stop-color="#e8e2cf" stop-opacity=".09"/>
+          </linearGradient>
+          <radialGradient id="vigG" cx="50%" cy="46%" r="72%">
+            <stop offset="62%" stop-color="#3a2c1a" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#3a2c1a" stop-opacity=".2"/>
+          </radialGradient>
+        </defs>
+
+        <!-- LAYER 1 — tilted ground plane (scale .8, then rotateX(35deg)) -->
+        <g id="ground"></g>
+        <!-- LAYER 2 — buildings: footprint + lifted roof face + near wall, painted
+             back to front so the near blocks occlude what stands behind them -->
+        <g id="bld"></g>
+        <!-- atmosphere: pushes the illustration behind the information layer -->
+        <rect x="0" y="0" width="778" height="718" fill="url(#scrimG)" pointer-events="none"/>
+        <!-- LAYER 3 — landmark plates -->
+        <g id="plates"></g>
+        <!-- LAYER 4 — network: subdued service lines + Falcon's legal moves -->
+        <g id="net"></g>
+        <!-- LAYER 5 — belief shading, stations, ghost (numbers stay upright) -->
+        <g id="bel"></g>
+        <g id="stn"></g>
+        <!-- LAYER 6 — characters, upright and idle-animated -->
+        <g id="chr"></g>
+        <rect x="0" y="0" width="778" height="718" fill="url(#vigG)" pointer-events="none"/>
+      </svg>
+
+      <div class="map-badge">
+        <span><b>Meridian Quarter</b> · 22 stations shown</span>
+        <span class="grown">+13 grown outward — original 9 unmoved</span>
+      </div>
+
+      <div class="zoom" role="group" aria-label="Map step controls">
+        <button class="zoom-out" type="button" aria-label="Zoom out">−</button>
+        <button class="pan-n" type="button" aria-label="Pan up">▲</button>
+        <button class="zoom-in" type="button" aria-label="Zoom in">+</button>
+        <button class="pan-w" type="button" aria-label="Pan left">◀</button>
+        <button class="pan-s" type="button" aria-label="Pan down">▼</button>
+        <button class="pan-e" type="button" aria-label="Pan right">▶</button>
+        <span class="lbl">step controls + arrow keys</span>
+      </div>
+
+      <div class="desktop-note">
+        <span class="tagline">ADDITIVE DESKTOP LAYOUT</span>
+        <div class="mini" aria-hidden="true">
+          <span class="mini-phone"><i></i><i class="map"></i><i class="tray"></i></span>
+          <span class="mini-arrow">→</span>
+          <span class="mini-desk"><i class="top"></i><i class="rail"></i><i class="map"></i><i class="panel"></i></span>
+        </div>
+        <div>
+          <p>No feature exists only here. The phone's bottom tray became this side rail, its log strip became the persistent side panel, and the top bar stayed a top bar — the extra width buys more quarter, never bigger blocks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- the phone's log strip, standing up as a persistent panel -->
+    <aside class="panel" aria-label="Public ticket log">
+      <div class="head">
+        <h2>Public ticket log</h2>
+        <span class="scope">16 turns · 1 row / turn</span>
+      </div>
+      <table class="log">
+        <caption>One public row per turn — the mode only. The destination stays hidden until a reveal pulse.</caption>
+        <thead>
+          <tr><th>T</th><th>Vulture</th><th>Read</th></tr>
+        </thead>
+        <tbody>
+          <tr class="future"><td class="t">T16</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T15</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T14</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T13</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T12</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T11</td><td>—</td><td>—</td></tr>
+          <tr><td class="t">T10</td><td>—</td><td><span class="hold">next reveal pulse</span></td></tr>
+          <tr class="future"><td class="t">T9</td><td>—</td><td>—</td></tr>
+          <tr class="future"><td class="t">T8</td><td>—</td><td>—</td></tr>
+          <tr class="now"><td class="t">T7</td><td><span class="pending">awaiting Falcon</span></td><td><span class="pending">agent-phase</span></td></tr>
+          <tr>
+            <td class="t">T6</td>
+            <td><span class="modecell"><svg width="20" height="10" viewBox="0 0 20 10"><path d="M1 5h18" stroke="#22303a" stroke-width="2.6"/></svg>taxi</span></td>
+            <td><span class="hold">mode only · dest. hidden</span></td>
+          </tr>
+          <tr>
+            <td class="t">T5</td>
+            <td><span class="modecell"><svg width="20" height="10" viewBox="0 0 20 10"><path d="M1 5h18" stroke="#14532d" stroke-width="3.4" stroke-dasharray="1.2 4.4" stroke-linecap="round"/></svg>foot</span></td>
+            <td><span class="hold">mode only · dest. hidden</span></td>
+          </tr>
+          <tr>
+            <td class="t">T4</td>
+            <td><span class="modecell"><svg width="20" height="10" viewBox="0 0 20 10"><path d="M1 5h18" stroke="#b45309" stroke-width="4" stroke-dasharray="7 3.4"/></svg>bus</span></td>
+            <td><span class="hold">mode only · dest. hidden</span></td>
+          </tr>
+          <tr><td class="t">T3</td><td><span class="hold">—</span></td><td><span class="hold">—</span></td></tr>
+          <tr><td class="t">T2</td><td><span class="hold">—</span></td><td><span class="hold">—</span></td></tr>
+          <tr><td class="t">T1</td><td><span class="hold">—</span></td><td><span class="hold">—</span></td></tr>
+        </tbody>
+      </table>
+      <div class="totals">
+        <h3>Falcon A1 · legal departures from n5</h3>
+        <div class="trow"><span class="nm">On foot</span><span class="v">n1 · n6 · n8 — <b>3 drawn</b></span></div>
+        <div class="trow"><span class="nm">Taxi</span><span class="v">n1 · n6 · n8 — <b>3 drawn</b></span></div>
+        <div class="trow no"><span class="nm">Bus</span><span class="v">n5 is a street node — <b>unavailable</b></span></div>
+        <div class="trow no"><span class="nm">Metro</span><span class="v">n5 is not a terminal — <b>unavailable</b></span></div>
+        <div class="trow no"><span class="nm">Special</span><span class="v">no secret link at n5 — <b>none held</b></span></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============================ FOOTER ============================ -->
+  <footer class="foot">
+    <span class="pill">STYLE A — FLAT VECTOR · 2.5D · DAY</span>
+    <span><b>Annotation:</b> this is the <b>additive desktop layout</b> of the same Board screen — mobile-first, grown.</span>
+    <span class="sep"></span>
+    <span>Phone 390 × 844: bottom tray + log strip. Desktop 1440 × 900: tray → <b>side rail</b>, log strip → <b>persistent side panel</b>, top bar stays a top bar. The extra width buys <b>more quarter</b>: 22 stations, 9 core unmoved.</span>
+    <span class="right">stage 1440 × 900 · nothing hover-only or drag-only</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================================
+   Yard-Meridian quarter — 778x718 board, drawn as a real city quarter.
+   The ground plane and the buildings live in one tilted coordinate system
+   (scale 0.8, then rotateX(35deg)) so every footprint is squashed like ground
+   seen from above while every wall rises straight up the screen. Everything
+   the player must READ — station ids, belief shading, legal-move paths, name
+   plates, figures — is drawn upright in the flat overlay layers, positioned
+   by projecting the same ground points.
+   ========================================================================== */
+
+var NS = 'http://www.w3.org/2000/svg';
+function f(n){ return Math.round(n * 100) / 100; }
+function $(i){ return document.getElementById(i); }
+function shade(hex, amt){
+  var n = parseInt(hex.slice(1), 16);
+  var r = Math.min(255, Math.max(0, (n >> 16) + amt)),
+      g = Math.min(255, Math.max(0, ((n >> 8) & 255) + amt)),
+      b = Math.min(255, Math.max(0, (n & 255) + amt));
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0;
+  var t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+var rnd = mulberry32(0x5e2d17);
+function rr(a, b){ return a + (b - a) * rnd(); }
+
+/* ---------------------------------------------------------- 1 · projection */
+var S = 0.8, TI = 35 * Math.PI / 180, SC = S * Math.cos(TI), TY = 0, UP = 1 / SC, TANR = Math.tan(TI);
+var MX = 'matrix(0.8 0 0 ' + f(SC) + ' 0 ' + TY + ')';
+function wx(x){ return x / S; }                 /* stage x -> world x */
+function wy(y){ return (y - TY) / SC; }         /* stage y -> world y */
+function wp(p){ return [wx(p[0]), wy(p[1])]; }
+function wps(ps){ return ps.map(wp); }
+function pth(ps){
+  var d = 'M' + f(ps[0][0]) + ' ' + f(ps[0][1]);
+  for (var i = 1; i < ps.length; i++) d += ' L' + f(ps[i][0]) + ' ' + f(ps[i][1]);
+  return d;
+}
+/* stage-pixel rect/circle -> world-space geometry (for the tilted layer) */
+function sRect(x, y, w, h, attrs){
+  return '<rect x="' + f(wx(x)) + '" y="' + f(wy(y)) + '" width="' + f(w / S) +
+         '" height="' + f(h / SC) + '" ' + attrs + '/>';
+}
+function sDisc(cx, cy, r, attrs){
+  return '<ellipse cx="' + f(wx(cx)) + '" cy="' + f(wy(cy)) + '" rx="' + f(r / S) +
+         '" ry="' + f(r / SC) + '" ' + attrs + '/>';
+}
+function sample(pts, step){
+  var out = [], i, j;
+  for (i = 0; i < pts.length - 1; i++){
+    var a = pts[i], b = pts[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]),
+        n = Math.max(1, Math.round(L / step));
+    for (j = 0; j <= n; j++) out.push([a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n]);
+  }
+  return out;
+}
+function offsetPath(pts, off){
+  var out = [], k;
+  for (k = 0; k < pts.length; k++){
+    var ax = 0, ay = 0, segs = [];
+    if (k > 0) segs.push([pts[k - 1], pts[k]]);
+    if (k < pts.length - 1) segs.push([pts[k], pts[k + 1]]);
+    segs.forEach(function(s){
+      var dx = s[1][0] - s[0][0], dy = s[1][1] - s[0][1], L = Math.hypot(dx, dy) || 1;
+      ax += -dy / L; ay += dx / L;
+    });
+    var L2 = Math.hypot(ax, ay) || 1;
+    out.push([pts[k][0] + ax / L2 * off, pts[k][1] + ay / L2 * off]);
+  }
+  return out;
+}
+
+/* ------------------------------- 2 · cast + game state (mobile Agent screen) */
+var ST = {
+  n1:[235,210,'street'],  n2:[320,185,'street'],  n3:[430,210,'street'],
+  n4:[510,265,'hub'],     n5:[275,315,'street'],  n6:[385,330,'hub'],
+  n7:[480,390,'terminal'],n8:[250,430,'street'],  n9:[380,450,'street'],
+  n10:[525,180,'terminal'],n11:[155,195,'street'],n12:[90,305,'street'],
+  n13:[120,390,'hub'],    n14:[275,485,'street'], n15:[535,480,'street'],
+  n16:[610,390,'street'], n17:[175,55,'street'],  n18:[430,80,'terminal'],
+  n19:[470,295,'street'], n20:[275,165,'hub'],    n21:[555,195,'street'],
+  n22:[640,265,'street']
+};
+var N = {}, id;
+for (id in ST) N[id] = { x: ST[id][0], y: ST[id][1], c: ST[id][2], wx: wx(ST[id][0]), wy: wy(ST[id][1]) };
+var ME = 'n5', OTHER = 'n10', GHOST = 'n3';
+
+/* belief: shading intensity encodes likelihood; numbers only for the top 3 */
+var BELIEF = [
+  { id:'n2', p:0.30 }, { id:'n6', p:0.25 }, { id:'n4', p:0.20 },
+  { id:'n7', p:0.08 }, { id:'n1', p:0.06 }, { id:'n9', p:0.05 }
+];
+var TOP3 = [
+  { id:'n2', pct:'30%', bx:340, by:146 },
+  { id:'n4', pct:'20%', bx:534, by:290 },
+  { id:'n6', pct:'25%', bx:410, by:352 }
+];
+/* station ids: the navigation aid, so every one is drawn clear of its own token */
+var LABELS = [
+  ['n1',220,196], ['n2',302,170], ['n3',450,196], ['n4',528,270], ['n5',298,292],
+  ['n6',364,354], ['n7',500,394], ['n8',230,448], ['n9',362,466], ['n10',499,208],
+  ['n11',137,182], ['n12',74,308], ['n13',100,404], ['n14',293,489], ['n15',515,486],
+  ['n16',626,372], ['n17',193,44], ['n18',448,68], ['n19',452,312], ['n20',257,150],
+  ['n21',573,200], ['n22',658,270]
+];
+
+/* ------------------------------------------------------------- 3 · network */
+var EDGES = [
+  ['n1','n2',[[235,210],[266,182],[292,178],[320,185]]],
+  ['n2','n3',[[320,185],[366,170],[402,186],[430,210]]],
+  ['n3','n4',[[430,210],[472,212],[502,238],[510,265]]],
+  ['n1','n5',[[235,210],[224,256],[238,290],[275,315]]],
+  ['n2','n6',[[320,185],[332,232],[366,286],[385,330]]],
+  ['n5','n6',[[275,315],[326,344],[385,330]]],
+  ['n3','n6',[[430,210],[427,258],[408,296],[385,330]]],
+  ['n4','n7',[[510,265],[514,326],[480,390]]],
+  ['n6','n7',[[385,330],[432,358],[480,390]]],
+  ['n5','n8',[[275,315],[246,366],[250,430]]],
+  ['n6','n9',[[385,330],[396,390],[380,450]]],
+  ['n8','n9',[[250,430],[312,462],[380,450]]],
+  ['n9','n7',[[380,450],[434,432],[480,390]]],
+  ['n17','n11',[[175,55],[158,120],[155,195]]],
+  ['n11','n12',[[155,195],[118,240],[90,305]]],
+  ['n11','n20',[[155,195],[212,178],[275,165]]],
+  ['n20','n2',[[275,165],[300,172],[320,185]]],
+  ['n17','n20',[[175,55],[228,102],[275,165]]],
+  ['n18','n10',[[430,80],[490,110],[525,180]]],
+  ['n18','n21',[[430,80],[470,100],[520,140],[555,195]]],
+  ['n21','n22',[[555,195],[600,225],[640,265]]],
+  ['n22','n16',[[640,265],[660,320],[630,370],[610,390]]],
+  ['n16','n15',[[610,390],[572,436],[535,480]]],
+  ['n15','n9',[[535,480],[460,478],[380,450]]],
+  ['n9','n14',[[380,450],[320,470],[275,485]]],
+  ['n14','n13',[[275,485],[190,470],[120,390]]],
+  ['n13','n12',[[120,390],[98,348],[90,305]]],
+  ['n8','n14',[[250,430],[258,460],[275,485]]],
+  ['n8','n13',[[250,430],[185,420],[120,390]]],
+  ['n3','n19',[[430,210],[455,250],[470,295]]],
+  ['n19','n7',[[470,295],[478,340],[480,390]]],
+  ['n16','n7',[[610,390],[545,395],[480,390]]],
+  ['n10','n19',[[525,180],[500,240],[470,295]]]
+];
+/* bus corridors: hub/terminal to hub/terminal only — never a standard street node */
+var BUS = [
+  [[510,265],[480,330],[430,342],[385,330]],
+  [[510,265],[520,220],[525,180]],
+  [[525,180],[562,252],[546,330],[480,390]],
+  [[385,330],[330,372],[215,398],[120,390]]
+];
+/* metro: terminal to terminal, crossing blocks instead of following streets */
+var METRO = [[480,390],[520,300],[540,240],[525,180],[492,124],[430,80]];
+var ALLEY = [[320,185],[345,255],[340,320],[346,392],[380,450]];
+/* decorative lanes: they structure the blocks and never join two stations the
+   rules do not already connect */
+var EXTRA = [
+  [[92,300],[62,238],[54,168]],
+  [[152,196],[118,152],[96,122]],
+  [[272,166],[232,142],[198,126]],
+  [[432,82],[382,60],[320,50]],
+  [[642,266],[690,302],[722,354]],
+  [[612,392],[662,432],[702,472]],
+  [[122,392],[84,442],[66,496]],
+  [[538,478],[516,522]],
+  [[176,56],[142,34],[112,24]],
+  [[526,182],[562,142],[594,104]],
+  [[238,212],[198,216],[170,228]],
+  [[386,332],[348,320],[312,306]]
+];
+/* the two bridges carry their own approach roads down to the far bank */
+var BRIDGES = [
+  { x:250, y0:472, y1:648 },
+  { x:560, y0:468, y1:642 }
+];
+
+var ROUTE = {};
+EDGES.forEach(function(e){
+  ROUTE[e[0] + '-' + e[1]] = e[2];
+  ROUTE[e[1] + '-' + e[0]] = e[2].slice().reverse();
+});
+
+/* Falcon's legal moves from n5 — every one a polyline that bends with the street.
+   n5 is a street node: on foot / taxi along its three street edges (n1, n6, n8)
+   only. Bus, metro and the special alleyway never serve n5, so no bus / metro /
+   special path may be drawn from it. */
+var MOVES = [
+  { mode:'foot', to:'n1', off: 5.4, t:0.78, label:1 },
+  { mode:'foot', to:'n8', off: 5.4, t:0.50, label:0 },
+  { mode:'foot', to:'n6', off: 5.4, t:0.46, label:0 },
+  { mode:'taxi', to:'n1', off:-5.4, t:0.45, label:0 },
+  { mode:'taxi', to:'n8', off:-5.4, t:0.62, label:1 },
+  { mode:'taxi', to:'n6', off:-5.4, t:0.55, label:0 }
+];
+var PSTYLE = {
+  taxi: { color:'#fff3dc', w:6.4, dash:null },
+  bus:  { color:'#4a7fbc', w:6.4, dash:'12 7' },
+  foot: { color:'#2f9aa8', w:5.2, dash:'2.6 5' },
+  metro:{ color:'#8e5fd0', w:6.4, dash:'1.6 5.6' },
+  special:{ color:'#9d8fb8', w:4.6, dash:'1.1 5.6' }
+};
+var PNAME = { taxi:'TAXI', bus:'BUS', foot:'ON FOOT', metro:'METRO', special:'SPECIAL' };
+
+/* -------------------------------------------------------------- 4 · glyphs */
+var GLYPH = {
+  taxi:[['rect',{x:2.4,y:7.1,width:11.2,height:4.9,rx:1.3}],
+        ['path',{d:'M5 7.1 L6.3 4.2 H9.7 L11 7.1'}],
+        ['circle',{cx:5.4,cy:12.7,r:1.5}],['circle',{cx:10.6,cy:12.7,r:1.5}]],
+  bus:[['rect',{x:3,y:3.2,width:10,height:10.6,rx:1.7}],
+       ['rect',{x:4.9,y:5,width:6.2,height:3.4,rx:.6}],
+       ['circle',{cx:5.6,cy:14.2,r:1.3}],['circle',{cx:10.4,cy:14.2,r:1.3}]],
+  metro:[['path',{d:'M4 13.2 V8.3 a4 4 0 0 1 8 0 V13.2'}],
+         ['path',{d:'M4.2 13.2 H11.8'}],['path',{d:'M6.6 5.6 H9.4'}]],
+  special:[['circle',{cx:5.9,cy:5.7,r:2.4}],
+           ['path',{d:'M7.7 7.5 L12.4 12.2'}],['path',{d:'M10.4 10.2 L12.1 8.5'}],
+           ['path',{d:'M12.4 12.2 L13.7 10.9'}]],
+  foot:[['ellipse',{cx:5.9,cy:5.7,rx:2.1,ry:3.4,transform:'rotate(-14 5.9 5.7)',fill:'currentColor',stroke:'none'}],
+        ['ellipse',{cx:10.3,cy:10.9,rx:2.1,ry:3.4,transform:'rotate(-14 10.3 10.9)',fill:'currentColor',stroke:'none'}]]
+};
+function el(tag, attrs, parent){
+  var n = document.createElementNS(NS, tag), k, v;
+  if (attrs) for (k in attrs){ v = attrs[k]; if (v !== null && v !== undefined) n.setAttribute(k, v); }
+  (parent || $('city')).appendChild(n);
+  return n;
+}
+function glyphInto(parent, mode, color, size){
+  var g = el('g', { fill:'none', stroke:color || 'currentColor', 'stroke-width':1.45,
+    'stroke-linecap':'round', 'stroke-linejoin':'round',
+    transform:'scale(' + (size / 16) + ')' }, parent);
+  GLYPH[mode].forEach(function(pr){
+    var a = {}, k;
+    for (k in pr[1]) a[k] = pr[1][k];
+    if (a.fill === 'currentColor') a.fill = color || 'currentColor';
+    else if (a.stroke === undefined || a.stroke !== 'none') a.stroke = color || 'currentColor';
+    el(pr[0], a, g);
+  });
+  return g;
+}
+function mountChipGlyphs(){
+  var hosts = document.querySelectorAll('.kg, .mg'), i;
+  for (i = 0; i < hosts.length; i++){
+    var host = hosts[i], mode = host.getAttribute('data-mode');
+    if (!mode || !GLYPH[mode]) continue;
+    var box = document.createElementNS(NS, 'svg');
+    box.setAttribute('viewBox', '0 0 16 16');
+    box.setAttribute('width', '100%'); box.setAttribute('height', '100%');
+    glyphInto(box, mode, 'currentColor', 16);
+    host.appendChild(box);
+  }
+}
+
+/* ---------------------------------------------------------- 5 · occupancy */
+var GS = 6, OX = -12, OY = -16, OW = 1000, OH = 1140;
+var GW = Math.ceil(OW / GS), GH = Math.ceil(OH / GS);
+var occ = new Uint8Array(GW * GH);
+function cell(ix, iy){ if (ix >= 0 && iy >= 0 && ix < GW && iy < GH) occ[iy * GW + ix] = 1; }
+function markSeg(ax, ay, bx, by, r){
+  var x0 = Math.max(0, Math.floor((Math.min(ax, bx) - r - OX) / GS)),
+      x1 = Math.min(GW - 1, Math.ceil((Math.max(ax, bx) + r - OX) / GS)),
+      y0 = Math.max(0, Math.floor((Math.min(ay, by) - r - OY) / GS)),
+      y1 = Math.min(GH - 1, Math.ceil((Math.max(ay, by) + r - OY) / GS));
+  var vx = bx - ax, vy = by - ay, L = vx * vx + vy * vy;
+  for (var iy = y0; iy <= y1; iy++) for (var ix = x0; ix <= x1; ix++){
+    var px = OX + ix * GS + GS / 2, py = OY + iy * GS + GS / 2;
+    var t = L > 0 ? ((px - ax) * vx + (py - ay) * vy) / L : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    var dx = px - (ax + t * vx), dy = py - (ay + t * vy);
+    if (dx * dx + dy * dy <= r * r) cell(ix, iy);
+  }
+}
+function markPath(ps, r){ for (var i = 0; i < ps.length - 1; i++) markSeg(ps[i][0], ps[i][1], ps[i + 1][0], ps[i + 1][1], r); }
+function markBox(x, y, w, h, pad){
+  pad = pad || 0;
+  var x0 = Math.max(0, Math.floor((x - pad - OX) / GS)), x1 = Math.min(GW - 1, Math.ceil((x + w + pad - OX) / GS)),
+      y0 = Math.max(0, Math.floor((y - pad - OY) / GS)), y1 = Math.min(GH - 1, Math.ceil((y + h + pad - OY) / GS));
+  for (var iy = y0; iy <= y1; iy++) for (var ix = x0; ix <= x1; ix++) cell(ix, iy);
+}
+function markDisc(cx, cy, r){ markBox(cx - r, cy - r, 2 * r, 2 * r, 0); }
+function freeBox(x, y, w, h){
+  var x0 = Math.max(0, Math.floor((x - OX) / GS)), x1 = Math.min(GW - 1, Math.floor((x + w - OX) / GS)),
+      y0 = Math.max(0, Math.floor((y - OY) / GS)), y1 = Math.min(GH - 1, Math.floor((y + h - OY) / GS));
+  for (var iy = y0; iy <= y1; iy++) for (var ix = x0; ix <= x1; ix++) if (occ[iy * GW + ix]) return false;
+  return true;
+}
+/* reserve a rectangle given in stage pixels (plates, legends, badges) */
+function reserveStage(x, y, w, h, pad){
+  pad = pad || 0;
+  markBox(wx(x) - pad, wy(y) - pad, w / S + 2 * pad, h / SC + 2 * pad, 0);
+}
+
+/* --------------------------------------------------- 6 · quarter geometry */
+/* the river is authored on the stage and converted, so it sits at stage y 500-560 */
+var RIVER = [[-14,524],[104,530],[214,521],[326,532],[438,523],[548,531],[660,521],[792,528]];
+function riverY(x){
+  for (var i = 0; i < RIVER.length - 1; i++){
+    if (x >= RIVER[i][0] && x <= RIVER[i + 1][0]){
+      var t = (x - RIVER[i][0]) / (RIVER[i + 1][0] - RIVER[i][0]);
+      return RIVER[i][1] + t * (RIVER[i + 1][1] - RIVER[i][1]);
+    }
+  }
+  return 526;
+}
+var RIVERW = wps(RIVER);
+var PARK = [wx(148), wy(328), 92 / S, 62 / SC];
+var PLAZA = [wx(410), wy(376), 140 / S, 40 / SC];
+var CATH = { x: wx(72), y: wy(110), w: 96 / S, d: 48 / SC };
+var STATION = { x: wx(412), y: wy(414), w: 136 / S, d: 42 / SC };
+var MARKET = { x: wx(299), y: wy(262), w: 64 / S, d: 40 / SC };
+var STADIUM = [wx(700), wy(438), 60 / S, 40 / SC];
+var ALLOT = [wx(628), wy(56), 96 / S, 84 / SC];
+var CHURCH = { x: wx(148), y: wy(586), w: 54 / S, d: 38 / SC };
+var DOCK = [wx(430), wy(590), 108 / S, 54 / SC];
+
+/* streets: every network edge, every bus corridor, the decorative lanes and
+   the two bridge approach roads */
+var STREETS = [];
+EDGES.forEach(function(e){ STREETS.push({ p: wps(e[2]), k: 'main' }); });
+BUS.forEach(function(p){ STREETS.push({ p: wps(p), k: 'main' }); });
+EXTRA.forEach(function(p){ STREETS.push({ p: wps(p), k: 'lane' }); });
+BRIDGES.forEach(function(b){ STREETS.push({ p: [[wx(b.x), wy(b.y0)], [wx(b.x), wy(b.y1)]], k: 'bridge' }); });
+var SW = { main:{ kerb:20, pave:16.5, asp:12.6 }, lane:{ kerb:14, pave:11, asp:8 }, bridge:{ kerb:18.5, pave:15.5, asp:12 } };
+
+/* reserve the ground the city must keep clear of */
+markPath(RIVERW, 64);
+markPath(wps(METRO), 11);
+markPath(wps(ALLEY), 9);
+STREETS.forEach(function(s){ markPath(s.p, s.k === 'main' ? 13 : (s.k === 'bridge' ? 12 : 9)); });
+markBox(PARK[0], PARK[1], PARK[2], PARK[3], 5);
+markBox(PLAZA[0], PLAZA[1], PLAZA[2], PLAZA[3], 4);
+markBox(ALLOT[0], ALLOT[1], ALLOT[2], ALLOT[3], 4);
+markBox(CATH.x - 4, CATH.y - 5, CATH.w + 8, CATH.d + 8, 0);
+markBox(STATION.x - 4, STATION.y - 5, STATION.w + 8, STATION.d + 10, 0);
+markBox(MARKET.x - 3, MARKET.y - 4, MARKET.w + 6, MARKET.d + 8, 0);
+markBox(CHURCH.x - 3, CHURCH.y - 4, CHURCH.w + 6, CHURCH.d + 6, 0);
+markBox(DOCK[0], DOCK[1], DOCK[2], DOCK[3], 3);
+markBox(STADIUM[0] - STADIUM[2] - 6, STADIUM[1] - STADIUM[3] - 6, 2 * STADIUM[2] + 12, 2 * STADIUM[3] + 12, 0);
+BRIDGES.forEach(function(b){ markBox(wx(b.x) - 16, wy(b.y0) - 8, 32, (b.y1 - b.y0) / SC + 14, 4); });
+for (id in N) markDisc(N[id].wx, N[id].wy, 30);
+/* information panels: capital letters win, so keep the art out from under them */
+reserveStage(8, 8, 466, 38, 1);        /* HTML map badge */
+reserveStage(6, 650, 568, 64, 1);      /* HTML additive-layout note */
+reserveStage(584, 8, 188, 46, 1);      /* belief legend */
+TOP3.forEach(function(b){ reserveStage(b.bx - 2, b.by - 2, 78, 26, 1); });
+reserveStage(484, 214, 142, 28, 1);    /* ghost plate */
+reserveStage(548, 122, 146, 30, 1);    /* Harrier plate */
+reserveStage(116, 288, 158, 40, 1);    /* Falcon plate */
+
+/* -------------------------------------- 7 · roof materials + building draw */
+var MAT = [
+  { c:'#d9825c', w:'#f7e2c6', t:'tile' },   { c:'#c96f4e', w:'#f3d8b6', t:'tile' },
+  { c:'#dfa45f', w:'#f0e8da', t:'tile' },   { c:'#b8563c', w:'#f6dbc8', t:'tile' },
+  { c:'#c98f5f', w:'#f0d3c0', t:'tile' },   { c:'#b3663f', w:'#e8ded0', t:'tile' },
+  { c:'#d9a06e', w:'#f5dec6', t:'tile' },   { c:'#a8896f', w:'#f0e7de', t:'tile' },
+  { c:'#7f909c', w:'#efcfba', t:'slate' },  { c:'#6e8494', w:'#e5ecf1', t:'slate' },
+  { c:'#93a1ae', w:'#dce5eb', t:'slate' },  { c:'#7d8b96', w:'#eef2f5', t:'slate' },
+  { c:'#8f7f6e', w:'#e3d8c8', t:'slate' },  { c:'#c2a184', w:'#f7ebd0', t:'gravel' },
+  { c:'#c79a6b', w:'#ebd8ba', t:'gravel' }, { c:'#d8a55f', w:'#f0e7de', t:'gravel' },
+  { c:'#4f8d7c', w:'#eef1e9', t:'copper' }, { c:'#5c9a87', w:'#eaf0ea', t:'copper' },
+  { c:'#7fabcc', w:'#eaf2f7', t:'glass' },  { c:'#d6b46c', w:'#f8f0d9', t:'gravel' }
+];
+var blds = [], yards = [];
+function place(bx, by, bw, bd, kLo, kHi, pad){
+  if (bx < 1 || bx + bw > 970 || by < -8 || by + bd > 1093) return false;
+  if (!freeBox(bx, by, bw, bd)) return false;
+  markBox(bx, by, bw, bd, pad);
+  var k = rr(kLo, kHi);
+  var lift = Math.max(3, Math.min(bd * k, by + bd - 8));
+  var mi = Math.floor(rnd() * MAT.length), roll = rnd();
+  blds.push({
+    x: bx, y: by, w: bw, d: bd, lift: lift, m: MAT[mi],
+    kind: roll < 0.5 ? 'flat' : (roll < 0.78 ? 'gable' : 'hip'),
+    s1: rnd(), s2: rnd(), s3: rnd()
+  });
+  return true;
+}
+/* pass 1 — city blocks (sizes taken from the approved round-02 reference) */
+for (var gy = 18; gy < 1088; gy += 21){
+  for (var gx = 8; gx < 966; gx += 22){
+    if (rnd() < 0.08) continue;
+    var bw = rr(22, 46), bd = rr(18, 34), kLo = 0.78, kHi = 1.3, r0 = rnd();
+    if (r0 < 0.14){ bw = rr(44, 70); bd = rr(28, 46); }
+    else if (r0 < 0.20){ bw = rr(40, 58); bd = rr(30, 42); kLo = 0.7; kHi = 1.1; }
+    var r2 = rnd();
+    if (r2 > 0.55 && r2 < 0.84){ kLo = 1.3; kHi = 1.75; }
+    else if (r2 >= 0.84 && r2 < 0.96){ kLo = 1.75; kHi = 2.4; }
+    else if (r2 >= 0.96){ kLo = 2.4; kHi = 3.6; }
+    place(Math.round(gx + rr(-5, 5)), Math.round(gy + rr(-4, 4)), bw, bd, kLo, kHi, 2.4);
+  }
+}
+/* pass 2 — infill: narrow back-street buildings that fill the leftover gaps */
+for (var gy2 = 14; gy2 < 1090; gy2 += 11){
+  for (var gx2 = 5; gx2 < 968; gx2 += 11){
+    if (rnd() < 0.3) continue;
+    place(Math.round(gx2 + rr(-2, 2)), Math.round(gy2 + rr(-2, 2)),
+          rr(12, 25), rr(10.5, 20), 0.65, 1.15, 1.6);
+  }
+}
+/* pass 3 — yards, courtyards and small gardens between the blocks */
+for (var gy3 = 12; gy3 < 1092; gy3 += 13){
+  for (var gx3 = 5; gx3 < 968; gx3 += 12){
+    if (rnd() < 0.4) continue;
+    var yw = rr(9, 18), yd = rr(8, 15);
+    var yx = Math.round(gx3 + rr(-3, 3)), yy = Math.round(gy3 + rr(-3, 3));
+    if (yx < 1 || yy < -6 || yx + yw > 969 || yy + yd > 1092) continue;
+    if (!freeBox(yx, yy, yw, yd)) continue;
+    markBox(yx, yy, yw, yd, 1);
+    yards.push({ x: yx, y: yy, w: yw, d: yd, k: rnd() });
+  }
+}
+function yardStr(y){
+  var k = y.k;
+  if (k < 0.52){
+    return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="2" fill="#a9d79c"/>' +
+      '<circle cx="' + f(y.x + y.w * .32) + '" cy="' + f(y.y + y.d * .42) + '" r="' + f(Math.min(y.w, y.d) * .26) + '" fill="#7cbb72"/>' +
+      '<circle cx="' + f(y.x + y.w * .7) + '" cy="' + f(y.y + y.d * .66) + '" r="' + f(Math.min(y.w, y.d) * .2) + '" fill="#8ecb83"/>';
+  }
+  if (k < 0.78){
+    return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#d3d7c5"/>' +
+      '<rect x="' + f(y.x + 1.5) + '" y="' + f(y.y + 1.5) + '" width="' + f(y.w - 3) + '" height="' + f(y.d - 3) + '" fill="none" stroke="#c2c8b4" stroke-width="1"/>';
+  }
+  if (k < 0.9){
+    return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#cfd3c2"/>' +
+      '<rect x="' + f(y.x + 2) + '" y="' + f(y.y + 2) + '" width="6" height="3.4" rx="1.2" fill="#b0b8bd"/>' +
+      '<rect x="' + f(y.x + 10) + '" y="' + f(y.y + 2) + '" width="6" height="3.4" rx="1.2" fill="#a8b0b6"/>';
+  }
+  return '<rect x="' + f(y.x) + '" y="' + f(y.y) + '" width="' + f(y.w) + '" height="' + f(y.d) + '" rx="1.5" fill="#d8d3c1"/>';
+}
+function shadowStr(x, y, w, d, lift){
+  var hs = lift * SC;
+  var dx = 5 + 0.19 * hs, dy = 4 + 0.14 * hs;
+  return '<rect x="' + f(x + dx) + '" y="' + f(y + dy) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#3d5a66" opacity=".23"/>' +
+         '<rect x="' + f(x + 2) + '" y="' + f(y + 2) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#3d5a66" opacity=".14"/>';
+}
+function windowsStr(b){
+  var out = '', pitchX = 13, pitchY = 14.5, ww = 8, wh = 9;
+  var plinth = Math.min(b.lift * 0.3, 9);
+  if (b.w < 18 || b.lift < 10) return '';
+  var cols = Math.max(1, Math.floor((b.w - 5) / pitchX)), stepX = (b.w - 3) / cols;
+  var base = b.y + b.d - plinth - 3;
+  var rows = Math.floor((b.lift - plinth - 6) / pitchY);
+  if (rows < 1) return '';
+  var glass = b.s1 < 0.34 ? '#5f96b8' : (b.s1 < 0.7 ? '#74a9c8' : '#93c1d8');
+  for (var r = 0; r < rows; r++){
+    var wyy = base - (r + 1) * pitchY + 2;
+    if (wyy < b.y + b.d - b.lift + 2.5) break;
+    for (var c = 0; c < cols; c++){
+      out += '<rect x="' + f(b.x + 1.5 + c * stepX + (stepX - ww) / 2) + '" y="' + f(wyy) + '" width="' + ww +
+             '" height="' + wh + '" rx="1" fill="' + glass + '" opacity=".9"/>';
+    }
+  }
+  return out;
+}
+function roofTex(b){
+  var ry = b.y - b.lift, m = b.m, out = '', i, n, x, y;
+  if (m.t === 'tile' || m.t === 'slate'){
+    n = Math.max(2, Math.round(b.d / 5));
+    for (i = 1; i < n; i++){
+      y = ry + (b.d * i) / n;
+      out += '<path d="M' + f(b.x + .5) + ' ' + f(y) + ' H' + f(b.x + b.w - .5) + '" stroke="' + shade(m.c, -22) +
+             '" stroke-width=".9" opacity="' + (i % 2 ? .5 : .3) + '"/>';
+    }
+    n = Math.max(2, Math.round(b.w / 8));
+    for (i = 1; i < n; i++){
+      x = b.x + (b.w * i) / n;
+      out += '<path d="M' + f(x) + ' ' + f(ry + .6) + ' V' + f(ry + b.d - .6) + '" stroke="' +
+             shade(m.c, m.t === 'slate' ? 18 : -14) + '" stroke-width=".6" opacity=".22"/>';
+    }
+  } else if (m.t === 'copper'){
+    out += '<path d="M' + f(b.x + 2) + ' ' + f(ry + b.d * .32) + ' L' + f(b.x + b.w - 2.6) + ' ' + f(ry + b.d * .7) +
+           '" stroke="' + shade(m.c, 30) + '" stroke-width="1.3" opacity=".38"/>';
+    out += '<path d="M' + f(b.x + 3) + ' ' + f(ry + b.d * .6) + ' L' + f(b.x + b.w * .6) + ' ' + f(ry + b.d * .9) +
+           '" stroke="' + shade(m.c, 22) + '" stroke-width="1" opacity=".3"/>';
+    n = Math.max(2, Math.round(b.d / 6));
+    for (i = 1; i < n; i++){
+      y = ry + b.d * i / n;
+      out += '<path d="M' + f(b.x + 1) + ' ' + f(y) + ' H' + f(b.x + b.w - 1) + '" stroke="' + shade(m.c, -18) +
+             '" stroke-width=".8" opacity=".34"/>';
+    }
+  } else if (m.t === 'gravel'){
+    var k = Math.max(4, Math.round(b.w * b.d / 120));
+    for (i = 0; i < k; i++){
+      x = b.x + 1 + ((b.s1 * 7 + i * 1.7) % 1) * Math.max(1, b.w - 2);
+      y = ry + 1 + ((b.s2 * 5 + i * 2.3) % 1) * Math.max(1, b.d - 2);
+      out += '<circle cx="' + f(x) + '" cy="' + f(y) + '" r=".8" fill="' + shade(m.c, -32) + '" opacity=".42"/>';
+    }
+  } else if (m.t === 'lead'){
+    n = Math.max(2, Math.round(b.w / 6));
+    for (i = 1; i < n; i++){
+      x = b.x + (b.w * i) / n;
+      out += '<path d="M' + f(x) + ' ' + f(ry + .6) + ' V' + f(ry + b.d - .6) + '" stroke="' + shade(m.c, -26) +
+             '" stroke-width=".7" opacity=".34"/>';
+    }
+  } else if (m.t === 'glass'){
+    n = Math.max(2, Math.round(b.w / 7));
+    for (i = 1; i < n; i++){
+      x = b.x + (b.w * i) / n;
+      out += '<path d="M' + f(x) + ' ' + f(ry + .5) + ' V' + f(ry + b.d - .5) + '" stroke="#ffffff" stroke-width=".9" opacity=".5"/>';
+    }
+    n = Math.max(2, Math.round(b.d / 7));
+    for (i = 1; i < n; i++){
+      y = ry + (b.d * i) / n;
+      out += '<path d="M' + f(b.x + .5) + ' ' + f(y) + ' H' + f(b.x + b.w - .5) + '" stroke="#cfe2ee" stroke-width=".7" opacity=".5"/>';
+    }
+  }
+  return out;
+}
+function roofDetail(b){
+  var ry = b.y - b.lift, m = b.m, out = '', i, cx, cy, cw, ch, n;
+  out += '<rect x="' + f(b.x + 1.4) + '" y="' + f(ry + 1.4) + '" width="' + f(b.w - 2.8) + '" height="' + f(b.d - 2.8) +
+         '" fill="none" stroke="' + shade(m.c, -26) + '" stroke-opacity=".45" stroke-width="1.6"/>';
+  n = 1 + Math.floor(b.s2 * 3);
+  for (i = 0; i < n; i++){
+    cx = b.x + 5 + ((b.s3 * 7 + i * .37) % 1) * Math.max(4, b.w - 12);
+    cy = ry + 4 + (((b.s1 * 5 + i * .53) % 1) * Math.max(2, b.d - 10));
+    cw = 5.4; ch = 9 + b.s3 * 6;
+    out += '<rect x="' + f(cx) + '" y="' + f(cy - ch) + '" width="' + cw + '" height="' + f(ch + 3) + '" fill="#c08a6b"/>' +
+           '<rect x="' + f(cx - 0.8) + '" y="' + f(cy - ch - 2) + '" width="' + f(cw + 1.6) + '" height="3" fill="#a9724f"/>';
+  }
+  if (b.w > 34 && b.d > 28)
+    out += '<rect x="' + f(b.x + b.w - 17) + '" y="' + f(ry + 5) + '" width="7" height="5" rx="1" fill="#c3ccd2"/>' +
+           '<rect x="' + f(b.x + b.w - 15) + '" y="' + f(ry + 10) + '" width="3" height="3" fill="#aeb8bf"/>';
+  if (b.s1 > 0.74 && b.w > 30 && b.d > 26)
+    out += '<rect x="' + f(b.x + 5) + '" y="' + f(ry + b.d - 15) + '" width="' + f(Math.min(16, b.w - 10)) +
+           '" height="9" rx="2" fill="#8ec47f"/>';
+  if (m.t === 'glass' || b.s2 > 0.86)
+    out += '<rect x="' + f(b.x + b.w * .3) + '" y="' + f(ry + b.d * .34) + '" width="7" height="4.6" rx="1" fill="#e2f1f9" opacity=".85"/>';
+  return out;
+}
+function buildingStr(b){
+  var ny = b.y + b.d, wallTop = ny - b.lift, m = b.m, out = '', pl = Math.min(b.lift * .26, 9);
+  /* near (south) wall with its windows, plinth and door */
+  out += '<rect x="' + f(b.x) + '" y="' + f(wallTop) + '" width="' + f(b.w) + '" height="' + f(b.lift) + '" fill="' + m.w + '"/>';
+  out += windowsStr(b);
+  out += '<rect x="' + f(b.x) + '" y="' + f(ny - pl) + '" width="' + f(b.w) + '" height="' + f(pl) + '" fill="' + shade(m.w, -26) + '"/>';
+  if (b.w > 26 && b.s2 > .45)
+    out += '<rect x="' + f(b.x + 4 + b.s3 * (b.w - 14)) + '" y="' + f(ny - pl * .78) + '" width="6" height="' + f(pl * .78) +
+           '" rx="1" fill="#8a6a52"/>';
+  out += '<rect x="' + f(b.x) + '" y="' + f(wallTop) + '" width="' + f(b.w) + '" height="2.6" fill="' + shade(m.c, -34) + '" opacity=".85"/>';
+  out += '<rect x="' + f(b.x) + '" y="' + f(wallTop + 2.6) + '" width="' + f(b.w) + '" height="1.4" fill="#ffffff" opacity=".35"/>';
+  if (b.s2 < .22 && b.w > 26 && pl > 5)
+    out += '<rect x="' + f(b.x + 1) + '" y="' + f(ny - pl - 4.5) + '" width="' + f(b.w - 2) + '" height="4.5" rx="1.4" fill="' +
+           (b.s3 < .5 ? '#c85a52' : '#3f7f8c') + '"/>';
+  /* roof face: the footprint lifted up the screen */
+  out += '<rect x="' + f(b.x) + '" y="' + f(b.y - b.lift) + '" width="' + f(b.w) + '" height="' + f(b.d) + '" fill="' + m.c + '"/>';
+  out += '<rect x="' + f(b.x) + '" y="' + f(b.y - b.lift) + '" width="' + f(b.w) + '" height="2.4" fill="' + shade(m.c, 26) + '" opacity=".7"/>';
+  if (b.kind !== 'flat' && b.lift > 12){
+    var rise = Math.min(b.d * TANR * (b.kind === 'hip' ? .55 : .65), 20);
+    out += '<rect x="' + f(b.x) + '" y="' + f(wallTop - rise) + '" width="' + f(b.w) + '" height="' + f(rise) +
+           '" fill="' + shade(m.c, -14) + '"/>' +
+           '<rect x="' + f(b.x) + '" y="' + f(wallTop - rise) + '" width="' + f(b.w) + '" height="2" fill="' + shade(m.c, -40) + '"/>';
+  }
+  out += roofTex(b);
+  out += roofDetail(b);
+  return out;
+}
+
+/* --------------------------------------------------------- 8 · landmarks */
+function towerStr(tx, ty, tw, td, hs, spire, wall, withClock){
+  var out = '', lift = hs * UP, ny = ty + td, top = ty - lift;
+  out += '<rect x="' + f(tx) + '" y="' + f(ny - lift) + '" width="' + f(tw) + '" height="' + f(lift) + '" fill="' + wall + '"/>';
+  out += '<rect x="' + f(tx + tw * .3) + '" y="' + f(ny - lift + 12) + '" width="' + f(tw * .4) + '" height="' + f(lift - 26) +
+         '" rx="3" fill="#6d9ec0"/>';
+  out += '<rect x="' + f(tx) + '" y="' + f(ny - 4) + '" width="' + f(tw) + '" height="4" fill="#ded0b8"/>';
+  out += '<rect x="' + f(tx) + '" y="' + f(top) + '" width="' + f(tw) + '" height="2.2" fill="#bda98a" opacity=".8"/>';
+  out += '<rect x="' + f(tx) + '" y="' + f(top) + '" width="' + f(tw) + '" height="' + f(td) + '" fill="#5c6c78"/>';
+  out += '<polygon points="' + f(tx) + ',' + f(top) + ' ' + f(tx + tw) + ',' + f(top) + ' ' + f(tx + tw / 2) + ',' +
+         f(top - spire) + '" fill="#54626e"/>';
+  out += '<rect x="' + f(tx + tw / 2 - 1) + '" y="' + f(top - spire - 7) + '" width="2" height="7" fill="#e8c46a"/>';
+  if (withClock) out += '<circle cx="' + f(tx + tw / 2) + '" cy="' + f(ny - lift + 8) + '" r="3.4" fill="#f6f1e4"/>';
+  return out;
+}
+function cathedral(){
+  var x = CATH.x, y = CATH.y, w = CATH.w, d = CATH.d, out = '', ny = y + d, lift = 44 * UP, i, c;
+  /* far side first: chapter house + the north-west tower stand behind the nave */
+  out += '<rect x="' + f(x + w * .62) + '" y="' + f(y - 10 - 14 * UP) + '" width="24" height="' + f(14 + 14 * UP) +
+         '" fill="#eee2cb"/><rect x="' + f(x + w * .62) + '" y="' + f(y - 10 - 14 * UP) + '" width="24" height="14" fill="#8f7f6e"/>';
+  out += towerStr(x + 2, y + 3, 20, 18, 52, 24, '#f6efe2', 0);
+  /* nave: long south wall, arched windows, buttresses */
+  out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#f3e7d1"/>';
+  for (c = 0; c < 6; c++)
+    out += '<rect x="' + f(x + 8 + c * 13) + '" y="' + f(ny - lift + 6) + '" width="6" height="' + f(lift - 16) +
+           '" rx="3" fill="#6d9ec0"/>';
+  for (c = 0; c < 5; c++)
+    out += '<rect x="' + f(x + 15 + c * 18.5) + '" y="' + f(ny - lift - 5) + '" width="3.6" height="' + f(lift + 5) + '" fill="#e8dcc4"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(ny - 5) + '" width="' + f(w) + '" height="5" fill="#ded0b8"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="3" fill="#c9b894" opacity=".8"/>';
+  /* slate nave roof, ridge running east-west, lifted clear of the wall */
+  out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#63737f"/>';
+  out += roofTex({ x:x, y:y, w:w, d:d, lift:lift, m:{ c:'#6b7d8a', t:'slate' } });
+  out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="2.4" fill="#8194a0"/>';
+  out += '<rect x="' + f(x + 4) + '" y="' + f(y - lift - 9) + '" width="' + f(w - 8) + '" height="10" fill="#6f808c"/>';
+  /* crossing tower, then the near-west tower in front of it */
+  out += towerStr(x + w * .44, y + d * .22, 18, 16, 60, 20, '#f6efe2', 1);
+  out += towerStr(x + 2, y + d - 20, 20, 18, 52, 24, '#f6efe2', 0);
+  return { y1: ny + 40, s: out };
+}
+function stationHall(){
+  var x = STATION.x, y = STATION.y, w = STATION.w, d = STATION.d, out = '', ny = y + d, lift = 32 * UP, i;
+  /* stone facade with a row of tall windows */
+  out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#ece4d6"/>';
+  for (i = 0; i < 9; i++)
+    out += '<rect x="' + f(x + 8 + i * 18) + '" y="' + f(ny - lift + 7) + '" width="10" height="' + f(lift - 15) +
+           '" rx="5" fill="#7fb0cd"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(ny - 6) + '" width="' + f(w) + '" height="6" fill="#d9d1c1"/>';
+  out += '<rect x="' + f(x + w / 2 - 15) + '" y="' + f(ny - lift + 2) + '" width="30" height="14" rx="3" fill="#dfe6ec"/>';
+  out += '<circle cx="' + f(x + w / 2) + '" cy="' + f(ny - lift + 10) + '" r="4.4" fill="#f7f2e6" stroke="#8b98a3" stroke-width="1"/>';
+  /* forecourt canopy facing n7, and the platform canopy on the south side */
+  out += '<rect x="' + f(x + 14) + '" y="' + f(y - 10 - 15 * UP) + '" width="' + f(w * .62) + '" height="' + f(15 + 15 * UP) +
+         '" fill="#e3e9ed"/><rect x="' + f(x + 14) + '" y="' + f(y - 10 - 15 * UP) + '" width="' + f(w * .62) + '" height="15" fill="#6f7e8a"/>';
+  /* main shed: lifted lead roof with two glass strips */
+  out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#8794a0"/>';
+  out += '<rect x="' + f(x + 11) + '" y="' + f(y - lift) + '" width="' + f(w - 22) + '" height="' + f(d) + '" fill="#a7b6c1"/>';
+  out += '<rect x="' + f(x + 11) + '" y="' + f(y - lift) + '" width="' + f(w - 22) + '" height="' + f(d * .42) + '" fill="#bccbd5"/>';
+  out += '<rect x="' + f(x + 11) + '" y="' + f(y - lift) + '" width="' + f(w - 22) + '" height="2.6" fill="#d3dde4"/>';
+  for (i = 0; i < 8; i++)
+    out += '<path d="M' + f(x + 19 + i * (w - 38) / 7) + ' ' + f(y - lift + 3) + ' V' + f(y - lift + d - 3) +
+           '" stroke="#8a97a2" stroke-width="1" opacity=".5"/>';
+  out += '<rect x="' + f(x + 11) + '" y="' + f(y - lift + d * .42) + '" width="' + f(w - 22) + '" height="2.2" fill="#e6eef3" opacity=".8"/>';
+  return { y1: ny + 24, s: out };
+}
+function marketHall(){
+  var x = MARKET.x, y = MARKET.y, w = MARKET.w, d = MARKET.d, out = '', ny = y + d, lift = 28 * UP, i;
+  out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#f0e8d8"/>';
+  for (i = 0; i < 4; i++)
+    out += '<rect x="' + f(x + 7 + i * 16) + '" y="' + f(ny - lift + 6) + '" width="8" height="' + f(lift - 13) +
+           '" rx="4" fill="#6f9fbe"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(ny - 5) + '" width="' + f(w) + '" height="5" fill="#dfd6c2"/>';
+  /* oxidised copper barrel roof */
+  out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#5f9b8a"/>';
+  out += '<rect x="' + f(x + 6) + '" y="' + f(y - lift) + '" width="' + f(w - 12) + '" height="' + f(d) + '" fill="#6aa895"/>';
+  out += '<rect x="' + f(x + 6) + '" y="' + f(y - lift) + '" width="' + f(w - 12) + '" height="3" fill="#8dc4b3"/>';
+  for (i = 0; i < 6; i++)
+    out += '<path d="M' + f(x + 9 + i * (w - 18) / 5) + ' ' + f(y - lift + 3) + ' V' + f(y - lift + d - 3) +
+           '" stroke="#4e8676" stroke-width="1.1" opacity=".45"/>';
+  out += '<path d="M' + f(x + 7) + ' ' + f(y - lift + d * .3) + ' L' + f(x + w - 7) + ' ' + f(y - lift + d * .72) +
+         '" stroke="#9ad2c0" stroke-width="1.6" opacity=".4"/>';
+  /* clock turret */
+  out += towerStr(x + w / 2 - 7, y + d * .1, 14, 12, 20, 12, '#f2ead9', 1);
+  return { y1: ny + 16, s: out };
+}
+function stadium(){
+  var cx = STADIUM[0], cy = STADIUM[1], rx = STADIUM[2], ry = STADIUM[3];
+  var lift = 34 * UP, out = '', i, ax, ay;
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy) + '" rx="' + rx + '" ry="' + ry + '" fill="#b9c3cb"/>';
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy) + '" rx="' + (rx - 9) + '" ry="' + (ry - 7) + '" fill="none" stroke="#a3aeb8" stroke-width="2.2"/>';
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + rx + '" ry="' + ry + '" fill="#9fb0bd"/>';
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 26) + '" ry="' + (ry - 20) + '" fill="#b8c6d1"/>';
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 48) + '" ry="' + (ry - 34) + '" fill="#7cb96f"/>';
+  out += '<ellipse cx="' + f(cx) + '" cy="' + f(cy - lift) + '" rx="' + (rx - 74) + '" ry="' + (ry - 52) +
+         '" fill="none" stroke="#f2f5f3" stroke-width="2.4"/>';
+  out += '<path d="M' + f(cx - rx + 26) + ' ' + f(cy - lift) + ' H' + f(cx + rx - 26) + '" stroke="#f4f7f4" stroke-width="1.8" opacity=".8"/>';
+  for (i = 0; i < 4; i++){
+    ax = cx + (i < 2 ? -1 : 1) * (rx - 18); ay = cy - lift + (i % 2 === 0 ? -1 : 1) * (ry - 16);
+    out += '<rect x="' + f(ax - 3) + '" y="' + f(ay - 40) + '" width="6" height="40" fill="#8b98a3"/>' +
+           '<rect x="' + f(ax - 13) + '" y="' + f(ay - 52) + '" width="26" height="13" rx="3" fill="#e9eef2"/>';
+  }
+  return { y1: cy + ry, s: out };
+}
+function churchStr(){
+  var x = CHURCH.x, y = CHURCH.y, w = CHURCH.w, d = CHURCH.d, out = '', ny = y + d, lift = 20 * UP, i;
+  out += '<rect x="' + f(x) + '" y="' + f(ny - lift) + '" width="' + f(w) + '" height="' + f(lift) + '" fill="#f0e6d2"/>';
+  for (i = 0; i < 3; i++)
+    out += '<rect x="' + f(x + 7 + i * 17) + '" y="' + f(ny - lift + 4) + '" width="6" height="' + f(lift - 9) +
+           '" rx="3" fill="#6d9ec0"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(ny - 3.4) + '" width="' + f(w) + '" height="3.4" fill="#ded0b8"/>';
+  out += '<rect x="' + f(x) + '" y="' + f(y - lift) + '" width="' + f(w) + '" height="' + f(d) + '" fill="#6b7d8a"/>';
+  out += '<rect x="' + f(x + 3) + '" y="' + f(y - lift - 6) + '" width="' + f(w - 6) + '" height="7" fill="#7c8c97"/>';
+  out += towerStr(x + w - 20, y + 4, 15, 14, 46, 20, '#f2e7d3', 1);
+  return { y1: ny + 18, s: out };
+}
+
+/* ------------------------------------------------------------ 9 · ground */
+var G = [];
+/* land */
+G.push('<rect x="0" y="0" width="' + f(778 / S) + '" height="' + f(718 / SC) + '" fill="#dde1cd"/>');
+G.push('<rect x="0" y="0" width="' + f(778 / S) + '" height="' + f(718 / SC) + '" fill="url(#plotTex)"/>');
+for (var yi = 0; yi < yards.length; yi++) G.push(yardStr(yards[yi]));
+
+/* --- park: lawns, pond, paths, planting beds --- */
+G.push(sRect(148, 328, 92, 62, 'rx="14" fill="#7cbb78"'));
+G.push(sRect(153, 333, 82, 52, 'rx="11" fill="#93cf8c"'));
+G.push(sDisc(186, 372, 15, 'fill="#63bcd8"'));
+G.push(sDisc(186, 372, 15, 'fill="none" stroke="#dcecdf" stroke-width="2.4"'));
+G.push(sDisc(181, 369, 7, 'fill="#96d8ea" opacity=".7"'));
+G.push('<path d="' + pth(wps([[151,344],[176,351],[202,347],[236,357]])) + '" fill="none" stroke="#e6d9b4" stroke-width="8" stroke-linecap="round"/>');
+G.push('<path d="' + pth(wps([[162,386],[170,366],[188,340]])) + '" fill="none" stroke="#e6d9b4" stroke-width="6.4" stroke-linecap="round"/>');
+G.push(sRect(156, 356, 22, 14, 'rx="3" fill="#6fae66"'));
+G.push(sRect(212, 366, 22, 15, 'rx="3" fill="#82c17a"'));
+
+/* --- allotments, north-east --- */
+G.push(sRect(628, 56, 96, 84, 'rx="6" fill="#dcd9c6"'));
+for (var ay = 0; ay < 5; ay++) for (var ax = 0; ax < 4; ax++)
+  G.push(sRect(632 + ax * 23, 61 + ay * 15.4, 19, 11, 'rx="2" fill="' + (rnd() < .5 ? '#9ccf87' : '#b6d79a') + '"'));
+
+/* --- station forecourt: a civic plaza with a fountain and market stalls --- */
+G.push(sRect(410, 376, 140, 40, 'rx="9" fill="#ddd6c4"'));
+G.push(sRect(414, 380, 132, 32, 'rx="7" fill="#eae3d1"'));
+G.push(sRect(414, 380, 132, 32, 'rx="7" fill="url(#paveTex)"'));
+G.push(sDisc(506, 396, 13, 'fill="#cfe4ee" stroke="#a9c3d2" stroke-width="1.8"'));
+G.push(sDisc(506, 394, 5, 'fill="#9dc0d4"'));
+G.push(sRect(505, 386, 2.4, 8, 'fill="#b9c6cd"'));
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(d2){
+  var sxx = 506 + d2[0] * 44, syy = 396 + d2[1] * 14;
+  G.push(sRect(sxx - 9, syy - 6, 18, 12, 'rx="2" fill="#f6f1e4"'));
+  G.push(sRect(sxx - 10.4, syy - 9, 20.8, 5, 'rx="2" fill="' + (d2[0] < 0 ? '#c85a52' : '#3f7f8c') + '"'));
+});
+
+/* --- the dock basin south of the river: quay walls, cranes, a barge berth --- */
+G.push(sRect(430, 590, 108, 54, 'rx="4" fill="#4ea3cc"'));
+G.push(sRect(430, 590, 108, 54, 'rx="4" fill="none" stroke="#b9a684" stroke-width="3.4"'));
+G.push(sRect(424, 586, 12, 62, 'rx="2" fill="#c9b391"'));
+G.push(sRect(532, 586, 12, 62, 'rx="2" fill="#c9b391"'));
+
+/* --- river: banks, quay wall, water, shimmer --- */
+var rp = pth(RIVERW);
+G.push('<path d="' + rp + '" fill="none" stroke="#a9b09a" stroke-width="98" stroke-linecap="round"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="#cfd3bb" stroke-width="88" stroke-linecap="round"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="#b9a684" stroke-width="76" stroke-linecap="round"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="url(#waterG)" stroke-width="67" stroke-linecap="round"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="#7cc4e4" stroke-width="37" stroke-linecap="round"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="#e2f4fd" stroke-width="2.2" stroke-dasharray="26 44" class="shimmer" opacity=".8"/>');
+G.push('<path d="' + rp + '" fill="none" stroke="#5aa9cd" stroke-width="2.4" stroke-dasharray="48 96" opacity=".3"/>');
+/* embankment wall, bollards and steps on both banks */
+[0, 1].forEach(function(side){
+  var off = side ? 1 : -1, pts = [];
+  for (var xx = -10; xx <= 788; xx += 40) pts.push([xx, riverY(xx) + off * 31]);
+  G.push('<path d="' + pth(wps(pts)) + '" fill="none" stroke="#c8b894" stroke-width="5.2" stroke-linejoin="round"/>');
+  G.push('<path d="' + pth(wps(pts)) + '" fill="none" stroke="#efe7d2" stroke-width="1.8" stroke-dasharray="6 11" opacity=".75"/>');
+});
+for (var bx = 24; bx < 778; bx += 46)
+  G.push(sDisc(bx, riverY(bx) - 36, 1.8, 'fill="#8e8674"'));
+/* wharves, piers and a timber yard on both banks */
+G.push(sRect(60, 552, 86, 20, 'rx="3" fill="#c9b391"'));
+G.push(sRect(72, 572, 10, 26, 'fill="#b9a382"'));
+G.push(sRect(120, 572, 10, 26, 'fill="#b9a382"'));
+G.push(sRect(596, 466, 78, 16, 'rx="3" fill="#c9b391"'));
+G.push(sRect(610, 482, 9, 22, 'fill="#b9a382"'));
+G.push(sRect(650, 482, 9, 22, 'fill="#b9a382"'));
+G.push(sRect(258, 556, 60, 14, 'rx="2" fill="#d3c6a4"'));
+G.push(sRect(690, 560, 70, 18, 'rx="3" fill="#c9b391"'));
+/* steps down to the water at the north-bank quay */
+G.push(sRect(330, 494, 26, 9, 'rx="1.4" fill="#cfc3a4"'));
+G.push(sRect(333, 502, 20, 7, 'rx="1.4" fill="#c3b797"'));
+
+/* --- streets: kerb, pavement, asphalt (three passes so junctions merge
+       instead of stacking) --- */
+function pass(pick){
+  STREETS.forEach(function(s){
+    var o = pick(SW[s.k]);
+    G.push('<path d="' + pth(s.p) + '" fill="none" stroke="' + o.color + '" stroke-width="' + o.w +
+      '" stroke-linecap="round" stroke-linejoin="round"' + (o.dash ? ' stroke-dasharray="' + o.dash + '"' : '') + '/>');
+  });
+}
+pass(function(w){ return { color:'#a49b80', w:w.kerb }; });
+pass(function(w){ return { color:'#e7e1cd', w:w.pave }; });
+pass(function(w){ return { color:'#8b949c', w:w.asp }; });
+/* kerb-side gutter shading + centre markings on the service roads */
+STREETS.forEach(function(s){
+  if (s.k !== 'main') return;
+  G.push('<path d="' + pth(s.p) + '" fill="none" stroke="#7e878f" stroke-width="' + (SW.main.asp - 9) +
+         '" opacity=".28" stroke-linecap="round"/>');
+  G.push('<path d="' + pth(s.p) + '" fill="none" stroke="#f8f9f5" stroke-width="1.6" stroke-dasharray="8 14" opacity=".7" stroke-linecap="round"/>');
+});
+/* tram rails running up the market street and across the bridge */
+G.push('<path d="' + pth(wps([[320,185],[332,232],[366,286],[385,330]])) + '" fill="none" stroke="#8b8577" stroke-width="2" opacity=".5"/>');
+G.push('<path d="' + pth(wps([[326,187],[338,234],[372,288],[391,332]])) + '" fill="none" stroke="#8b8577" stroke-width="2" opacity=".5"/>');
+/* a rail viaduct: the metro crosses blocks instead of following streets */
+(function(){
+  var MP = wps(METRO), smp = sample(MP, 26), i;
+  for (i = 1; i < smp.length - 1; i++)
+    G.push('<rect x="' + f(smp[i][0] - 2.6) + '" y="' + f(smp[i][1] - 3) + '" width="5.2" height="11" fill="#9aa4ad"/>' +
+           '<ellipse cx="' + f(smp[i][0]) + '" cy="' + f(smp[i][1] + 8) + '" rx="4.4" ry="2.2" fill="#3d5a66" opacity=".18"/>');
+  G.push('<path d="' + pth(MP) + '" fill="none" stroke="#7d8791" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="' + pth(MP) + '" fill="none" stroke="#b9c2c9" stroke-width="11.5" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="' + pth(MP) + '" fill="none" stroke="#6c767f" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>');
+  [2.6, -2.6].forEach(function(o2){
+    G.push('<path d="' + pth(offsetPath(MP, o2)) + '" fill="none" stroke="#eef2f5" stroke-width="1.4" opacity=".85"/>');
+  });
+})();
+/* the special alleyway is a real passage between the blocks */
+G.push('<path d="' + pth(wps(ALLEY)) + '" fill="none" stroke="#b7ae98" stroke-width="13" stroke-linecap="round"/>');
+G.push('<path d="' + pth(wps(ALLEY)) + '" fill="none" stroke="#cdc6b2" stroke-width="9.5" stroke-linecap="round"/>');
+G.push('<path d="' + pth(wps(ALLEY)) + '" fill="none" stroke="#a89e88" stroke-width="1.4" stroke-dasharray="2.4 4.4" opacity=".6"/>');
+
+/* --- the two bridges: abutments, piers, parapets, roadway --- */
+BRIDGES.forEach(function(br){
+  var by = riverY(br.x), w = 40, hh = br.y1 - br.y0;
+  /* pier bands standing in the water, wider than the deck so they show */
+  [-26, 0, 26].forEach(function(o2){
+    G.push(sRect(br.x - w / 2 - 8, by + o2 - 7, w + 16, 14, 'rx="2" fill="#8b959d"'));
+    G.push(sRect(br.x - w / 2 - 8, by + o2 - 7, w + 16, 4, 'fill="#bcc4ca"'));
+  });
+  /* abutments on both banks */
+  G.push(sRect(br.x - w / 2 - 11, by - 66, w + 22, 42, 'rx="3" fill="#b0a992"'));
+  G.push(sRect(br.x - w / 2 - 11, by + 24, w + 22, 42, 'rx="3" fill="#b0a992"'));
+  G.push(sRect(br.x - w / 2 - 11, by - 66, w + 22, 5, 'fill="#cdc6b0"'));
+  G.push(sRect(br.x - w / 2 - 11, by + 24, w + 22, 5, 'fill="#cdc6b0"'));
+  /* deck: shadow edge, stone deck, darker roadway */
+  G.push(sRect(br.x - w / 2 - 5, br.y0 + 2, w + 10, hh, 'rx="4" fill="#4d6a76" opacity=".22"'));
+  G.push(sRect(br.x - w / 2 - 3, br.y0, w + 6, hh, 'rx="3.6" fill="#a7aeae"'));
+  G.push(sRect(br.x - w / 2, br.y0, w, hh, 'fill="#c9d0d4"'));
+  G.push(sRect(br.x - w / 2 + 7, br.y0, w - 14, hh, 'fill="#a2abb2"'));
+  /* parapets: pale stone with a coping band and railing posts */
+  [-1, 1].forEach(function(s2){
+    var px = br.x + s2 * (w / 2 - 4) - 3.4;
+    G.push(sRect(px, br.y0 - 2, 6.8, hh + 4, 'fill="#f5f3ea"'));
+    G.push(sRect(px, br.y0 - 2, 6.8, hh + 4, 'fill="none" stroke="#c6c0ae" stroke-width="1"'));
+    for (var yy = br.y0 + 8; yy < br.y1 - 6; yy += 13)
+      G.push(sRect(px + 1.8, yy, 3.2, 6, 'fill="#cfd5d8" opacity=".9"'));
+  });
+  /* roadway markings */
+  G.push('<path d="' + pth([[wx(br.x), wy(br.y0 + 6)], [wx(br.x), wy(br.y1 - 6)]]) +
+         '" fill="none" stroke="#f6f7f3" stroke-width="1.6" stroke-dasharray="7 9" opacity=".8"/>');
+});
+
+/* --- crossings, parking bays, loading bays --- */
+function zebra(sxx, syy, deg){
+  var out = '<g transform="translate(' + f(wx(sxx)) + ',' + f(wy(syy)) + ') rotate(' + deg + ')">';
+  for (var i = -2; i <= 2; i++)
+    out += '<rect x="' + (i * 4.4 - 1.8) + '" y="-7.4" width="3.2" height="14.8" fill="#f4f5f0" opacity=".82"/>';
+  return out + '</g>';
+}
+G.push(zebra(268, 318, 8));
+G.push(zebra(268, 426, -16));
+G.push(zebra(382, 334, 4));
+G.push(zebra(316, 462, 4));
+G.push(zebra(160, 198, -10));
+function bays(sxx, syy, deg, n){
+  var out = '<g transform="translate(' + f(wx(sxx)) + ',' + f(wy(syy)) + ') rotate(' + deg + ')">';
+  for (var i = 0; i < n; i++)
+    out += '<rect x="' + (i * 7.4) + '" y="-5" width="6" height="10" rx="1" fill="#d3d5cd"/>' +
+           '<rect x="' + (i * 7.4 + 5.6) + '" y="-5" width="1" height="10" fill="#f0f1ec" opacity=".9"/>';
+  return out + '</g>';
+}
+G.push(bays(300, 344, -4, 5));
+G.push(bays(408, 418, 8, 4));
+G.push(bays(496, 480, 4, 6));
+
+/* --- trees: park, squares, churchyard, riverbank --- */
+function treeStr(x, y, r, cls){
+  return '<ellipse cx="' + f(x + 3) + '" cy="' + f(y + 3.2) + '" rx="' + f(r * .94) + '" ry="' + f(r * .55) +
+    '" fill="#3f5f52" opacity=".17"/>' +
+    '<rect x="' + f(x - 1.2) + '" y="' + f(y - r - 4.8) + '" width="2.4" height="' + f(r + 4.8) + '" fill="#8a6f4d"/>' +
+    '<g class="' + (cls || '') + '">' +
+      '<circle cx="' + f(x) + '" cy="' + f(y - r - 4.8) + '" r="' + f(r) + '" fill="#6fb46a"/>' +
+      '<circle cx="' + f(x - r * .34) + '" cy="' + f(y - r - 6.6 - r * .3) + '" r="' + f(r * .62) + '" fill="#86c77f"/>' +
+      '<circle cx="' + f(x + r * .32) + '" cy="' + f(y - r - 5.7 + r * .22) + '" r="' + f(r * .48) + '" fill="#5fa25c" opacity=".85"/>' +
+    '</g>';
+}
+var ti, tx, ty;
+for (ti = 0; ti < 20; ti++){
+  tx = rr(PARK[0] + 6, PARK[0] + PARK[2] - 6); ty = rr(PARK[1] + 6, PARK[1] + PARK[3] - 6);
+  if (Math.hypot(tx - wx(186), ty - wy(372)) < 22) continue;
+  G.push(treeStr(tx, ty, rr(8, 13.5), ti % 3 === 0 ? 'sway' : (ti % 3 === 1 ? 'sway d1' : '')));
+}
+for (ti = 0; ti < 5; ti++) G.push(treeStr(ALLOT[0] - 6, ALLOT[1] + 9 + ti * 20, 7, ''));
+var streetTrees = [[232,190],[262,200],[196,232],[286,224],[342,208],[368,326],[300,318],
+  [246,300],[212,300],[160,318],[112,330],[128,272],[236,404],[300,440],[352,436],
+  [452,348],[496,344],[540,340],[588,352],[628,368],[608,286],[664,300],
+  [352,268],[420,250],[466,132],[508,128],[560,120],[452,62],[368,64],[262,62],
+  [186,110],[122,124],[98,232],[176,444],[594,452],[288,532],[626,506]];
+for (ti = 0; ti < streetTrees.length; ti++)
+  G.push(treeStr(wx(streetTrees[ti][0]), wy(streetTrees[ti][1]), rr(5.6, 9.4), ti % 4 === 2 ? 'sway d2' : ''));
+/* hedges and planting beds */
+[[336,300,26,7],[292,352,22,7],[452,278,24,6.4],[544,232,22,6.4],[196,432,22,6.4],
+ [676,398,26,7],[654,88,30,7],[300,528,26,6.4]].forEach(function(hb){
+  G.push(sRect(hb[0], hb[1], hb[2], hb[3], 'rx="2.4" fill="#6fae66"'));
+  G.push(sRect(hb[0], hb[1], hb[2], hb[3] * .5, 'rx="2.4" fill="#8ac47f"'));
+});
+/* market stalls along the market-hall frontage */
+[[318,306],[338,304],[358,302]].forEach(function(st, i){
+  G.push(sRect(st[0], st[1], 16, 11, 'rx="2" fill="#f6f1e4"'));
+  G.push(sRect(st[0] - 1.4, st[1] - 4.4, 18.8, 4.6, 'rx="1.6" fill="' + (i % 2 ? '#3f7f8c' : '#c85a52') + '"'));
+});
+
+/* --- cast shadows: one north-west sun, every shadow falls south-east --- */
+blds.forEach(function(b){ G.push(shadowStr(b.x, b.y, b.w, b.d, b.lift)); });
+G.push(shadowStr(CATH.x - 6, CATH.y, CATH.w + 12, CATH.d, 74));
+G.push(shadowStr(STATION.x - 8, STATION.y, STATION.w + 16, STATION.d, 54));
+G.push(shadowStr(MARKET.x - 3, MARKET.y, MARKET.w + 6, MARKET.d, 46));
+G.push(shadowStr(CHURCH.x - 3, CHURCH.y, CHURCH.w + 6, CHURCH.d, 34));
+G.push('<ellipse cx="' + f(STADIUM[0] + 20) + '" cy="' + f(STADIUM[1] + 16) + '" rx="' + (STADIUM[2] + 10) +
+       '" ry="' + (STADIUM[3] + 7) + '" fill="#5d7a70" opacity=".16"/>');
+
+/* --- the moving life: two cars and a barge (calm, looping, CSS only) --- */
+G.push('<g transform="translate(' + f(wx(96)) + ',' + f(wy(500)) + ')"><g class="car">' +
+  '<rect x="-8" y="-4.4" width="16" height="8.8" rx="2.4" fill="#aab3b9"/>' +
+  '<rect x="-3.4" y="-7.8" width="9" height="4.6" rx="1.4" fill="#98a2a9"/>' +
+  '<rect x="-2.4" y="-7.2" width="6" height="3.4" rx="1" fill="#cfe3ee"/>' +
+  '<circle cx="-4.6" cy="4.4" r="1.8" fill="#6d757b"/><circle cx="4.6" cy="4.4" r="1.8" fill="#6d757b"/></g></g>');
+G.push('<g transform="translate(' + f(wx(560)) + ',' + f(wy(486)) + ')"><g class="car d1">' +
+  '<rect x="-7.4" y="-4" width="14.8" height="8" rx="2.2" fill="#b3b9bd"/>' +
+  '<rect x="-3.2" y="-7.2" width="8.4" height="4.2" rx="1.3" fill="#9aa3a9"/>' +
+  '<rect x="-2.2" y="-6.6" width="5.6" height="3" rx="1" fill="#d4e6f0"/>' +
+  '<circle cx="-4.2" cy="4" r="1.6" fill="#6d757b"/><circle cx="4.2" cy="4" r="1.6" fill="#6d757b"/></g></g>');
+G.push('<g transform="translate(' + f(wx(150)) + ',' + f(wy(riverY(150) + 8)) + ')"><g class="barge">' +
+  '<path d="M-20 -6 H18 L13 6 H-17 Z" fill="#8d7a5e"/>' +
+  '<rect x="-14" y="-12" width="20" height="6.6" rx="1.6" fill="#a89272"/>' +
+  '<rect x="-19" y="-7" width="38" height="2.4" fill="#6f6047"/>' +
+  '<rect x="-15" y="-16" width="2.4" height="4.6" fill="#7d6a4f"/></g></g>');
+/* a dockside crane, swaying very slowly */
+G.push('<g transform="translate(' + f(wx(546)) + ',' + f(wy(596)) + ')">' +
+  '<rect x="-3" y="-46" width="6" height="46" fill="#8d7a5e"/>' +
+  '<g class="crane"><rect x="-3" y="-52" width="46" height="5" rx="2" fill="#a89272"/>' +
+  '<rect x="34" y="-52" width="2.4" height="18" fill="#7d6a4f"/>' +
+  '<rect x="30" y="-34" width="11" height="8" rx="1.6" fill="#c9b391"/></g></g>');
+
+/* ------------------------------------------------ 10 · buildings painting */
+var items = [];
+blds.forEach(function(b){ items.push({ y1: b.y + b.d, s: buildingStr(b) }); });
+items.push(cathedral());
+items.push(stationHall());
+items.push(marketHall());
+items.push(stadium());
+items.push(churchStr());
+items.sort(function(a, b){ return a.y1 - b.y1; });
+$('ground').setAttribute('transform', MX);
+$('bld').setAttribute('transform', MX);
+$('ground').innerHTML = G.join('');
+$('bld').innerHTML = items.map(function(it){ return it.s; }).join('');
+
+/* ================================================================ 11 · info */
+function path(pts, o, parent){
+  return el('path', { d: pth(pts), fill:'none', stroke:o.color, 'stroke-width':o.w,
+    'stroke-linecap':o.cap || 'round', 'stroke-linejoin':'round',
+    'stroke-dasharray':o.dash || null, opacity:o.opacity }, parent || $('net'));
+}
+function txt(parent, o, body){
+  var t = el('text', { x:f(o.x), y:f(o.y), 'text-anchor':o.anchor || 'middle',
+    'font-size':o.size, 'font-weight':o.weight || 800, fill:o.fill,
+    'letter-spacing':o.ls || '0', stroke:o.halo || 'none', 'stroke-width':o.halo ? 3.2 : 0,
+    'paint-order':'stroke', 'stroke-linejoin':'round' }, parent);
+  t.textContent = body;
+  return t;
+}
+
+/* --- service lines, deliberately subdued: the legal moves are the bright ones.
+       Drawn in stage pixels — this layer is not tilted. --- */
+(function(){
+  path(METRO, { color:'#ffffff', w:7, opacity:.42 });
+  path(METRO, { color:'#3d4d69', w:4, dash:'13 5', opacity:.42 });
+  BUS.forEach(function(bp){
+    path(bp, { color:'#ffffff', w:5.6, opacity:.22 });
+    path(bp, { color:'#2563eb', w:2.8, dash:'8 9', opacity:.2 });
+  });
+  path(ALLEY, { color:'#ffffff', w:5.2, opacity:.42 });
+  path(ALLEY, { color:'#7c3aed', w:2.8, dash:'7 3.4 1.8 3.4', opacity:.5 });
+})();
+
+/* --- Falcon's legal moves: polylines that bend along the street geometry,
+       drawn in stage pixels — the same coordinates the station table uses. --- */
+function slicePath(pts, a, b){
+  var out = pts.map(function(p){ return p.slice(); }), k, t, L;
+  for (k = 0; k < out.length - 1 && a > 0; k++){
+    L = Math.hypot(out[k + 1][0] - out[k][0], out[k + 1][1] - out[k][1]);
+    if (L <= a){ a -= L; out[k] = null; }
+    else { t = a / L; out[k] = [out[k][0] + (out[k + 1][0] - out[k][0]) * t, out[k][1] + (out[k + 1][1] - out[k][1]) * t]; a = 0; }
+  }
+  for (k = out.length - 1; k > 0 && b > 0; k--){
+    L = Math.hypot(out[k][0] - out[k - 1][0], out[k][1] - out[k - 1][1]);
+    if (L <= b){ b -= L; out[k] = null; }
+    else { t = b / L; out[k] = [out[k][0] + (out[k - 1][0] - out[k][0]) * t, out[k][1] + (out[k - 1][1] - out[k][1]) * t]; b = 0; }
+  }
+  return out.filter(Boolean);
+}
+function pointAt(pts, t){
+  var segs = [], total = 0, k, L, want, s;
+  for (k = 0; k < pts.length - 1; k++){ L = Math.hypot(pts[k + 1][0] - pts[k][0], pts[k + 1][1] - pts[k][1]); segs.push(L); total += L; }
+  want = total * t;
+  for (k = 0; k < segs.length; k++){
+    if (want <= segs[k] || k === segs.length - 1){
+      s = Math.min(1, want / (segs[k] || 1));
+      return { x: pts[k][0] + (pts[k + 1][0] - pts[k][0]) * s, y: pts[k][1] + (pts[k + 1][1] - pts[k][1]) * s,
+               nx: -(pts[k + 1][1] - pts[k][1]) / (segs[k] || 1), ny: (pts[k + 1][0] - pts[k][0]) / (segs[k] || 1) };
+    }
+    want -= segs[k];
+  }
+  return { x: pts[0][0], y: pts[0][1], nx:0, ny:-1 };
+}
+function arrow(aid, color){
+  var m = el('marker', { id:aid, viewBox:'0 0 14 14', refX:11, refY:7, markerWidth:14, markerHeight:14,
+    markerUnits:'userSpaceOnUse', orient:'auto' });
+  el('path', { d:'M2.6 2.6 L12.2 7 L2.6 11.4 Z', fill:color, stroke:'#26313d', 'stroke-width':1.4,
+    'stroke-linejoin':'round' }, m);
+}
+arrow('arw-taxi', PSTYLE.taxi.color);
+arrow('arw-foot', PSTYLE.foot.color);
+MOVES.forEach(function(mv){
+  var st = PSTYLE[mv.mode], pts = offsetPath(ROUTE['n5-' + mv.to], mv.off);
+  var draw = slicePath(pts, 15, 13), pt, side, px, py, pw, gl, g = el('g', { 'data-move':mv.mode }, $('net'));
+  path(draw, { color:'#26313d', w:st.w + 4.6, opacity:.55 }, g);
+  el('path', { d:pth(draw), fill:'none', stroke:st.color, 'stroke-width':st.w,
+    'stroke-linecap':(mv.mode === 'foot') ? 'round' : 'butt', 'stroke-linejoin':'round',
+    'stroke-dasharray':st.dash, 'marker-end':'url(#arw-' + mv.mode + ')' }, g);
+  pt = pointAt(pts, mv.t); side = mv.off < 0 ? -1 : 1;
+  px = pt.x + pt.nx * side * 13; py = pt.y + pt.ny * side * 13;
+  if (mv.label){
+    pw = mv.mode === 'foot' ? 68 : 52;
+    el('rect', { x:f(px - pw / 2), y:f(py - 10), width:pw, height:20, rx:10, fill:'#1b2b3c', opacity:.94 }, g);
+    el('rect', { x:f(px - pw / 2), y:f(py - 10), width:pw, height:20, rx:10, fill:'none', stroke:st.color,
+      'stroke-width':1.4, opacity:.9 }, g);
+    gl = el('g', { transform:'translate(' + f(px - pw / 2 + 6) + ',' + f(py - 6.6) + ')' }, g);
+    glyphInto(gl, mv.mode, st.color, 13);
+    txt(g, { x:px + 9, y:py + 4, size:9, fill:'#f4f8fb', ls:'.05em' }, PNAME[mv.mode]);
+  } else {
+    el('circle', { cx:f(px), cy:f(py), r:10, fill:'#1b2b3c', opacity:.9 }, g);
+    el('circle', { cx:f(px), cy:f(py), r:10, fill:'none', stroke:st.color, 'stroke-width':1.4, opacity:.9 }, g);
+    gl = el('g', { transform:'translate(' + f(px - 6.5) + ',' + f(py - 6.5) + ')' }, g);
+    glyphInto(gl, mv.mode, st.color, 13);
+  }
+});
+
+/* --- belief shading: a warm additive glow over a cool base --- */
+BELIEF.forEach(function(bl){
+  var n = N[bl.id], p = bl.p;
+  el('circle', { cx:n.x, cy:n.y, r:f(21 + 62 * p), fill:'url(#belCool)', opacity:f(.45 + .95 * p) }, $('bel'));
+  el('circle', { cx:n.x, cy:n.y, r:f(14 + 62 * p), fill:'url(#belGlow)', opacity:f(.18 + 1.1 * p) }, $('bel'));
+  el('circle', { cx:n.x, cy:n.y, r:f(7 + 26 * p), fill:'url(#belCore)', opacity:f(.22 + .75 * p) }, $('bel'));
+  el('circle', { cx:n.x, cy:n.y, r:f(12 + 40 * p), fill:'none', stroke:'#c9760c',
+    'stroke-width':f(1.1 + 2.4 * p), 'stroke-dasharray':f(2.4 + 7 * p) + ' ' + f(10 - 6.4 * p),
+    opacity:f(.28 + .6 * p) }, $('bel'));
+});
+
+/* --- stations: class reads by shape, and every id stays legible --- */
+function hex(x, y, r){
+  var s = '', k, a;
+  for (k = 0; k < 6; k++){ a = Math.PI / 6 + k * Math.PI / 3; s += (k ? ' L' : 'M') + f(x + r * Math.cos(a)) + ' ' + f(y + r * Math.sin(a)); }
+  return s + ' Z';
+}
+function marker(sid){
+  var n = N[sid], g = $('stn');
+  if (n.c === 'street'){
+    el('circle', { cx:n.x, cy:n.y, r:10.4, fill:'#fffdf6', stroke:'#f6efdf', 'stroke-width':4 }, g);
+    el('circle', { cx:n.x, cy:n.y, r:9.2, fill:'#fffdf6', stroke:'#2f4053', 'stroke-width':2.8 }, g);
+    el('circle', { cx:n.x, cy:n.y, r:2.4, fill:'#2f4053' }, g);
+  } else if (n.c === 'hub'){
+    el('path', { d:hex(n.x, n.y, 13.5), fill:'#f3e0bb', stroke:'#2f4053', 'stroke-width':3.2 }, g);
+    el('path', { d:hex(n.x, n.y, 8.4), fill:'none', stroke:'#2f4053', 'stroke-width':1.8 }, g);
+    el('circle', { cx:n.x, cy:n.y, r:2.2, fill:'#2f4053' }, g);
+  } else {
+    el('rect', { x:n.x - 15, y:n.y - 15, width:30, height:30, rx:5.6, fill:'#3d4d69', stroke:'#fffdf6', 'stroke-width':3.2 }, g);
+    el('rect', { x:n.x - 13.6, y:n.y - 13.6, width:27.2, height:27.2, rx:4.4, fill:'#3d4d69', stroke:'#1d2b3a', 'stroke-width':1.8 }, g);
+    el('path', { d:'M' + (n.x - 5.6) + ' ' + (n.y + 5.6) + ' V' + (n.y - .4) + ' a5.6 5.6 0 0 1 11.2 0 V' + (n.y + 5.6),
+      fill:'none', stroke:'#dbe4f2', 'stroke-width':2.2 }, g);
+  }
+}
+Object.keys(N).forEach(marker);
+LABELS.forEach(function(l){
+  txt($('stn'), { x:l[1], y:l[2], size:12.5, fill:'#25384a', halo:'#f4ecd9', ls:'.02em' }, l[0]);
+});
+
+/* --- ghost: last-known node n3, never a drawn Fugitive ------------------- */
+(function(){
+  var n = N[GHOST], D = 'M' + n.x + ' ' + (n.y - 9) + ' L' + (n.x + 9) + ' ' + n.y + ' L' + n.x + ' ' + (n.y + 9) +
+    ' L' + (n.x - 9) + ' ' + n.y + ' Z';
+  el('circle', { cx:n.x, cy:n.y, r:19, fill:'none', stroke:'#9a7b4f', 'stroke-width':2.2,
+    'stroke-dasharray':'5 4.4', opacity:.9 }, $('stn'));
+  el('path', { d:D, fill:'#9a7b4f', opacity:.2 }, $('stn'));
+  el('path', { d:D, fill:'none', stroke:'#8a6a3a', 'stroke-width':1.8, 'stroke-dasharray':'3.6 3' }, $('stn'));
+  el('path', { d:'M' + (n.x + 12) + ' ' + (n.y + 6) + ' L498 224', stroke:'#8a6a3a', 'stroke-width':1.5,
+    'stroke-dasharray':'2.4 3' }, $('stn'));
+  el('rect', { x:484, y:214, width:142, height:26, rx:6, fill:'#fdf6e6', stroke:'#c2a878', 'stroke-width':1.3 }, $('stn'));
+  txt($('stn'), { x:495, y:231.5, size:10.8, fill:'#7a5c2c', anchor:'start', ls:'.04em' }, 'n3 · LAST KNOWN T5');
+})();
+
+/* --- characters: upright figures on a ground ring, idle bobbing ---------- */
+function figureStr(col, hair, ghost){
+  var body = ghost ? 'fill="#ccd6dd" stroke="#3f4d59" stroke-width="1.4" stroke-dasharray="3 2.4"' : 'fill="' + col + '"';
+  var leg = ghost ? 'fill="#b9c5ce"' : 'fill="#2b3a4a"';
+  var head = ghost ? 'fill="#dbe3e9" stroke="#3f4d59" stroke-width="1.4"' : 'fill="#f0c9a2"';
+  return '<rect x="-4.6" y="-15" width="3.4" height="15" rx="1.6" ' + leg + '/>' +
+         '<rect x="1.2" y="-15" width="3.4" height="15" rx="1.6" ' + leg + '/>' +
+         '<path d="M-6.8,-31 q1.7,-4.6 6.8,-4.6 q5.1,0 6.8,4.6 l1.5,17.6 q-8.3,2.7 -16.6,0 z" ' + body + '/>' +
+         '<circle cx="0" cy="-35.4" r="4.8" ' + head + '/>' +
+         (ghost ? '' : '<path d="M-4.8,-36.8 a4.8,4.8 0 0 1 9.6,0 z" fill="' + hair + '"/>');
+}
+function character(sid, col, hair, kind){
+  var n = N[sid], top = $('chr'), g;
+  g = el('g', { transform:'translate(' + n.x + ',' + n.y + ')' }, top);
+  el('ellipse', { cx:3.4, cy:3.4, rx:15, ry:6.4, fill:'#33475c', opacity:.18 }, g);
+  if (kind === 'ghost'){
+    el('ellipse', { rx:15, ry:6.2, fill:'none', stroke:'#8d9aa8', 'stroke-opacity':.85,
+      'stroke-width':2.4, 'stroke-dasharray':'4.4 4.2' }, g);
+    el('ellipse', { rx:15, ry:6.2, fill:'#8d9aa8', 'fill-opacity':.1 }, g);
+    el('ellipse', { rx:22, ry:9, fill:'none', stroke:'#8d9aa8', 'stroke-opacity':.4,
+      'stroke-width':1.4, 'stroke-dasharray':'2.6 6' }, g);
+  } else {
+    el('ellipse', { rx:15, ry:6.2, fill:col, 'fill-opacity':.24 }, g);
+    el('ellipse', { rx:15, ry:6.2, fill:'none', stroke:col, 'stroke-width':3.4 }, g);
+    el('ellipse', { rx:15, ry:6.2, fill:'none', stroke:'#ffffff', 'stroke-opacity':.65, 'stroke-width':1.2 }, g);
+  }
+  if (kind === 'you') el('ellipse', { rx:22, ry:9.2, fill:'none', stroke:'#0f7f8f', 'stroke-width':2, class:'ghostfig' }, g);
+  var fig = el('g', { transform:'translate(0,0)' }, g);
+  var inner = el('g', { class:kind === 'ghost' ? 'ghostfig' : 'fig' }, fig);
+  inner.innerHTML = figureStr(col, hair, kind === 'ghost');
+  return g;
+}
+function namePlate(x, y, w, h, big, small, color, ptr, bigSize){
+  var g = el('g', null, $('plates')), bs = bigSize || 11;
+  /* the pointer touches the token's own ring, so a plate can never read as
+     belonging to a different node */
+  if (ptr) el('path', { d:'M' + f(ptr[0]) + ' ' + f(ptr[1]) + ' L' + f(ptr[2]) + ' ' + f(ptr[3]),
+    stroke:color, 'stroke-width':1.7, 'stroke-dasharray':'3 3', fill:'none', opacity:.9 }, g);
+  el('rect', { x:x, y:y, width:w, height:h, rx:8, fill:'#fffdf6', stroke:color, 'stroke-width':1.8, opacity:.97 }, g);
+  if (h >= 34){
+    txt(g, { x:x + 10, y:y + 17, size:bs, fill:color, anchor:'start', ls:'.04em' }, big);
+    txt(g, { x:x + 10, y:y + 29, size:8.6, fill:'#6e7c8a', anchor:'start', ls:'.05em' }, small);
+  } else {
+    txt(g, { x:x + 10, y:y + 15.4, size:bs, fill:color, anchor:'start', ls:'.04em' }, big);
+    txt(g, { x:x + w - 10, y:y + 15.4, size:8.4, fill:'#6e7c8a', anchor:'end', ls:'.05em' }, small);
+  }
+  return g;
+}
+character(GHOST, '#8d9aa8', '#8d9aa8', 'ghost');
+character(OTHER, '#3643b6', '#3a2b1f', 'agent');
+character(ME, '#0f7f8f', '#123047', 'you');
+namePlate(552, 126, 140, 26, 'A2 HARRIER', 'AT n10', '#3643b6', [560, 154, 532, 172]);
+namePlate(118, 292, 152, 34, 'A1 FALCON', 'YOU · AT n5 · AGENT', '#0f7f8f', [262, 306, 266, 312]);
+
+/* --- top-3 numeric badge: the deduction lives on the map ----------------- */
+TOP3.forEach(function(b){
+  var n = N[b.id], cx = Math.max(b.bx + 8, Math.min(b.bx + 70, n.x)), cy = (n.y < b.by) ? b.by : (n.y > b.by + 24 ? b.by + 24 : b.by + 12);
+  el('path', { d:'M' + f(cx) + ' ' + f(cy) + ' L' + n.x + ' ' + n.y, stroke:'#d98410', 'stroke-width':1.8,
+    'stroke-dasharray':'3 3', opacity:.9 }, $('chr'));
+  el('circle', { cx:n.x, cy:n.y, r:3, fill:'#b8620a' }, $('chr'));
+  el('rect', { x:b.bx, y:b.by, width:76, height:24, rx:7, fill:'#1b2b3c', opacity:.95 }, $('chr'));
+  el('rect', { x:b.bx, y:b.by, width:76, height:24, rx:7, fill:'none', stroke:'#f0a01e', 'stroke-width':1.6 }, $('chr'));
+  txt($('chr'), { x:b.bx + 11, y:b.by + 17, size:11, fill:'#ffce85', anchor:'start', ls:'.06em' }, b.id);
+  txt($('chr'), { x:b.bx + 65, y:b.by + 17.6, size:15, fill:'#ffdc9e', anchor:'end' }, b.pct);
+});
+
+/* --- belief legend + landmark names -------------------------------------- */
+(function(){
+  var g = $('chr');
+  el('rect', { x:584, y:8, width:190, height:48, rx:8, fill:'#fffdf6', opacity:.93 }, g);
+  el('rect', { x:584, y:8, width:190, height:48, rx:8, fill:'none', stroke:'#d9c9a8', 'stroke-width':1.3 }, g);
+  el('circle', { cx:602, cy:32, r:13, fill:'url(#belGlow)', opacity:.85 }, g);
+  el('circle', { cx:602, cy:32, r:7.4, fill:'#c9760c', opacity:.5 }, g);
+  el('circle', { cx:602, cy:32, r:11, fill:'none', stroke:'#c9760c', 'stroke-width':1.8, 'stroke-dasharray':'3.6 3.6' }, g);
+  txt(g, { x:622, y:23, size:9.6, fill:'#3a4b5c', anchor:'start', ls:'.06em' }, 'WHERE VULTURE MIGHT BE');
+  txt(g, { x:622, y:35.5, size:8.6, fill:'#7a8794', anchor:'start', ls:'.02em' }, 'warm glow = likelihood');
+  txt(g, { x:622, y:47, size:8.6, fill:'#b3670a', anchor:'start', ls:'.02em' }, 'numbers = top 3 nodes only');
+})();
+function placeTag(sxx, syy, label, col, size){
+  el('text', { x:f(sxx), y:f(syy), 'text-anchor':'middle', 'font-size':size || 9, 'font-weight':800,
+    'letter-spacing':'.12em', fill:col, stroke:'#fdfaf0', 'stroke-width':3.4,
+    'paint-order':'stroke', 'stroke-linejoin':'round' }, $('plates')).textContent = label;
+}
+placeTag(120, 98, 'CATHEDRAL', '#4f3f10', 9);
+placeTag(476, 436, 'CENTRAL STATION', '#22384a', 9.6);
+placeTag(331, 256, 'MARKET HALL', '#0b544d', 8.6);
+placeTag(174, 340, 'THE OLD PARK', '#2a5c2c', 8.4);
+placeTag(430, 368, 'STATION SQUARE', '#5c5540', 8);
+placeTag(700, 408, 'GREYFRIARS STADIUM', '#33414d', 8.6);
+placeTag(676, 52, 'ALLOTMENTS', '#3d5a2c', 8.2);
+placeTag(175, 578, "ST ANNE'S", '#4f4030', 8.2);
+placeTag(484, 640, 'SOUTH WHARVES', '#3c4c58', 8.2);
+
+/* ------------------------------- 12 · additive-desktop mode selection ----- */
+(function(){
+  var btns = document.querySelectorAll('.move[data-mode]'), i;
+  function sync(){
+    var on = {};
+    for (var k = 0; k < btns.length; k++) if (btns[k].getAttribute('aria-pressed') === 'true') on[btns[k].getAttribute('data-mode')] = 1;
+    var groups = $('net').querySelectorAll('g[data-move]');
+    for (var j = 0; j < groups.length; j++) groups[j].style.display = on[groups[j].getAttribute('data-move')] ? '' : 'none';
+  }
+  for (i = 0; i < btns.length; i++){
+    btns[i].addEventListener('click', function(){
+      var now = this.getAttribute('aria-pressed') === 'true';
+      this.setAttribute('aria-pressed', now ? 'false' : 'true');
+      this.classList.toggle('selected', !now);
+      sync();
+    });
+  }
+  sync();
+})();
+
+mountChipGlyphs();
+})();
+</script>
+</body>
+</html>

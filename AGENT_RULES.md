@@ -93,8 +93,10 @@ open question it stands in for.
   provisional value into a differently named constant, and do not let one escape
   into the wire layer unlabelled.
 - `spec-alignment.test.ts` enforces the convention in both directions: each
-  expected `PROVISIONAL_` export must exist, and no ticket, turn, grace, or
-  payout constant may exist without the prefix.
+  expected `PROVISIONAL_` export must exist, and no ticket, turn, grace, payout,
+  or seat constant may exist without either the prefix or an entry in the test's
+  explicit list of ratified names. Dropping the prefix is therefore a deliberate
+  act, not a rename.
 - Do not add a number to `game-core` without either a brief citation or the
   `PROVISIONAL_` prefix plus an appendix cross-reference.
 - When the director answers a question, promote the number into the brief (§1–§6),
@@ -188,7 +190,7 @@ curl -s localhost:3001/health
 curl -s localhost:3001/board
 ```
 
-Expected state today: 5 test files and 88 tests, all passing. The server serves
+Expected state today: 5 test files and 93 tests, all passing. The server serves
 `/health` and `/board` and rejects every game message explicitly as
 "not implemented" — it does not pretend to play. Report what you actually ran and
 what the output was. Do not claim a check passed that you did not execute.

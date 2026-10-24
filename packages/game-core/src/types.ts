@@ -201,21 +201,41 @@ export const TRANSPORT_MODES: readonly TransportMode[] = [
 ];
 
 /* ------------------------------------------------------------------ *
+ * Numbers ratified by the director on 2026-10-16
+ *
+ * Each of these was a `PROVISIONAL_` default until the director answered the
+ * matching open question in GAME_VISION.appendix.md C.2. The value cited in
+ * the comment is the ruling; do not change one without a new ruling.
+ * ------------------------------------------------------------------ */
+
+/** Turns in one Yard (§2). Ratified 2026-10-16: a 16-turn Yard. */
+export const YARD_TURN_LIMIT = 16;
+
+/** Turns on which a Reveal Pulse fires (§2). Ratified 2026-10-16: 5 / 10 / 15. */
+export const REVEAL_PULSE_TURNS: readonly number[] = [5, 10, 15];
+
+/** Fugitive seats per Yard (§6). Ratified 2026-10-16. */
+export const MAX_FUGITIVES_PER_YARD = 4;
+
+/**
+ * Agent seats per Yard (§6). Ratified 2026-10-16 alongside
+ * {@link MAX_FUGITIVES_PER_YARD}: 4 + 16 = the ruled 20 players per Yard.
+ */
+export const MAX_AGENTS_PER_YARD = 16;
+
+/**
+ * Minimum graph distance, in edges, between every Agent start and the
+ * Fugitive start (§3). Ratified 2026-10-16 (appendix C.2, R15).
+ */
+export const MIN_START_SEPARATION_EDGES = 3;
+
+/* ------------------------------------------------------------------ *
  * PROVISIONAL defaults — NOT stated by the brief
  *
  * Each constant below exists only so the engine can run before the director
  * answers. The `PROVISIONAL_` prefix is deliberate: `grep -rn PROVISIONAL_`
  * must list every unratified number in the codebase.
  * ------------------------------------------------------------------ */
-
-/** PROVISIONAL (Q2): §2 gives "e.g. turns 3, 8, 13, 18" — an example, not a rule. */
-export const PROVISIONAL_REVEAL_PULSE_TURNS: readonly number[] = [3, 8, 13, 18];
-
-/** PROVISIONAL (Q2): fixed pulse interval once the example list runs out. */
-export const PROVISIONAL_REVEAL_PULSE_INTERVAL = 5;
-
-/** PROVISIONAL (Q3): §2 defines capture but no Yard end condition. */
-export const PROVISIONAL_YARD_TURN_LIMIT = 24;
 
 /** PROVISIONAL (Q1): §3 gives no ticket counts, only "cheap and plentiful". */
 export const PROVISIONAL_FUGITIVE_STARTING_TICKETS: TicketBag = {
@@ -242,12 +262,6 @@ export const PROVISIONAL_MISSION_PAYOUTS: Readonly<Record<RiskTier, number>> = {
 
 /** PROVISIONAL (Q8): §4 mentions a grace period without a duration. */
 export const PROVISIONAL_LOGOFF_GRACE_TURNS = 3;
-
-/** PROVISIONAL (Q4): seats per Yard. */
-export const PROVISIONAL_MAX_FUGITIVES_PER_YARD = 4;
-
-/** PROVISIONAL (Q4). */
-export const PROVISIONAL_MAX_AGENTS_PER_YARD = 6;
 
 /** PROVISIONAL (Q6): how heavy cargo restricts movement. */
 export const PROVISIONAL_HEAVY_CARGO_FORBIDS: readonly TransportMode[] = ['underground'];

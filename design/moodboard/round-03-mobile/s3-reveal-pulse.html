@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>X-Yard — Scenario 3: the Reveal Pulse firing (turn 10/16)</title>
+<style>
+  /* ==================================================================
+     X-Yard · Round-03 mobile mockup · Scenario 3 "the Reveal Pulse firing"
+     style delta A ("F") — flat vector · slight 2.5D · daylight
+     Stage is exactly 390 x 844. Self-contained: inline CSS, no external
+     resources, no web fonts, no images, no network. Renders offline.
+
+     Viewer: Falcon (Agent A1), mid-turn-10. The pulse has just run, so
+     there is NO belief shading anywhere: the board is exact knowledge.
+
+     Art revision (round 03): the quarter is drawn as an illustrated city,
+     the way design/moodboard/round-02-city/f-flat-2p5d-day.html draws it —
+     every building is a footprint plus a lifted roof face plus a visible
+     near wall, roof materials vary (tile / slate / copper / gravel / lead /
+     glass), one NW sun throws every shadow SE, the streets carry kerbs,
+     pavements, markings and crossings, the river has banks, a quay and two
+     bridges with piers, abutments and parapets, and the quarter is given
+     identity by a cathedral, the Central station hall and a market hall.
+     The information layer (numbers, routes, plates) stays flat and upright.
+     ================================================================== */
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#8fa9b8}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;color:#16283a}
+
+  .stage{
+    position:relative;width:390px;height:844px;overflow:hidden;
+    display:grid;grid-template-rows:92px minmax(0,1fr) 176px;
+    background:#cfe4ef;
+  }
+
+  /* ================= SLOT 1 — top bar (<= 92 px) ================= */
+  .topbar{
+    position:relative;background:linear-gradient(180deg,#fdfcf8,#f1eee5);
+    border-bottom:1px solid #cfc6b1;box-shadow:0 3px 9px rgba(24,42,60,.13);
+    padding:7px 11px 6px;overflow:hidden;
+  }
+  .tb-main{display:flex;align-items:center;gap:9px;height:43px}
+  .tb-turn{min-width:0}
+  .tb-turn .kicker{font-size:8px;font-weight:800;letter-spacing:.17em;color:#8b98a6}
+  .tb-turn .val{font-size:23px;font-weight:800;line-height:1;letter-spacing:-.02em;color:#20344a;
+                font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:3px;margin-top:1px}
+  .tb-turn .val i{font-style:normal;font-size:11.5px;font-weight:750;color:#93a1ae;letter-spacing:0}
+  .tb-phase{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0}
+  .phase{
+    display:inline-flex;align-items:center;gap:5px;height:25px;padding:0 9px;border-radius:13px;
+    background:#fdecec;border:1px solid #f0b3b0;
+    font-size:9.5px;font-weight:800;letter-spacing:.11em;color:#a82a21;white-space:nowrap;
+  }
+  .phase .live{width:8px;height:8px;border-radius:50%;background:#e0483a;animation:live 1.15s infinite}
+  .seq{font-size:7.5px;font-weight:750;letter-spacing:.055em;color:#9aa5ae;white-space:nowrap}
+  .tb-sub{display:flex;align-items:center;gap:7px;margin-top:5px;height:20px;min-width:0}
+  .sch{display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sch em{font-style:normal;font-size:7.5px;font-weight:800;letter-spacing:.12em;color:#94a1ad}
+  .sch b{font-size:11px;font-weight:800;color:#b45309}
+  .sch span{font-size:9.5px;font-weight:750;color:#68757f}
+  .sch .sep{font-size:9px;font-weight:800;color:#c3ccd3}
+  .actchip{
+    margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;
+    background:#e5f1fb;border:1px solid #b6d5ee;font-size:8px;font-weight:800;letter-spacing:.09em;color:#1c5c8f;
+    white-space:nowrap;
+  }
+
+  /* pulse tick track — 16 turns, pulses on 5 / 10 / 15 */
+  .ticks{display:flex;gap:3px}
+  .ticks i{
+    flex:1;height:13px;border-radius:2.5px;background:#e6e0d2;
+    box-shadow:inset 0 0 0 1px rgba(120,108,84,.14);
+  }
+  .ticks i.done{background:#cfc7b5}
+  .ticks i.prev{background:#d9be86;box-shadow:inset 0 0 0 1px rgba(150,108,40,.5)}
+  .ticks i.pulse{background:#fdf3df;box-shadow:inset 0 0 0 1.5px #d99a1a}
+  .ticks i.now{
+    background:linear-gradient(180deg,#f2604f,#d8352a);
+    box-shadow:0 0 0 1.5px #fff,0 0 0 3px rgba(216,53,42,.5),0 0 10px rgba(216,53,42,.65);
+  }
+
+  /* ================= SLOT 2 — the map ================= */
+  .map{position:relative;overflow:hidden;background:#dfe4d3}
+  .map svg{position:absolute;left:0;top:28px;width:390px;height:535px;display:block}
+  .map svg text{font-family:inherit}
+
+  /* ================= SLOT 3 — bottom tray (<= 176 px) ================= */
+  .tray{
+    position:relative;background:linear-gradient(180deg,#fbf9f3,#f0ebdf);
+    border-top:1px solid #cfc6b1;box-shadow:0 -4px 13px rgba(24,42,60,.14);
+    display:grid;grid-template-rows:auto auto auto auto auto;align-content:start;
+    padding:7px 11px 7px;gap:6px;overflow:hidden;
+  }
+  .row1{display:flex;align-items:center;gap:6px;min-width:0}
+  .wlab{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto}
+  .wlab svg{width:15px;height:15px;display:block}
+  .wlab b{font-size:10.5px;font-weight:800;letter-spacing:-.01em;color:#16283a}
+  .wlab span{font-size:7px;font-weight:800;letter-spacing:.1em;color:#9aa5ae}
+  .row1 .pill{
+    margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:10px;
+    background:#e5f1fb;border:1px solid #b6d5ee;font-size:7.5px;font-weight:800;letter-spacing:.1em;color:#1c5c8f;
+    white-space:nowrap;
+  }
+  .event{
+    display:flex;align-items:center;gap:5px;height:23px;padding:0 8px;border-radius:7px;
+    background:#fce9e7;border:1px solid #efc0bc;min-width:0;overflow:hidden;
+  }
+  .event em{font-style:normal;font-size:7.5px;font-weight:800;letter-spacing:.1em;color:#a82a21;white-space:nowrap}
+  .event b{font-size:9.5px;font-weight:800;color:#8f241c;white-space:nowrap}
+  .event span{font-size:8.5px;font-weight:650;color:#8b5b56;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .act{display:flex;align-items:center;gap:7px;min-width:0}
+  .act .n{font-size:13.5px;font-weight:800;letter-spacing:-.01em;color:#16283a;white-space:nowrap;flex:0 0 auto}
+  .act .t{font-size:9px;font-weight:650;color:#8f241c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0}
+  .go{flex:0 0 auto;height:30px;padding:0 13px;border:0;border-radius:9px;
+      background:linear-gradient(180deg,#2f8fd4,#1d6cad);color:#fff;
+      font-family:inherit;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+      box-shadow:0 2px 0 #14507f,0 4px 9px rgba(19,72,112,.3);white-space:nowrap}
+  .moves{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;min-width:0}
+  .mv{display:flex;align-items:center;gap:6px;min-width:0}
+  .mv .lgi{flex:0 0 32px;height:13px;display:block}
+  .mv .txt{font-size:9.5px;font-weight:750;color:#22384c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mv .txt em{font-style:normal;font-weight:650;color:#6d7b88;font-size:8.5px}
+  .mv.key{background:rgba(216,53,42,.085);border-radius:6px;box-shadow:inset 0 0 0 1px rgba(216,53,42,.3);
+          padding:1px 5px;margin:-1px -5px}
+  .mv.key .txt{color:#8f241c}
+  .mv.dis .lgi,.mv.dis .txt{opacity:.42}
+  .tickets{display:flex;align-items:center;gap:7px;border-top:1px solid rgba(60,72,84,.13);padding-top:5px;min-width:0}
+  .tickets em{font-style:normal;font-size:7.5px;font-weight:800;letter-spacing:.12em;color:#94a1ad;white-space:nowrap}
+  .tickets span{font-size:8.5px;font-weight:700;color:#4b5a68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tickets span b{color:#8f241c}
+  .tickets .sp{margin-left:auto}
+
+  /* ================= animation — calm, looping, CSS only ================= */
+  @keyframes live{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+  @keyframes ripple{
+    0%{transform:scale(.14);opacity:0}
+    9%{opacity:.85}
+    78%{opacity:.12}
+    100%{transform:scale(1);opacity:0}
+  }
+  @keyframes reticle{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes flash{0%{transform:scale(.34);opacity:.8}70%{opacity:.1}100%{transform:scale(1.16);opacity:0}}
+  @keyframes wing{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  @keyframes beamsweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  /* figures: a gentle bob or breathing on every player figure */
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.8px)}}
+  @keyframes ghostbob{0%,100%{transform:translateY(0);opacity:.88}50%{transform:translateY(-1.3px);opacity:1}}
+  /* ambient city: river shimmer, tree sway, traffic, a barge, the viaduct train */
+  @keyframes shimmer{to{stroke-dashoffset:-420}}
+  @keyframes sway{0%,100%{transform:rotate(-1.7deg)}50%{transform:rotate(1.7deg)}}
+  @keyframes driveV{0%{transform:translate(0,0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(0,150px);opacity:0}}
+  @keyframes driveH{0%{transform:translate(0,0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translate(186px,-6px);opacity:0}}
+  @keyframes barge{0%{transform:translate(0,0);opacity:0}6%{opacity:.95}94%{opacity:.95}100%{transform:translate(392px,-9px);opacity:0}}
+  @keyframes train{0%{transform:translate(0,0);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translate(70px,-172px);opacity:0}}
+  @keyframes lamppulse{0%,100%{opacity:.16}50%{opacity:.52}}
+  @keyframes ripple2{
+    0%{transform:scale(.13);opacity:0}
+    10%{opacity:.6}
+    80%{opacity:.08}
+    100%{transform:scale(1);opacity:0}
+  }
+  .rip{animation:ripple 2.35s cubic-bezier(.2,.66,.32,1) infinite;transform-box:view-box}
+  .rip.b{animation-delay:.79s}
+  .rip.c{animation-delay:1.57s}
+  .rip.x{animation:ripple 3.4s cubic-bezier(.2,.66,.32,1) infinite;stroke-dasharray:2 7;transform-box:view-box}
+  .rip.x.b{animation-delay:1.7s}
+  .ret{animation:reticle 9s linear infinite;transform-box:view-box}
+  .beam{animation:beamsweep 6.5s linear infinite;transform-box:view-box}
+  .flash{animation:flash 2.35s ease-out infinite;transform-box:view-box}
+  .vg{animation:wing 2.35s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .fig{animation:bob 3.1s ease-in-out infinite}
+  .fig.d1{animation-delay:.8s}
+  .fig.d2{animation-delay:1.6s}
+  .ghostfig{animation:ghostbob 4.4s ease-in-out infinite}
+  .shimmer{animation:shimmer 9s linear infinite}
+  .shimmer.b{animation-delay:3s;animation-duration:12s}
+  .sway{animation:sway 5.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 96%}
+  .sway.d1{animation-delay:1.5s}
+  .sway.d2{animation-delay:3s}
+  .driveV{animation:driveV 12s linear infinite}
+  .driveH{animation:driveH 16s linear infinite}
+  .barge{animation:barge 34s linear infinite}
+  .train{animation:train 14s linear infinite}
+  .lamp{animation:lamppulse 4.2s ease-in-out infinite}
+  .lamp.d1{animation-delay:1.4s}
+  .lamp.d2{animation-delay:2.8s}
+  @media (prefers-reduced-motion:reduce){
+    .rip,.rip.x,.ret,.beam,.flash,.vg,.fig,.ghostfig,.shimmer,.sway,
+    .driveV,.driveH,.barge,.train,.lamp,.phase .live{animation:none}
+    .rip,.rip.x{opacity:0}
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+
+  <!-- ============================================================
+       SLOT 1 · top bar — turn, phase, pulse schedule
+       ============================================================ -->
+  <header class="topbar">
+    <div class="tb-main">
+      <div class="tb-turn">
+        <div class="kicker">TURN</div>
+        <div class="val">10<i>/ 16</i></div>
+      </div>
+      <div class="tb-phase">
+        <div class="phase"><span class="live"></span>PULSE FIRING</div>
+        <div class="seq">FUGITIVE MOVE → PULSE → AGENT PHASE → CAPTURE</div>
+      </div>
+    </div>
+
+    <div class="tb-sub">
+      <div class="sch">
+        <em>PULSES</em>
+        <b>5 · 10</b>
+        <span class="sep">|</span>
+        <em>NEXT</em>
+        <span>15</span>
+      </div>
+      <div class="actchip">
+        <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
+          <path d="M5 0 9.4 5 5 10 .6 5z" fill="#1c5c8f"/>
+        </svg>
+        FALCON STILL TO ACT
+      </div>
+    </div>
+
+    <div class="ticks" role="img" aria-label="Turn track: 16 turns, pulses fired on 5 and 10, next pulse on 15, now on turn 10">
+      <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+      <i class="prev"></i>
+      <i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i>
+      <i class="now"></i>
+      <i></i><i></i><i></i><i></i>
+      <i class="pulse"></i>
+      <i></i>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       SLOT 2 · the map — an illustrated city quarter, 390 x 535.
+       The ground plane and the buildings live in one tilted group
+       (scale .8, rotateX 25deg) so footprints are squashed like
+       ground seen from above while walls rise up the screen.
+       Everything readable — station ids, routes, plates — is drawn
+       upright in flat overlay layers over the same ground points.
+       ============================================================ -->
+  <section class="map">
+    <svg viewBox="0 0 390 535" width="390" height="535" role="img"
+         aria-label="Yard-Meridian cathedral quarter seen from above: a river with two bridges, a cathedral, the Central station hall, a market hall, streets with kerbs and crossings, and ten stations. Vulture is revealed at station n6 by the turn 10 pulse. Falcon is at n5 and may move on foot to n1, n8 or n6; no bus, metro or special line serves n5. Harrier is at n10.">
+      <defs>
+        <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7cc4e4"/>
+          <stop offset="55%" stop-color="#5aa9cd"/>
+          <stop offset="100%" stop-color="#4a93bb"/>
+        </linearGradient>
+        <!-- ground paving: pale plots, so bare ground never reads as paper -->
+        <pattern id="plotTex" width="13" height="11" patternUnits="userSpaceOnUse">
+          <rect x="1" y="1" width="5" height="4" rx=".8" fill="#d2d8c1" opacity=".55"/>
+          <rect x="7.6" y="3.4" width="4.4" height="3.6" rx=".8" fill="#ccd4ba" opacity=".45"/>
+          <rect x="3" y="6.6" width="4" height="3.4" rx=".8" fill="#d6dcc7" opacity=".45"/>
+        </pattern>
+        <pattern id="paveTex" width="6" height="6" patternUnits="userSpaceOnUse">
+          <path d="M0 .35H6M.35 0V6" stroke="#c8c0a6" stroke-width=".45" opacity=".5"/>
+        </pattern>
+        <pattern id="parkTex" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <rect width="12" height="12" fill="#93cf8c"/>
+          <path d="M6 0V12" stroke="#82c47c" stroke-width="1.4"/>
+        </pattern>
+        <!-- roof materials: a few painted strokes, never a flat fill -->
+        <pattern id="tileTex" width="6" height="5" patternUnits="userSpaceOnUse">
+          <path d="M0 4.6H6" stroke="#8f4a2e" stroke-width=".8"/>
+          <path d="M1.5 2.6V4.6M4.5 2.6V4.6" stroke="#f0c9a4" stroke-width=".4"/>
+        </pattern>
+        <pattern id="slateTex" width="5" height="4" patternUnits="userSpaceOnUse">
+          <path d="M0 3.6H5" stroke="#5c6b76" stroke-width=".5"/>
+          <path d="M1.2 1.8V3.6M3.7 1.8V3.6" stroke="#c8d3da" stroke-width=".35"/>
+        </pattern>
+        <pattern id="copperTex" width="4" height="4" patternUnits="userSpaceOnUse">
+          <path d="M2 0V4" stroke="#9fd6c4" stroke-width=".6" opacity=".75"/>
+        </pattern>
+        <pattern id="gravelTex" width="3.2" height="3.2" patternUnits="userSpaceOnUse">
+          <path d="M0 0V3.2M1.6-1.6 4.8 1.6" stroke="#a89a80" stroke-width=".4" opacity=".9"/>
+        </pattern>
+        <pattern id="leadTex" width="5" height="5" patternUnits="userSpaceOnUse">
+          <path d="M0 4.6H5M2.5 2.4V4.6" stroke="#7d8a95" stroke-width=".5"/>
+        </pattern>
+        <pattern id="glassTex" width="4.6" height="4.6" patternUnits="userSpaceOnUse">
+          <path d="M0 3.8H4.6M2.3 1.9V3.8" stroke="#bcd8ea" stroke-width=".5"/>
+        </pattern>
+        <radialGradient id="lamGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffd98a" stop-opacity=".55"/>
+          <stop offset="100%" stop-color="#ffd98a" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="belCore" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff0d2" stop-opacity=".9"/>
+          <stop offset="70%" stop-color="#ffab2e" stop-opacity=".3"/>
+          <stop offset="100%" stop-color="#ff9d1f" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="scrimG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f4f1e4" stop-opacity=".12"/>
+          <stop offset="45%" stop-color="#f4f1e4" stop-opacity=".02"/>
+          <stop offset="100%" stop-color="#e8e2cf" stop-opacity=".1"/>
+        </linearGradient>
+        <filter id="soft" x="-45%" y="-45%" width="190%" height="190%">
+          <feGaussianBlur stdDeviation="1.8"/>
+        </filter>
+        <filter id="ringGlow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="1.6" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- flat paper: riverside district beyond the frame, then the city -->
+      <rect x="-60" y="-80" width="530" height="720" fill="#d9dccb"/>
+      <!-- LAYER 1 — tilted ground: paving, park, streets, water, bridges, shadows -->
+      <g id="ground"></g>
+      <!-- LAYER 2 — buildings: footprint + lifted roof face + near wall -->
+      <g id="bld"></g>
+      <!-- atmosphere, keeps the illustration behind the information -->
+      <rect x="0" y="0" width="390" height="535" fill="url(#scrimG)" pointer-events="none"/>
+      <!-- LAYER 3 — the Reveal Pulse: expanding rings over the revealed node -->
+      <g id="pulse"></g>
+      <!-- LAYER 4 — place names on their own roofs, above the city -->
+      <g id="plates"></g>
+      <!-- LAYER 5 — network: subdued service lines + Falcon's legal moves -->
+      <g id="net" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+      <!-- LAYER 6 — stations (numbers stay upright) then Harrier's marker -->
+      <g id="stn"></g>
+      <!-- LAYER 7 — characters, upright and idle-animated, then name plates -->
+      <g id="chr"></g>
+    </svg>
+  </section>
+
+  <!-- ============================================================
+       SLOT 3 · bottom tray — who acts, the pulse event, and
+       Falcon's legal moves as street-bending polylines
+       ============================================================ -->
+  <footer class="tray">
+    <div class="row1">
+      <span class="wlab">
+        <svg viewBox="0 0 22 22" aria-hidden="true">
+          <rect x="2.6" y="2.6" width="16.8" height="16.8" rx="4.6" fill="#fff" stroke="#0a1420" stroke-width="1.4"/>
+          <rect x="4.4" y="4.4" width="13.2" height="13.2" rx="3.4" fill="#0f8fa3"/>
+          <path d="M11 6.4 C13.6 8.2 13.6 12.6 11 14.4 C8.4 12.6 8.4 8.2 11 6.4 Z" fill="#fff"/>
+        </svg>
+        <b>FALCON</b><span>TO ACT</span>
+      </span>
+      <span class="pill">AGENT PHASE · 1 OF 2</span>
+    </div>
+
+    <div class="event">
+      <em>PULSE 10</em>
+      <b>VULTURE REVEALED AT n6</b>
+      <span>— no guessing now</span>
+    </div>
+
+    <div class="act">
+      <span class="n">Falcon can still move —</span>
+      <span class="t" style="color:#8f241c"><b>n6 reachable</b></span>
+      <button class="go" type="button">MOVE TO n6</button>
+    </div>
+
+    <div class="moves">
+      <div class="mv">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#2b3f52" stroke-width="2.6" stroke-dasharray="1.6 5.4" stroke-linecap="round"/>
+          <ellipse cx="24" cy="3.2" rx="1.5" ry="2.7" fill="#2b3f52"/>
+          <ellipse cx="27" cy="9.6" rx="1.5" ry="2.7" fill="#2b3f52"/>
+        </svg>
+        <span class="txt">FOOT <em>→ n1 · n8</em></span>
+      </div>
+      <div class="mv dis">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#f0b45c" stroke-width="2.2" stroke-dasharray="11 5" stroke-linecap="round"/>
+          <path d="M6.5 2 25.5 11M25.5 2 6.5 11" stroke="#8d99a4" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="txt">TAXI <em>no cab rank at n5</em></span>
+      </div>
+      <div class="mv key">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#fff" stroke-width="5.4" stroke-linecap="round" opacity=".9"/>
+          <path d="M1 6.5H31" stroke="#8f241c" stroke-width="3.4" stroke-dasharray="1.6 5.4" stroke-linecap="round"/>
+          <ellipse cx="24" cy="3.2" rx="1.5" ry="2.7" fill="#8f241c"/>
+          <ellipse cx="27" cy="9.6" rx="1.5" ry="2.7" fill="#8f241c"/>
+        </svg>
+        <span class="txt">FOOT <em>→ n6 · Vulture</em></span>
+      </div>
+      <div class="mv dis">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#1552d8" stroke-width="2.2" stroke-dasharray="11 5" stroke-linecap="round"/>
+          <path d="M6.5 2 25.5 11M25.5 2 6.5 11" stroke="#8d99a4" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="txt">BUS <em>no line at n5</em></span>
+      </div>
+      <div class="mv dis">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#0e7490" stroke-width="2.2" stroke-dasharray="9 2.6 1.8 2.6" stroke-linecap="round"/>
+          <path d="M2.4 6.5H29.6" stroke="#e6f6f9" stroke-width=".9" stroke-dasharray="9 2.6 1.8 2.6"/>
+        </svg>
+        <span class="txt">METRO <em>no line at n5</em></span>
+      </div>
+      <div class="mv dis">
+        <svg class="lgi" viewBox="0 0 32 13" aria-hidden="true">
+          <path d="M1 6.5H31" stroke="#7c3aed" stroke-width="2" stroke-dasharray="8 3 2 3" stroke-linecap="round"/>
+          <path d="M6.5 2 25.5 11M25.5 2 6.5 11" stroke="#8d99a4" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="txt">SPECIAL <em>none on n5</em></span>
+      </div>
+    </div>
+
+    <div class="tickets">
+      <em>FALCON KIT</em>
+      <span class="sp">Tickets are spent the moment the pulse fires — <b>choose now</b>.</span>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function(){
+'use strict';
+
+/* ==================================================================
+   The quarter. Station world coordinates are the brief's, unchanged;
+   the projection below turns them into the same stage pixels the
+   previous revision used, so the layout, the cast and the state are
+   identical — only the art has been rebuilt.
+   ================================================================== */
+var S=0.8, TI=25*Math.PI/180, SC=S*Math.cos(TI), TY=126, UP=1/SC;
+
+function r3(n){return Math.round(n*1000)/1000;}
+function f(n){return Math.round(n*100)/100;}
+var MX='matrix(0.8 0 0 '+r3(SC)+' 0 '+TY+')';
+function $(i){return document.getElementById(i);}
+function sx(x){return f(S*x);}                 /* world x -> stage x */
+function sy(y){return f(SC*y+TY);}             /* world y -> stage y */
+function wx(x){return x/S;}
+function wy(y){return (y-TY)/SC;}
+function wp(p){return [wx(p[0]),wy(p[1])];}
+function wps(ps){return ps.map(wp);}
+function pth(ps){var d='M'+f(ps[0][0])+' '+f(ps[0][1]);
+  for(var i=1;i<ps.length;i++)d+=' L'+f(ps[i][0])+' '+f(ps[i][1]);return d;}
+function shade(hex,amt){
+  var n=parseInt(hex.slice(1),16);
+  var r=Math.min(255,Math.max(0,(n>>16)+amt)),g=Math.min(255,Math.max(0,((n>>8)&255)+amt)),
+      b=Math.min(255,Math.max(0,(n&255)+amt));
+  return 'rgb('+r+','+g+','+b+')';
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+var rnd=mulberry32(0x3f1c2b7);
+function rr(a,b){return a+(b-a)*rnd();}
+function sample(pts,step){
+  var out=[],i,j;
+  for(i=0;i<pts.length-1;i++){
+    var a=pts[i],b=pts[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.round(L/step));
+    for(j=0;j<=n;j++)out.push([a[0]+(b[0]-a[0])*j/n,a[1]+(b[1]-a[1])*j/n]);
+  }
+  return out;
+}
+function pathSlice(pts,a,b){
+  var out=pts.map(function(p){return p.slice();}),k,t,L;
+  for(k=0;k<out.length-1&&a>0;k++){
+    L=Math.hypot(out[k+1][0]-out[k][0],out[k+1][1]-out[k][1]);
+    if(L<=a){a-=L;out[k]=null;}
+    else{t=a/L;out[k]=[out[k][0]+(out[k+1][0]-out[k][0])*t,out[k][1]+(out[k+1][1]-out[k][1])*t];a=0;}
+  }
+  for(k=out.length-1;k>0&&b>0;k--){
+    L=Math.hypot(out[k][0]-out[k-1][0],out[k][1]-out[k-1][1]);
+    if(L<=b){b-=L;out[k]=null;}
+    else{t=b/L;out[k]=[out[k][0]+(out[k-1][0]-out[k][0])*t,out[k][1]+(out[k-1][1]-out[k][1])*t];b=0;}
+  }
+  return out.filter(Boolean);
+}
+function pointAt(pts,t){
+  var segs=[],total=0,k,L,want;
+  for(k=0;k<pts.length-1;k++){L=Math.hypot(pts[k+1][0]-pts[k][0],pts[k+1][1]-pts[k][1]);segs.push(L);total+=L;}
+  want=total*t;
+  for(k=0;k<segs.length;k++){
+    if(want<=segs[k]||k===segs.length-1){
+      var s2=Math.min(1,want/(segs[k]||1));
+      return {x:pts[k][0]+(pts[k+1][0]-pts[k][0])*s2,y:pts[k][1]+(pts[k+1][1]-pts[k][1])*s2};
+    }
+    want-=segs[k];
+  }
+  return {x:pts[0][0],y:pts[0][1]};
+}
+function svg(tag,attrs,parent){
+  var n=document.createElementNS('http://www.w3.org/2000/svg',tag),k;
+  if(attrs)for(k in attrs)if(attrs[k]!==null&&attrs[k]!==undefined)n.setAttribute(k,attrs[k]);
+  if(parent)parent.appendChild(n); else if(tag==='marker')$('net').appendChild(n);
+  return n;
+}
+var NAMES={n1:'n1',n2:'n2',n3:'n3',n4:'n4',n5:'n5',n6:'n6',n7:'n7',n8:'n8',n9:'n9',n10:'n10'};
+
+/* ---------------------------------------------- 1 · cast + state (fixed) */
+var ST={
+  n1:[55,104,'street'],   n2:[140,88,'street'],
+  n3:[250,120,'street'],  n4:[330,175,'hub'],
+  n5:[95,190,'street'],   n6:[205,240,'hub'],
+  n7:[300,300,'terminal'],n8:[70,340,'street'],
+  n9:[200,360,'street'],  n10:[345,90,'terminal']
+};
+var N={},id;
+for(id in ST)N[id]={x:sx(ST[id][0]),y:sy(ST[id][1]),c:ST[id][2]};
+var ME='n5', OTHER='n10', REVEAL='n6';
+
+/* ------------------------------------------------ 2 · the street network */
+var EDGES=[
+  ['n1','n2',[[55,104],[78,110],[104,104],[140,88]]],
+  ['n2','n3',[[140,88],[172,90],[202,102],[226,118],[250,120]]],
+  ['n3','n4',[[250,120],[276,126],[292,158],[316,168],[330,175]]],
+  ['n4','n7',[[330,175],[322,214],[306,262],[300,300]]],
+  ['n6','n7',[[205,240],[236,268],[266,290],[300,300]]],
+  ['n1','n5',[[55,104],[52,136],[76,170],[95,190]]],
+  ['n2','n6',[[140,88],[150,124],[170,178],[186,208],[205,240]]],
+  ['n5','n6',[[95,190],[122,204],[154,212],[180,224],[205,240]]],
+  ['n3','n6',[[250,120],[252,158],[242,194],[224,214],[205,240]]],
+  ['n5','n8',[[95,190],[78,214],[60,244],[58,280],[70,340]]],
+  ['n6','n9',[[205,240],[210,276],[216,310],[210,340],[200,360]]],
+  ['n7','n9',[[300,300],[276,330],[240,344],[200,360]]],
+  ['n8','n9',[[70,340],[110,350],[146,360],[180,364],[200,360]]]
+];
+var ROUTE={};
+EDGES.forEach(function(e){
+  ROUTE[e[0]+'-'+e[1]]=e[2];
+  ROUTE[e[1]+'-'+e[0]]=e[2].slice().reverse();
+});
+/* bus corridors (never a standard street node) and the terminal-to-terminal metro */
+var BUS=[
+  [[330,175],[292,190],[240,212],[205,240]],
+  [[330,175],[348,152],[352,116],[345,90]],
+  [[345,90],[362,132],[360,200],[318,246],[300,300]]
+];
+var METRO=[[300,300],[340,254],[362,148],[345,90]];
+var ALLEY=[[140,88],[172,150],[186,208],[200,360]];
+/* decorative streets: they structure the blocks, and none of them joins two
+   stations the rules do not already connect */
+var EXTRA=[
+  [[-30,90],[40,84],[96,96]],
+  [[-30,150],[20,140],[60,132],[104,138]],
+  [[-32,214],[10,206],[48,214],[86,232]],
+  [[-34,286],[8,278],[46,288]],
+  [[-20,388],[36,382],[92,394]],
+  [[240,150],[262,150],[286,164]],
+  [[240,48],[254,102],[268,150]],
+  [[112,52],[124,104],[136,152]],
+  [[12,190],[10,240],[14,300],[20,360]],
+  [[12,300],[70,302],[120,306],[170,300],[220,304],[270,312],[320,300]],
+  [[60,400],[116,398],[176,404],[236,398],[292,404],[350,398]],
+  [[300,300],[332,330],[360,352]],
+  [[188,392],[186,436],[184,486]]
+];
+/* two bridges, each carrying an approach road with structure to the far bank */
+var BRIDGES=[{x:100,y0:394,y1:592},{x:300,y0:392,y1:590}];
+/* every street, tagged with what it is: network edges and bus corridors are
+   full streets, the decorative lanes are narrower, the bridges are their own */
+var STREETS=[];
+EDGES.forEach(function(e){STREETS.push({p:e[2],k:'main'});});
+BUS.forEach(function(p){STREETS.push({p:p,k:'main'});});
+EXTRA.forEach(function(p){STREETS.push({p:p,k:'lane'});});
+BRIDGES.forEach(function(b){STREETS.push({p:[[b.x,b.y0],[b.x,b.y1]],k:'bridge'});});
+
+/* ------------------------------------------- 3 · the river and its banks */
+var RIVER=[[-40,466],[40,458],[118,472],[196,462],[268,474],[338,462],[420,470]];
+function riverY(x){
+  for(var i=0;i<RIVER.length-1;i++){
+    if(x>=RIVER[i][0]&&x<=RIVER[i+1][0]){
+      var t=(x-RIVER[i][0])/(RIVER[i+1][0]-RIVER[i][0]);
+      return RIVER[i][1]+t*(RIVER[i+1][1]-RIVER[i][1]);
+    }
+  }
+  return 468;
+}
+/* landmark footprints, in world units — reserved whole, so no block of the
+   procedural city can ever be painted over a landmark */
+var CATH  =[  8, 30,104, 62];
+var HALL  =[288,196, 90, 48];
+var MARKET=[252,244, 50, 36];
+var PARK  =[ 16,240, 84, 64];
+var PLAZA =[206,214, 34, 28];
+var ALLOT =[ 70,372, 54, 46];
+var LANDMARKS=[CATH,HALL,MARKET,PARK,PLAZA,ALLOT];
+
+/* ------------------------------------------------------- 4 · occupancy */
+/* roof materials, declared before the placement passes below */
+var MAT=[
+  {c:'#c1663c',w:'#f6e6cd',t:'tile'},   {c:'#b4542f',w:'#f3e1c7',t:'tile'},
+  {c:'#cf8248',w:'#f7e9d2',t:'tile'},   {c:'#ab4a33',w:'#efd9bd',t:'tile'},
+  {c:'#72818f',w:'#eef1f3',t:'slate'},  {c:'#82909d',w:'#eaedf1',t:'slate'},
+  {c:'#8c99a4',w:'#edf0f2',t:'slate'},  {c:'#4f8d7c',w:'#eef1e9',t:'copper'},
+  {c:'#5c9a87',w:'#eaf0ea',t:'copper'}, {c:'#c2b498',w:'#f4efe2',t:'gravel'},
+  {c:'#b0a289',w:'#f1ebdf',t:'gravel'}, {c:'#8f99a3',w:'#eef1f4',t:'lead'},
+  {c:'#7fabcc',w:'#eaf2f7',t:'glass'},  {c:'#9c7a5f',w:'#f5e8d6',t:'tile'},
+  {c:'#d6b46c',w:'#f8f0d9',t:'gravel'}, {c:'#c2b3a0',w:'#f6f2ea',t:'slate'}
+];
+var blds=[],yards=[];
+var GS=3, OX=-80, OY=-80, OW=560, OH=780;
+var GW=Math.ceil(OW/GS), GH=Math.ceil(OH/GS);
+var occ=new Uint8Array(GW*GH);
+function cell(ix,iy){if(ix>=0&&iy>=0&&ix<GW&&iy<GH)occ[iy*GW+ix]=1;}
+function markSeg(ax,ay,bx,by,r){
+  var x0=Math.max(0,Math.floor((Math.min(ax,bx)-r-OX)/GS)),
+      x1=Math.min(GW-1,Math.ceil((Math.max(ax,bx)+r-OX)/GS)),
+      y0=Math.max(0,Math.floor((Math.min(ay,by)-r-OY)/GS)),
+      y1=Math.min(GH-1,Math.ceil((Math.max(ay,by)+r-OY)/GS));
+  var vx=bx-ax,vy=by-ay,L=vx*vx+vy*vy;
+  for(var iy=y0;iy<=y1;iy++)for(var ix=x0;ix<=x1;ix++){
+    var px=OX+ix*GS+GS/2,py=OY+iy*GS+GS/2;
+    var t=L>0?((px-ax)*vx+(py-ay)*vy)/L:0;
+    t=t<0?0:(t>1?1:t);
+    var dx=px-(ax+t*vx),dy=py-(ay+t*vy);
+    if(dx*dx+dy*dy<=r*r)cell(ix,iy);
+  }
+}
+function markPath(ps,r){for(var i=0;i<ps.length-1;i++)markSeg(ps[i][0],ps[i][1],ps[i+1][0],ps[i+1][1],r);}
+function markBox(x,y,w,h,pad){
+  pad=pad||0;
+  var x0=Math.max(0,Math.floor((x-pad-OX)/GS)),x1=Math.min(GW-1,Math.ceil((x+w+pad-OX)/GS)),
+      y0=Math.max(0,Math.floor((y-pad-OY)/GS)),y1=Math.min(GH-1,Math.ceil((y+h+pad-OY)/GS));
+  for(var iy=y0;iy<=y1;iy++)for(var ix=x0;ix<=x1;ix++)cell(ix,iy);
+}
+function markDisc(cx,cy,r){markBox(cx-r,cy-r,2*r,2*r,0);}
+function freeBox(x,y,w,h){
+  var x0=Math.max(0,Math.floor((x-OX)/GS)),x1=Math.min(GW-1,Math.floor((x+w-OX)/GS)),
+      y0=Math.max(0,Math.floor((y-OY)/GS)),y1=Math.min(GH-1,Math.floor((y+h-OY)/GS));
+  for(var iy=y0;iy<=y1;iy++)for(var ix=x0;ix<=x1;ix++)if(occ[iy*GW+ix])return false;
+  return true;
+}
+/* reserve the ground the city must keep clear of */
+markPath(RIVER,46);
+STREETS.forEach(function(s){markPath(s.p,s.k==='main'?13:(s.k==='bridge'?11:9));});
+LANDMARKS.forEach(function(l){markBox(l[0]-3,l[1]-4,l[2]+6,l[3]+8,0);});
+for(id in N)markDisc(wx(N[id].x),wy(N[id].y),24);
+markPath(wps(METRO),13);
+markPath(wps(ALLEY),8);
+
+/* -------------------------------- 5 · placing the city block by block */
+/* height is tied to footprint depth: the lifted roof face stays the dominant
+   plane while the near facade still carries windows and a plinth */
+function place(bx,by,bw,bd,kLo,kHi,pad){
+  if(bx<OX+3||bx+bw>OX+OW-3||by<OY+4||by+bd>OY+OH-3)return false;
+  if(!freeBox(bx,by,bw,bd))return false;
+  markBox(bx,by,bw,bd,pad);
+  var k=rr(kLo,kHi);
+  var lift=Math.max(2.2,Math.min(bd*k,16));
+  var mi=Math.floor(rnd()*MAT.length),roll=rnd();
+  blds.push({
+    x:bx,y:by,w:bw,d:bd,lift:lift,m:MAT[mi],
+    kind:roll<0.5?'flat':(roll<0.8?'gable':'hip'),
+    s1:rnd(),s2:rnd(),s3:rnd()
+  });
+  return true;
+}
+/* city blocks */
+for(var gy=-72;gy<700;gy+=11){
+  for(var gx=-74;gx<476;gx+=12){
+    if(rnd()<0.1)continue;
+    var bw=rr(11,25),bd=rr(9,20),kLo=0.55,kHi=1.2,r0=rnd();
+    if(r0<0.1){bw=rr(24,38);bd=rr(16,26);}
+    else if(r0<0.17){bw=rr(20,32);bd=rr(13,21);kLo=0.42;kHi=0.82;}
+    var r2=rnd();
+    if(r2>0.6&&r2<0.85){kLo=1.2;kHi=1.8;}
+    else if(r2>=0.85&&r2<0.96){kLo=1.8;kHi=2.5;}
+    else if(r2>=0.96){kLo=2.5;kHi=3.2;}
+    place(Math.round(gx+rr(-4,4)),Math.round(gy+rr(-4,4)),bw,bd,kLo,kHi,1.4);
+  }
+}
+/* back-street infill: narrow buildings that fill the leftover gaps */
+for(var gy2=-70;gy2<700;gy2+=8){
+  for(var gx2=-72;gx2<476;gx2+=9){
+    if(rnd()<0.34)continue;
+    place(Math.round(gx2+rr(-2,2)),Math.round(gy2+rr(-2,2)),rr(6.5,14),rr(5.5,11.5),0.5,1.1,1.1);
+  }
+}
+/* courtyards, yards, gardens and parking between the blocks */
+for(var gy3=-68;gy3<700;gy3+=9){
+  for(var gx3=-72;gx3<476;gx3+=10){
+    if(rnd()<0.55)continue;
+    var yw=rr(5,11),yd=rr(4.5,9.5),yx=gx3+rr(-3,3),yy=gy3+rr(-3,3);
+    if(yx<OX+2||yy<OY+2||yx+yw>OX+OW-2||yy+yd>OY+OH-2)continue;
+    if(!freeBox(yx,yy,yw,yd))continue;
+    markBox(yx,yy,yw,yd,1);
+    yards.push({x:yx,y:yy,w:yw,d:yd,k:rnd()});
+  }
+}
+function yardStr(y){
+  var k=y.k;
+  if(k<0.4)return '<rect x="'+f(y.x)+'" y="'+f(y.y)+'" width="'+f(y.w)+'" height="'+f(y.d)+'" rx="1" fill="#a9d79c"/>'+
+    '<circle cx="'+f(y.x+y.w*.33)+'" cy="'+f(y.y+y.d*.45)+'" r="'+f(Math.min(y.w,y.d)*.24)+'" fill="#7cbb72"/>'+
+    '<circle cx="'+f(y.x+y.w*.7)+'" cy="'+f(y.y+y.d*.68)+'" r="'+f(Math.min(y.w,y.d)*.18)+'" fill="#8ecb83"/>';
+  if(k<0.72)return '<rect x="'+f(y.x)+'" y="'+f(y.y)+'" width="'+f(y.w)+'" height="'+f(y.d)+'" rx="1" fill="#d5d1bd"/>'+
+    '<rect x="'+f(y.x+.8)+'" y="'+f(y.y+.8)+'" width="'+f(y.w-1.6)+'" height="'+f(y.d-1.6)+'" fill="none" stroke="#c4bfa7" stroke-width=".6"/>';
+  if(k<0.88)return '<rect x="'+f(y.x)+'" y="'+f(y.y)+'" width="'+f(y.w)+'" height="'+f(y.d)+'" rx="1" fill="#d2cfbc"/>'+
+    '<rect x="'+f(y.x+1)+'" y="'+f(y.y+1.2)+'" width="3.2" height="1.8" rx=".7" fill="#aeb6bb"/>'+
+    '<rect x="'+f(y.x+5.4)+'" y="'+f(y.y+1.2)+'" width="3.2" height="1.8" rx=".7" fill="#a5adb3"/>';
+  return '<rect x="'+f(y.x)+'" y="'+f(y.y)+'" width="'+f(y.w)+'" height="'+f(y.d)+'" rx="1" fill="#dad5c3"/>';
+}
+/* one sun, north-west: every cast shadow falls south-east */
+function shadowStr(x,y,w,d,lift){
+  var dx=1.7+0.15*lift,dy=1.4+0.11*lift;
+  return '<rect x="'+f(x+dx)+'" y="'+f(y+dy)+'" width="'+f(w)+'" height="'+f(d)+'" fill="#33505c" opacity=".24"/>'+
+         '<rect x="'+f(x+0.9)+'" y="'+f(y+0.9)+'" width="'+f(w)+'" height="'+f(d)+'" fill="#33505c" opacity=".13"/>';
+}
+function windowsStr(b){
+  var ny=b.y+b.d,out='',pitchX=4.6,pitchY=5.2,ww=2.2,wh=2.9;
+  if(b.w<10||b.lift<5.4)return '';
+  var cols=Math.max(1,Math.floor((b.w-2.4)/pitchX)),stepX=(b.w-1.8)/cols;
+  var rows=Math.max(1,Math.floor((b.lift-2.4)/pitchY));
+  var glass=b.s1<0.34?'#5f96b8':(b.s1<0.7?'#74a9c8':'#93c1d8');
+  for(var r=0;r<rows;r++){
+    var wyy=ny-b.lift+1.7+r*pitchY;
+    if(wyy+wh>ny-1)break;
+    for(var c=0;c<cols;c++)
+      out+='<rect x="'+f(b.x+0.9+c*stepX)+'" y="'+f(wyy)+'" width="'+ww+'" height="'+wh+
+           '" rx=".35" fill="'+glass+'" opacity=".85"/>';
+  }
+  return out;
+}
+function roofTex(b){
+  var ry=b.y-b.lift,m=b.m,t=m.t;
+  var pat=t==='tile'?'tileTex':(t==='slate'?'slateTex':(t==='copper'?'copperTex':
+          (t==='gravel'?'gravelTex':(t==='lead'?'leadTex':'glassTex'))));
+  return '<rect x="'+f(b.x)+'" y="'+f(ry)+'" width="'+f(b.w)+'" height="'+f(b.d)+
+         '" fill="url(#'+pat+')" opacity=".34"/>';
+}
+function roofDetail(b){
+  var ry=b.y-b.lift,m=b.m,out='',i,cx,cy,cw,ch,n;
+  out+='<rect x="'+f(b.x+.7)+'" y="'+f(ry+.7)+'" width="'+f(b.w-1.4)+'" height="'+f(b.d-1.4)+
+       '" fill="none" stroke="'+shade(m.c,-32)+'" stroke-opacity=".4" stroke-width=".6"/>';
+  n=1+Math.floor(b.s2*2.2);
+  for(i=0;i<n;i++){
+    cx=b.x+1.6+((b.s3*5+i*.41)%1)*Math.max(1.5,b.w-4.5);
+    cy=ry+2+(((b.s1*3+i*.57)%1)*Math.max(1,b.d-5));
+    cw=2.2;ch=3+b.s3*3.4;
+    out+='<rect x="'+f(cx)+'" y="'+f(cy-ch)+'" width="'+f(cw)+'" height="'+f(ch+1)+'" fill="#bd8a6c"/>'+
+         '<rect x="'+f(cx-.35)+'" y="'+f(cy-ch-1)+'" width="'+f(cw+.7)+'" height="1.1" fill="#a3714f"/>';
+  }
+  if(b.w>15&&b.d>11&&b.s1>.52)
+    out+='<rect x="'+f(b.x+b.w-6.2)+'" y="'+f(ry+1.7)+'" width="3.2" height="2.4" rx=".5" fill="#c3ccd2"/>'+
+         '<rect x="'+f(b.x+b.w-5.4)+'" y="'+f(ry+4.1)+'" width="1.6" height="1.4" fill="#aeb8bf"/>';
+  if(b.s1>.82&&b.w>13&&b.d>10)
+    out+='<rect x="'+f(b.x+2.1)+'" y="'+f(ry+b.d-5.4)+'" width="'+f(Math.min(7,b.w-4.2))+'" height="3.6" rx="1" fill="#8ec47f"/>';
+  if((m.t==='glass'||b.s2>.9)&&b.w>11&&b.d>9)
+    out+='<rect x="'+f(b.x+b.w*.3)+'" y="'+f(ry+b.d*.32)+'" width="3.4" height="2.3" rx=".5" fill="#e2f1f9" opacity=".85"/>';
+  if(b.s3>.72&&b.w>13&&b.d>9)
+    out+='<rect x="'+f(b.x+b.w*.55)+'" y="'+f(ry+b.d*.58)+'" width="4.2" height="1.6" rx=".5" fill="#9aa6ae"/>';
+  return out;
+}
+function buildingStr(b){
+  var ny=b.y+b.d,wallTop=ny-b.lift,m=b.m,out='',pl=Math.min(b.lift*.26,3.6);
+  /* near (south) wall, facing the viewer */
+  out+='<rect x="'+f(b.x)+'" y="'+f(wallTop)+'" width="'+f(b.w)+'" height="'+f(b.lift)+'" fill="'+m.w+'"/>';
+  out+=windowsStr(b);
+  out+='<rect x="'+f(b.x)+'" y="'+f(ny-pl)+'" width="'+f(b.w)+'" height="'+f(pl)+'" fill="'+shade(m.w,-26)+'"/>';
+  if(b.w>13&&b.s2>.5)
+    out+='<rect x="'+f(b.x+2+b.s3*(b.w-7))+'" y="'+f(ny-pl*.8)+'" width="3.2" height="'+f(pl*.8)+'" rx=".5" fill="#8a6a52"/>';
+  /* wall/roof junction: a dark cornice, then a lit cap */
+  out+='<rect x="'+f(b.x)+'" y="'+f(wallTop)+'" width="'+f(b.w)+'" height="1.7" fill="'+shade(m.c,-38)+'" opacity=".85"/>';
+  out+='<rect x="'+f(b.x)+'" y="'+f(wallTop+1.7)+'" width="'+f(b.w)+'" height=".9" fill="#ffffff" opacity=".32"/>';
+  if(b.s2<.22&&b.w>14&&pl>2.4)
+    out+='<rect x="'+f(b.x+.6)+'" y="'+f(ny-pl-2.8)+'" width="'+f(b.w-1.2)+'" height="2.8" rx=".9" fill="'+
+         (b.s3<.5?'#c85a52':'#3f7f8c')+'"/>';
+  /* roof face: the footprint lifted up the screen */
+  out+='<rect x="'+f(b.x)+'" y="'+f(b.y-b.lift)+'" width="'+f(b.w)+'" height="'+f(b.d)+'" fill="'+m.c+'"/>';
+  out+='<rect x="'+f(b.x)+'" y="'+f(b.y-b.lift)+'" width="'+f(b.w)+'" height="1.4" fill="'+shade(m.c,28)+'" opacity=".7"/>';
+  if(b.kind!=='flat'&&b.lift>7){
+    var rise=Math.min(b.d*0.42*Math.tan(TI),9);
+    out+='<rect x="'+f(b.x)+'" y="'+f(wallTop-rise)+'" width="'+f(b.w)+'" height="'+f(rise)+'" fill="'+shade(m.c,-16)+'"/>'+
+         '<rect x="'+f(b.x)+'" y="'+f(wallTop-rise)+'" width="'+f(b.w)+'" height="1.2" fill="'+shade(m.c,-44)+'"/>';
+  }
+  out+=roofTex(b);
+  out+=roofDetail(b);
+  return out;
+}
+
+/* -------------------------------------------------------- 6 · landmarks */
+function towerStr(tx,ty,tw,td,hs,spire,wall,withClock){
+  var out='',lift=hs*UP,ny=ty+td,top=ty-lift;
+  out+='<rect x="'+f(tx)+'" y="'+f(ny-lift)+'" width="'+f(tw)+'" height="'+f(lift)+'" fill="'+wall+'"/>';
+  out+='<rect x="'+f(tx+tw*.3)+'" y="'+f(ny-lift+6)+'" width="'+f(tw*.4)+'" height="'+f(Math.max(4,lift-14))+'" rx="1.6" fill="#6d9ec0"/>';
+  out+='<rect x="'+f(tx)+'" y="'+f(ny-2.4)+'" width="'+f(tw)+'" height="2.4" fill="#ded0b8"/>';
+  out+='<rect x="'+f(tx)+'" y="'+f(top)+'" width="'+f(tw)+'" height="1.4" fill="#bda98a" opacity=".8"/>';
+  out+='<rect x="'+f(tx)+'" y="'+f(top)+'" width="'+f(tw)+'" height="'+f(td)+'" fill="#5c6c78"/>';
+  out+='<polygon points="'+f(tx)+','+f(top)+' '+f(tx+tw)+','+f(top)+' '+f(tx+tw/2)+','+f(top-spire)+'" fill="#54626e"/>';
+  out+='<rect x="'+f(tx+tw/2-.7)+'" y="'+f(top-spire-4)+'" width="1.4" height="4" fill="#e8c46a"/>';
+  if(withClock)out+='<circle cx="'+f(tx+tw/2)+'" cy="'+f(ny-lift+4.4)+'" r="2" fill="#f6f1e4"/>';
+  return out;
+}
+function cathedral(){
+  var x=CATH[0],y=CATH[1],w=CATH[2],d=CATH[3],out='',ny=y+d,lift=32*UP,i,c;
+  /* chapter house and the north-west tower stand behind the nave */
+  out+='<rect x="'+f(x+w*.66)+'" y="'+f(y-8-10*UP)+'" width="16" height="'+f(10+10*UP)+'" fill="#eee2cb"/>'+
+       '<rect x="'+f(x+w*.66)+'" y="'+f(y-8-10*UP)+'" width="16" height="10" fill="#8f7f6e"/>';
+  out+=towerStr(x+2,y+2,14,12,38,16,'#f6efe2',0);
+  /* nave: long south wall, arched windows, buttresses between them */
+  out+='<rect x="'+f(x)+'" y="'+f(ny-lift)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#f3e7d1"/>';
+  for(c=0;c<8;c++)
+    out+='<rect x="'+f(x+7+c*12)+'" y="'+f(ny-lift+4)+'" width="4.4" height="'+f(lift-11)+'" rx="2.2" fill="#6d9ec0"/>';
+  for(c=0;c<7;c++)
+    out+='<rect x="'+f(x+12+c*14.5)+'" y="'+f(ny-lift-3)+'" width="2.4" height="'+f(lift+3)+'" fill="#e8dcc4"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(ny-3.4)+'" width="'+f(w)+'" height="3.4" fill="#ded0b8"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(ny-lift)+'" width="'+f(w)+'" height="1.8" fill="#c9b894" opacity=".8"/>';
+  /* slate nave roof, ridge running east-west, lifted clear of the wall */
+  out+='<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(d)+'" fill="#6b7d8a"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(d)+'" fill="url(#slateTex)" opacity=".32"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="1.8" fill="#96a7b2"/>';
+  out+='<rect x="'+f(x+3)+'" y="'+f(y-lift-5)+'" width="'+f(w-6)+'" height="5.4" fill="#6f808c"/>';
+  out+=towerStr(x+w*.45,y+d*.22,12,10,40,14,'#f6efe2',1);
+  out+=towerStr(x+2,y+d-14,14,12,38,16,'#f6efe2',0);
+  return {y1:ny,s:out};
+}
+function stationHall(){
+  var x=HALL[0],y=HALL[1],w=HALL[2],d=HALL[3],out='',ny=y+d,lift=20*UP,i;
+  out+='<rect x="'+f(x)+'" y="'+f(ny-lift)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#ece4d6"/>';
+  for(i=0;i<9;i++)
+    out+='<rect x="'+f(x+5+i*9.6)+'" y="'+f(ny-lift+4.2)+'" width="5.4" height="'+f(lift-9)+'" rx="2.7" fill="#7fb0cd"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(ny-4)+'" width="'+f(w)+'" height="4" fill="#d9d1c1"/>';
+  out+='<rect x="'+f(x+w/2-9)+'" y="'+f(ny-lift+1.4)+'" width="18" height="9" rx="2" fill="#dfe6ec"/>';
+  out+='<circle cx="'+f(x+w/2)+'" cy="'+f(ny-lift+6.4)+'" r="2.6" fill="#f7f2e6" stroke="#8b98a3" stroke-width=".6"/>';
+  out+='<rect x="'+f(x+8)+'" y="'+f(y-6-9*UP)+'" width="'+f(w*.62)+'" height="'+f(9+9*UP)+'" fill="#e3e9ed"/>'+
+       '<rect x="'+f(x+8)+'" y="'+f(y-6-9*UP)+'" width="'+f(w*.62)+'" height="9" fill="#6f7e8a"/>';
+  /* main shed: lifted lead roof with two glass strips and ribs */
+  out+='<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(d)+'" fill="#8794a0"/>';
+  out+='<rect x="'+f(x+7)+'" y="'+f(y-lift)+'" width="'+f(w-14)+'" height="'+f(d)+'" fill="#a7b6c1"/>';
+  out+='<rect x="'+f(x+7)+'" y="'+f(y-lift)+'" width="'+f(w-14)+'" height="'+f(d*.42)+'" fill="#bccbd5"/>';
+  out+='<rect x="'+f(x+7)+'" y="'+f(y-lift)+'" width="'+f(w-14)+'" height="1.6" fill="#d3dde4"/>';
+  out+='<rect x="'+f(x+7)+'" y="'+f(y-lift)+'" width="'+f(w-14)+'" height="'+f(d)+'" fill="url(#leadTex)" opacity=".26"/>';
+  for(i=0;i<8;i++)
+    out+='<path d="M'+f(x+12+i*(w-24)/7)+' '+f(y-lift+1.6)+' V'+f(y-lift+d-1.6)+'" stroke="#8a97a2" stroke-width=".6" opacity=".5"/>';
+  out+='<rect x="'+f(x+7)+'" y="'+f(y-lift+d*.42)+'" width="'+f(w-14)+'" height="1.4" fill="#e6eef3" opacity=".8"/>';
+  return {y1:ny,s:out};
+}
+function marketHall(){
+  var x=MARKET[0],y=MARKET[1],w=MARKET[2],d=MARKET[3],out='',ny=y+d,lift=17*UP,i;
+  out+='<rect x="'+f(x)+'" y="'+f(ny-lift)+'" width="'+f(w)+'" height="'+f(lift)+'" fill="#f0e8d8"/>';
+  for(i=0;i<4;i++)
+    out+='<rect x="'+f(x+4+i*11.6)+'" y="'+f(ny-lift+4)+'" width="5.4" height="'+f(lift-8)+'" rx="2.7" fill="#6f9fbe"/>';
+  out+='<rect x="'+f(x)+'" y="'+f(ny-3.4)+'" width="'+f(w)+'" height="3.4" fill="#dfd6c2"/>';
+  /* oxidised copper barrel roof */
+  out+='<rect x="'+f(x)+'" y="'+f(y-lift)+'" width="'+f(w)+'" height="'+f(d)+'" fill="#5f9b8a"/>';
+  out+='<rect x="'+f(x+4)+'" y="'+f(y-lift)+'" width="'+f(w-8)+'" height="'+f(d)+'" fill="#6aa895"/>';
+  out+='<rect x="'+f(x+4)+'" y="'+f(y-lift)+'" width="'+f(w-8)+'" height="'+f(d)+'" fill="url(#copperTex)" opacity=".38"/>';
+  out+='<rect x="'+f(x+4)+'" y="'+f(y-lift)+'" width="'+f(w-8)+'" height="2" fill="#8dc4b3"/>';
+  for(i=0;i<6;i++)
+    out+='<path d="M'+f(x+6+i*(w-12)/5)+' '+f(y-lift+2)+' V'+f(y-lift+d-2)+'" stroke="#4e8676" stroke-width=".7" opacity=".45"/>';
+  out+='<path d="M'+f(x+5)+' '+f(y-lift+d*.3)+' L'+f(x+w-5)+' '+f(y-lift+d*.72)+'" stroke="#9ad2c0" stroke-width="1" opacity=".4"/>';
+  out+=towerStr(x+w/2-4,y+d*.1,8,7,10,7,'#f2ead9',1);
+  return {y1:ny,s:out};
+}
+/* ------------------------------------------------------- 7 · the ground */
+var G=[];
+G.push('<rect x="'+OX+'" y="'+OY+'" width="'+OW+'" height="'+OH+'" fill="#dde1cd"/>');
+G.push('<rect x="'+OX+'" y="'+OY+'" width="'+OW+'" height="'+OH+'" fill="url(#plotTex)"/>');
+for(var yi=0;yi<yards.length;yi++)G.push(yardStr(yards[yi]));
+
+/* --- park: lawns, pond, paths, planting beds --- */
+G.push('<rect x="'+f(PARK[0])+'" y="'+f(PARK[1])+'" width="'+f(PARK[2])+'" height="'+f(PARK[3])+'" rx="14" fill="#7cbb78"/>');
+G.push('<rect x="'+f(PARK[0]+4)+'" y="'+f(PARK[1]+4)+'" width="'+f(PARK[2]-8)+'" height="'+f(PARK[3]-8)+'" rx="11" fill="url(#parkTex)"/>');
+G.push('<ellipse cx="'+f(PARK[0]+PARK[2]*.36)+'" cy="'+f(PARK[1]+PARK[3]*.6)+'" rx="15" ry="8" fill="#63bcd8"/>');
+G.push('<ellipse cx="'+f(PARK[0]+PARK[2]*.36)+'" cy="'+f(PARK[1]+PARK[3]*.6)+'" rx="15" ry="8" fill="none" stroke="#dcecdf" stroke-width="1.6"/>');
+G.push('<ellipse cx="'+f(PARK[0]+PARK[2]*.3)+'" cy="'+f(PARK[1]+PARK[3]*.54)+'" rx="6" ry="3" fill="#96d8ea" opacity=".7"/>');
+G.push('<path d="'+pth([[PARK[0]+3,PARK[1]+11],[PARK[0]+28,PARK[1]+18],[PARK[0]+54,PARK[1]+13],[PARK[0]+PARK[2]-3,PARK[1]+24]])+
+  '" fill="none" stroke="#e6d9b4" stroke-width="5" stroke-linecap="round"/>');
+G.push('<path d="'+pth([[PARK[0]+15,PARK[1]+PARK[3]-3],[PARK[0]+23,PARK[1]+PARK[3]*.55],[PARK[0]+41,PARK[1]+11]])+
+  '" fill="none" stroke="#e6d9b4" stroke-width="4" stroke-linecap="round"/>');
+G.push('<rect x="'+f(PARK[0]+3)+'" y="'+f(PARK[1]+PARK[3]*.22)+'" width="15" height="9" rx="2" fill="#6fae66"/>');
+G.push('<rect x="'+f(PARK[0]+PARK[2]-19)+'" y="'+f(PARK[1]+PARK[3]*.7)+'" width="15" height="10" rx="2" fill="#82c17a"/>');
+
+/* --- allotments --- */
+G.push('<rect x="'+f(ALLOT[0])+'" y="'+f(ALLOT[1])+'" width="'+f(ALLOT[2])+'" height="'+f(ALLOT[3])+'" rx="4" fill="#dcd9c6"/>');
+for(var ay=0;ay<5;ay++)for(var ax=0;ax<3;ax++)
+  G.push('<rect x="'+f(ALLOT[0]+2.4+ax*(ALLOT[2]-4)/3)+'" y="'+f(ALLOT[1]+2.4+ay*(ALLOT[3]-4)/5)+
+    '" width="'+f((ALLOT[2]-5)/3-1.4)+'" height="'+f((ALLOT[3]-5)/5-1.2)+'" rx="1" fill="'+
+    (rnd()<.5?'#9ccf87':'#b6d79a')+'"/>');
+
+/* --- civic plaza: paving, a fountain and market stalls --- */
+G.push('<rect x="'+f(PLAZA[0])+'" y="'+f(PLAZA[1])+'" width="'+f(PLAZA[2])+'" height="'+f(PLAZA[3])+'" rx="8" fill="#ddd6c4"/>');
+G.push('<rect x="'+f(PLAZA[0]+3)+'" y="'+f(PLAZA[1]+3)+'" width="'+f(PLAZA[2]-6)+'" height="'+f(PLAZA[3]-6)+'" rx="6" fill="#eae3d1"/>');
+G.push('<rect x="'+f(PLAZA[0]+3)+'" y="'+f(PLAZA[1]+3)+'" width="'+f(PLAZA[2]-6)+'" height="'+f(PLAZA[3]-6)+'" rx="6" fill="url(#paveTex)"/>');
+var fx=PLAZA[0]+PLAZA[2]*.5,fy=PLAZA[1]+PLAZA[3]*.5;
+G.push('<ellipse cx="'+f(fx)+'" cy="'+f(fy)+'" rx="8" ry="4.8" fill="#cfe4ee" stroke="#a9c3d2" stroke-width="1.2"/>');
+G.push('<circle cx="'+f(fx)+'" cy="'+f(fy-1)+'" r="2.2" fill="#9dc0d4"/>');
+G.push('<rect x="'+f(fx-.6)+'" y="'+f(fy-5.4)+'" width="1.2" height="4.4" fill="#b9c6cd"/>');
+[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function(d2){
+  var qx=fx+d2[0]*PLAZA[2]*.28,qy=fy+d2[1]*PLAZA[3]*.3;
+  G.push('<rect x="'+f(qx-4)+'" y="'+f(qy-3)+'" width="8" height="6" rx="1" fill="#f6f1e4"/>'+
+         '<rect x="'+f(qx-4.6)+'" y="'+f(qy-4.4)+'" width="9.2" height="2.6" rx="1" fill="'+
+         (d2[0]<0?'#c85a52':'#3f7f8c')+'"/>'+
+         '<rect x="'+f(qx-1)+'" y="'+f(qy-4.4)+'" width="2" height="2.6" fill="#f0e6d2"/>');
+});
+
+/* --- the river: banks, quay, water, shimmer --- */
+var rp=pth(RIVER);
+G.push('<path d="'+rp+'" fill="none" stroke="#a9b09a" stroke-width="58" stroke-linecap="round"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="#cfd3bb" stroke-width="52" stroke-linecap="round"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="#b9a684" stroke-width="42" stroke-linecap="round"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="url(#water)" stroke-width="38" stroke-linecap="round"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="#7cc4e4" stroke-width="20" stroke-linecap="round"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="#e2f4fd" stroke-width="1.4" stroke-dasharray="16 26" class="shimmer" opacity=".8"/>');
+G.push('<path d="'+rp+'" fill="none" stroke="#5aa9cd" stroke-width="1.6" stroke-dasharray="30 60" class="shimmer b" opacity=".3"/>');
+/* embankment wall, bollards and steps on the near bank */
+G.push('<path d="'+pth(RIVER.map(function(p){return [p[0],p[1]-19];}))+'" fill="none" stroke="#c8b894" stroke-width="3.2" stroke-linejoin="round"/>');
+G.push('<path d="'+pth(RIVER.map(function(p){return [p[0],p[1]-19];}))+'" fill="none" stroke="#efe7d2" stroke-width="1.1" stroke-dasharray="4 7" opacity=".75"/>');
+for(var bxp=-30;bxp<470;bxp+=26)
+  G.push('<circle cx="'+f(bxp)+'" cy="'+f(riverY(bxp)-22)+'" r="1" fill="#8e8674"/>');
+G.push('<rect x="'+f(wx(196)-9)+'" y="'+f(wy(392))+'" width="18" height="6.5" rx="1" fill="#cfc3a4"/>');
+/* far bank: wharves, a timber yard and cranes */
+G.push('<rect x="8" y="'+f(riverY(40)+24)+'" width="54" height="14" rx="2" fill="#c9b391"/>');
+G.push('<rect x="16" y="'+f(riverY(40)+38)+'" width="7" height="18" fill="#b9a382"/>');
+G.push('<rect x="48" y="'+f(riverY(40)+38)+'" width="7" height="18" fill="#b9a382"/>');
+G.push('<rect x="150" y="'+f(riverY(150)+23)+'" width="48" height="12" rx="2" fill="#c9b391"/>');
+G.push('<rect x="246" y="'+f(riverY(250)+23)+'" width="50" height="12" rx="2" fill="#c9b391"/>');
+G.push('<rect x="330" y="'+f(riverY(330)+24)+'" width="44" height="12" rx="2" fill="#c9b391"/>');
+[[96,484],[104,496],[262,488],[268,500]].forEach(function(cr,i){
+  G.push('<rect x="'+f(cr[0])+'" y="'+f(cr[1]-16)+'" width="2.2" height="16" fill="#8f9aa2"/>'+
+         '<rect x="'+f(cr[0]-9)+'" y="'+f(cr[1]-18)+'" width="19" height="2.4" rx="1" fill="#a9b3ba"/>'+
+         '<rect x="'+f(cr[0]+2)+'" y="'+f(cr[1]-21)+'" width="2" height="3.4" fill="#7c878f"/>');
+});
+G.push('<rect x="'+(OX+4)+'" y="'+f(riverY(0)+30)+'" width="48" height="24" rx="2" fill="#cbb894"/>');
+for(var tl=0;tl<4;tl++)
+  G.push('<rect x="'+(OX+7)+'" y="'+f(riverY(0)+33+tl*5.6)+'" width="42" height="4.2" rx="1" fill="#b39a72"/>');
+
+/* --- streets: kerb, pavement, asphalt, markings. Three passes so junctions
+       merge instead of stacking, and the roads survive over any block. --- */
+var SW={main:{kerb:20,pave:17,asp:13},lane:{kerb:15,pave:12,asp:8.5},bridge:{kerb:18,pave:15,asp:11}};
+function passFn(colorFn,widthFn){
+  STREETS.forEach(function(s){
+    var o=widthFn(SW[s.k]);
+    G.push('<path d="'+pth(s.p)+'" fill="none" stroke="'+colorFn(s.k)+'" stroke-width="'+o+
+      '" stroke-linecap="'+(s.k==='bridge'?'butt':'round')+'" stroke-linejoin="round"/>');
+  });
+}
+passFn(function(){return '#a49b80';},function(w){return w.kerb;});
+passFn(function(){return '#e7e1cd';},function(w){return w.pave;});
+passFn(function(k){return k==='lane'?'#95a0a8':'#8b949c';},function(w){return w.asp;});
+/* tyrewear + centre markings on the full streets */
+STREETS.forEach(function(s){
+  if(s.k!=='main')return;
+  G.push('<path d="'+pth(s.p)+'" fill="none" stroke="#7e878f" stroke-width="'+(SW.main.asp-5)+'" opacity=".28" stroke-linecap="round"/>');
+  G.push('<path d="'+pth(s.p)+'" fill="none" stroke="#f8f9f5" stroke-width=".9" stroke-dasharray="4.5 8" opacity=".7" stroke-linecap="round"/>');
+});
+/* a rail viaduct: the metro crosses the blocks instead of following a street */
+(function(){
+  var MP=wps(METRO),smp=sample(MP,24),i;
+  G.push('<path d="'+pth(MP.map(function(p){return [p[0]+1.6,p[1]+1.6];}))+'" fill="none" stroke="#4c5a66" stroke-width="13" opacity=".2" stroke-linecap="round"/>');
+  for(i=1;i<smp.length-1;i++)
+    G.push('<rect x="'+f(smp[i][0]-1.8)+'" y="'+f(smp[i][1]-1.8)+'" width="3.6" height="7" fill="#9aa4ad"/>'+
+           '<ellipse cx="'+f(smp[i][0])+'" cy="'+f(smp[i][1]+5)+'" rx="3" ry="1.4" fill="#3d5a66" opacity=".18"/>');
+  G.push('<path d="'+pth(MP)+'" fill="none" stroke="#7d8791" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+pth(MP)+'" fill="none" stroke="#b9c2c9" stroke-width="8.6" stroke-linecap="round" stroke-linejoin="round"/>');
+  G.push('<path d="'+pth(MP)+'" fill="none" stroke="#6c767f" stroke-width="1.1" stroke-dasharray="1.4 3" opacity=".8"/>');
+  [2.1,-2.1].forEach(function(o2){
+    G.push('<path d="'+pth(MP.map(function(p,i2){return [p[0]+o2*(i2%2?1:-1)*0.4,p[1]+o2];}))+
+      '" fill="none" stroke="#eef2f5" stroke-width=".85" opacity=".85"/>');
+  });
+})();
+/* the special alleyway is a real passage between the blocks */
+G.push('<path d="'+pth(wps(ALLEY))+'" fill="none" stroke="#b7ae98" stroke-width="8" stroke-linecap="round"/>');
+G.push('<path d="'+pth(wps(ALLEY))+'" fill="none" stroke="#cdc6b2" stroke-width="5.6" stroke-linecap="round"/>');
+G.push('<path d="'+pth(wps(ALLEY))+'" fill="none" stroke="#a89e88" stroke-width=".9" stroke-dasharray="1.6 3" opacity=".6"/>');
+
+/* --- the two bridges: piers in the water, abutments on both banks, a deck
+       with parapets and railings, and a marked roadway --- */
+BRIDGES.forEach(function(br){
+  var by=riverY(br.x),w=24,hh=br.y1-br.y0;
+  [-16,0,16].forEach(function(o2){
+    G.push('<rect x="'+f(br.x-w/2-5)+'" y="'+f(by+o2-4)+'" width="'+f(w+10)+'" height="8" rx="1.4" fill="#8b959d"/>'+
+           '<rect x="'+f(br.x-w/2-5)+'" y="'+f(by+o2-4)+'" width="'+f(w+10)+'" height="2.4" fill="#bcc4ca"/>');
+  });
+  G.push('<rect x="'+f(br.x-w/2-7)+'" y="'+f(by-38)+'" width="'+f(w+14)+'" height="26" rx="2" fill="#b0a992"/>');
+  G.push('<rect x="'+f(br.x-w/2-7)+'" y="'+f(by+14)+'" width="'+f(w+14)+'" height="26" rx="2" fill="#b0a992"/>');
+  G.push('<rect x="'+f(br.x-w/2-7)+'" y="'+f(by-38)+'" width="'+f(w+14)+'" height="2.8" fill="#cdc6b0"/>');
+  G.push('<rect x="'+f(br.x-w/2-7)+'" y="'+f(by+14)+'" width="'+f(w+14)+'" height="2.8" fill="#cdc6b0"/>');
+  G.push('<rect x="'+f(br.x-w/2-3.2)+'" y="'+f(br.y0+1.4)+'" width="'+f(w+6.4)+'" height="'+(hh-1)+'" rx="3" fill="#4d6a76" opacity=".2"/>');
+  G.push('<rect x="'+f(br.x-w/2-2)+'" y="'+f(br.y0)+'" width="'+f(w+4)+'" height="'+hh+'" rx="2.4" fill="#a7aeae"/>');
+  G.push('<rect x="'+f(br.x-w/2)+'" y="'+f(br.y0)+'" width="'+w+'" height="'+hh+'" fill="#c9d0d4"/>');
+  G.push('<rect x="'+f(br.x-w/2+5)+'" y="'+f(br.y0)+'" width="'+f(w-10)+'" height="'+hh+'" fill="#a2abb2"/>');
+  [-1,1].forEach(function(s2){
+    var px=br.x+s2*(w/2-2.4)-2.2;
+    G.push('<rect x="'+f(px)+'" y="'+f(br.y0-1)+'" width="4.4" height="'+(hh+2)+'" fill="#f5f3ea"/>');
+    G.push('<rect x="'+f(px)+'" y="'+f(br.y0-1)+'" width="4.4" height="'+(hh+2)+'" fill="none" stroke="#c6c0ae" stroke-width=".6"/>');
+    for(var yy=br.y0+5;yy<br.y1-3;yy+=8)
+      G.push('<rect x="'+f(px+1.1)+'" y="'+f(yy)+'" width="2.2" height="4" fill="#cfd5d8" opacity=".9"/>');
+  });
+  G.push('<path d="'+pth([[br.x,br.y0+4],[br.x,br.y1-4]])+'" fill="none" stroke="#f6f7f3" stroke-width=".9" stroke-dasharray="4 5" opacity=".8"/>');
+});
+
+/* --- crossings, parking bays, loading bays --- */
+function zebra(wxx,wyy,deg){
+  var out='<g transform="translate('+f(wxx)+','+f(wyy)+') rotate('+deg+')">';
+  for(var i=-2;i<=2;i++)
+    out+='<rect x="'+(i*2.4-1)+'" y="-4" width="1.7" height="8" fill="#f4f5f0" opacity=".82"/>';
+  return out+'</g>';
+}
+G.push(zebra(sx(55),sy(104),8));
+G.push(zebra(sx(70),sy(340),-16));
+G.push(zebra(sx(205),sy(240),4));
+G.push(zebra(sx(200),sy(360),4));
+G.push(zebra(sx(140),sy(88),6));
+function bays(wxx,wyy,deg,n){
+  var out='<g transform="translate('+f(wxx)+','+f(wyy)+') rotate('+deg+')">';
+  for(var i=0;i<n;i++)
+    out+='<rect x="'+(i*4)+'" y="-2.8" width="3.4" height="5.6" rx=".6" fill="#d3d5cd"/>'+
+         '<rect x="'+(i*4+3.2)+'" y="-2.8" width=".6" height="5.6" fill="#f0f1ec" opacity=".9"/>';
+  return out+'</g>';
+}
+G.push(bays(sx(120),sy(176),-4,4));
+G.push(bays(sx(240),sy(214),10,3));
+G.push(bays(sx(96),sy(392),4,5));
+
+/* --- trees: park, squares, churchyard, riverbank, street --- */
+function treeStr(wxx,wyy,r,cls){
+  return '<ellipse cx="'+f(wxx+2)+'" cy="'+f(wyy+2)+'" rx="'+f(r*.94)+'" ry="'+f(r*.55)+'" fill="#3f5f52" opacity=".17"/>'+
+    '<rect x="'+f(wxx-.8)+'" y="'+f(wyy-r-3)+'" width="1.6" height="'+f(r+3)+'" fill="#8a6f4d"/>'+
+    '<g class="'+(cls||'')+'">'+
+      '<circle cx="'+f(wxx)+'" cy="'+f(wyy-r-3)+'" r="'+f(r)+'" fill="#6fb46a"/>'+
+      '<circle cx="'+f(wxx-r*.34)+'" cy="'+f(wyy-r-4-r*.3)+'" r="'+f(r*.62)+'" fill="#86c77f"/>'+
+      '<circle cx="'+f(wxx+r*.32)+'" cy="'+f(wyy-r-3.4+r*.22)+'" r="'+f(r*.48)+'" fill="#5fa25c" opacity=".85"/>'+
+    '</g>';
+}
+var ti,tx2,ty2;
+for(ti=0;ti<15;ti++){
+  tx2=rr(PARK[0]+4,PARK[0]+PARK[2]-4);ty2=rr(PARK[1]+4,PARK[1]+PARK[3]-4);
+  if(Math.hypot(tx2-(PARK[0]+PARK[2]*.36),ty2-(PARK[1]+PARK[3]*.6))<14)continue;
+  G.push(treeStr(tx2,ty2,rr(3.4,6),ti%3===0?'sway':(ti%3===1?'sway d1':'')));
+}
+/* churchyard and market square trees */
+[[224,58,4.4,'sway'],[286,52,3.6,''],[240,54,3.2,'sway d2'],
+ [218,222,3.2,''],[246,222,3.4,'sway d1'],[310,250,3,'sway d2']].forEach(function(t2){
+  G.push(treeStr(t2[0],t2[1],t2[2],t2[3]));
+});
+/* street and riverbank trees */
+var streetTrees=[[36,166],[52,178],[92,80],[176,76],[214,76],[262,178],[320,196],
+  [58,292],[112,246],[178,246],[236,242],[300,250],[330,392],[252,392],[188,392],
+  [132,132],[96,292],[46,360],[64,212],[300,80],[268,52],[24,414],[54,420],[112,432],
+  [170,424],[228,436],[286,428],[344,440],[16,352],[36,120]];
+for(ti=0;ti<streetTrees.length;ti++)
+  G.push(treeStr(streetTrees[ti][0],streetTrees[ti][1],rr(2.4,4.2),ti%4===2?'sway d2':''));
+/* hedges and planting beds */
+[[178,232,16,3.6],[236,232,14,3.6],[92,192,16,3.2],[262,164,14,3.2],[40,336,12,3.2],
+ [226,30,20,3.4],[12,306,14,3.2]].forEach(function(hb){
+  G.push('<rect x="'+f(hb[0])+'" y="'+f(hb[1])+'" width="'+f(hb[2])+'" height="'+f(hb[3])+'" rx="1.4" fill="#6fae66"/>'+
+         '<rect x="'+f(hb[0])+'" y="'+f(hb[1])+'" width="'+f(hb[2])+'" height="'+f(hb[3]*.5)+'" rx="1.4" fill="#8ac47f"/>');
+});
+/* street lamps: a slow warm pulse, one of the ambient city motions */
+[[60,150],[150,120],[250,166],[54,270],[150,240],[250,290],[24,380],[128,382],
+ [230,382],[326,362],[96,462],[262,470],[190,430]].forEach(function(lp,i){
+  G.push('<rect x="'+f(lp[0]-.5)+'" y="'+f(lp[1]-9)+'" width="1" height="9" fill="#7f8a92"/>'+
+         '<circle cx="'+f(lp[0])+'" cy="'+f(lp[1]-10)+'" r="1.5" fill="#f3e2b4"/>'+
+         '<circle class="lamp'+(i%3===1?' d1':(i%3===2?' d2':''))+'" cx="'+f(lp[0])+'" cy="'+f(lp[1]-10)+'" r="7" fill="url(#lamGlow)"/>');
+});
+
+/* --- cast shadows are companions of the buildings, so they sort with them
+       instead of landing on top: one north-west sun, every shadow goes SE --- */
+
+/* --- the moving life: two cars on the streets, a barge on the river, a
+       train on the viaduct --- */
+function carStr(fill){
+  return '<rect x="-5.6" y="-3" width="11.2" height="6" rx="1.6" fill="'+fill+'"/>'+
+    '<rect x="-2.4" y="-5.4" width="6.2" height="3.2" rx="1" fill="#98a2a9"/>'+
+    '<rect x="-1.6" y="-5" width="4.2" height="2.4" rx=".7" fill="#cfe3ee"/>'+
+    '<circle cx="-3.2" cy="3" r="1.2" fill="#6d757b"/><circle cx="3.2" cy="3" r="1.2" fill="#6d757b"/>';
+}
+var carA=pointAt([wp([10,240]),wp([14,300]),wp([20,360])],0.06);
+var carB0=pointAt(wps([[96,392],[100,534]]),0.02);
+G.push('<g transform="translate('+f(carA.x)+','+f(carA.y)+')"><g class="driveV">'+carStr('#aab3b9')+'</g></g>');
+G.push('<g transform="translate('+f(carB0.x)+','+f(carB0.y)+')"><g class="driveV">'+carStr('#b3b9bd')+'</g></g>');
+G.push('<g transform="translate('+f(wx(-30))+','+f(riverY(-30)+4)+')"><g class="barge">'+
+  '<path d="M-12 -3.6 H11 L8.4 3.6 H-10 Z" fill="#8d7a5e"/>'+
+  '<rect x="-8" y="-7.2" width="12" height="4" rx="1" fill="#a89272"/>'+
+  '<rect x="-11.4" y="-4.2" width="23" height="1.4" fill="#6f6047"/>'+
+  '<rect x="-9" y="-10" width="1.4" height="3" fill="#7d6a4f"/>'+
+  '</g></g>');
+var trainP=wps([[316,240]]);
+G.push('<g transform="translate('+f(trainP[0][0])+','+f(trainP[0][1])+')"><g class="train">'+
+  '<rect x="-4" y="-13" width="8" height="26" rx="2.4" fill="#dfe6ea"/>'+
+  '<rect x="-2.6" y="-11" width="5.2" height="4" rx="1" fill="#7fb0cd"/>'+
+  '<rect x="-2.6" y="-4.4" width="5.2" height="4" rx="1" fill="#7fb0cd"/>'+
+  '<rect x="-2.6" y="2.2" width="5.2" height="4" rx="1" fill="#7fb0cd"/>'+
+  '<rect x="-4.6" y="-14" width="9.2" height="1.6" rx=".8" fill="#8d99a4"/>'+
+  '</g></g>');
+
+/* -------------------------------------------- 8 · paint ground + city */
+/* Every building is painted back to front — its shadow immediately behind it —
+   so a near block occludes what stands behind while its own shadow never
+   lands on its own roof. */
+var paint=[];
+blds.forEach(function(b){
+  paint.push({y1:b.y+b.d-0.01,s:shadowStr(b.x,b.y,b.w,b.d,b.lift)});
+  paint.push({y1:b.y+b.d,s:buildingStr(b)});
+});
+paint.push({y1:CATH[1]+CATH[3]-0.01,s:shadowStr(CATH[0]-3,CATH[1],CATH[2]+6,CATH[3],44)});
+paint.push(cathedral());
+paint.push({y1:HALL[1]+HALL[3]-0.01,s:shadowStr(HALL[0]-6,HALL[1],HALL[2]+12,HALL[3],30)});
+paint.push(stationHall());
+paint.push({y1:MARKET[1]+MARKET[3]-0.01,s:shadowStr(MARKET[0]-2,MARKET[1],MARKET[2]+4,MARKET[3],26)});
+paint.push(marketHall());
+paint.sort(function(a,b){return a.y1-b.y1;});
+$('ground').setAttribute('transform',MX);
+$('bld').setAttribute('transform',MX);
+$('ground').innerHTML=G.join('');
+$('bld').innerHTML=paint.map(function(it){return it.s;}).join('');
+
+/* ================================================================ 9 · info */
+function txt(parent,o,body){
+  var t=svg('text',{x:f(o.x),y:f(o.y),'text-anchor':o.anchor||'middle',
+    'font-size':o.size,'font-weight':o.weight||800,fill:o.fill,
+    'letter-spacing':o.ls||'0',stroke:o.halo||'none','stroke-width':o.halo?3:0,
+    'paint-order':'stroke','stroke-linejoin':'round'},parent);
+  t.textContent=body;
+  return t;
+}
+/* --- service lines are deliberately subdued; the legal moves are bright --- */
+svg('path',{d:pth(wps(METRO)),fill:'none',stroke:'#ffffff','stroke-width':6,opacity:.4},$('net'));
+svg('path',{d:pth(wps(METRO)),fill:'none',stroke:'#3d4d69','stroke-width':3.4,'stroke-dasharray':'11 4',opacity:.42},$('net'));
+BUS.forEach(function(bp){
+  var p=wps(bp);
+  svg('path',{d:pth(p),fill:'none',stroke:'#ffffff','stroke-width':4.6,opacity:.22},$('net'));
+  svg('path',{d:pth(p),fill:'none',stroke:'#2563eb','stroke-width':2.4,'stroke-dasharray':'6 7',opacity:.2},$('net'));
+});
+svg('path',{d:pth(wps(ALLEY)),fill:'none',stroke:'#ffffff','stroke-width':4.4,opacity:.42},$('net'));
+svg('path',{d:pth(wps(ALLEY)),fill:'none',stroke:'#7c3aed','stroke-width':2.4,'stroke-dasharray':'6 3 1.6 3',opacity:.5},$('net'));
+
+/* --- Falcon's legal moves from n5. n5 is a street node, so its only exits
+       are its three street edges: n1, n6 and n8. Every path is a multi-segment
+       polyline whose waypoints sit alongside the street centre-line, so each
+       one visibly bends with the road instead of cutting across a block. --- */
+function arrow(aid,color){
+  var m=svg('marker',{id:aid,viewBox:'0 0 14 14',refX:11,refY:7,markerWidth:12,markerHeight:12,
+    markerUnits:'userSpaceOnUse',orient:'auto'});
+  svg('path',{d:'M2.6 2.6 L12.2 7 L2.6 11.4 Z',fill:color,stroke:'#26313d','stroke-width':1.2,
+    'stroke-linejoin':'round'},m);
+}
+arrow('arw-foot','#1d8f9e');
+arrow('arw-key','#8f241c');
+var MOVES=[
+  {mode:'foot',to:'n1',key:false,t:0.55,
+   pts:[[100,187],[60,181],[43,166],[37,130],[36,106]]},
+  {mode:'foot',to:'n8',key:false,t:0.55,
+   pts:[[100,194],[70,216],[51,256],[44,300],[45,342]]},
+  {mode:'foot',to:'n6',key:true,t:0.30,
+   pts:[[99,194],[124,203],[156,211],[182,224],[206,242]]}
+];
+MOVES.forEach(function(mv){
+  var col=mv.key?'#8f241c':'#1d8f9e',cw=mv.key?5.4:4.2,dash=mv.key?'1.6 5.2':'2.6 4.6';
+  svg('path',{d:pth(mv.pts),fill:'none',stroke:'#f7f2e3','stroke-width':mv.key?10:9,'stroke-opacity':.9},$('net'));
+  svg('path',{d:pth(mv.pts),fill:'none',stroke:'#ffffff','stroke-opacity':.85,'stroke-width':mv.key?7.4:6},$('net'));
+  svg('path',{d:pth(mv.pts),fill:'none',stroke:col,'stroke-width':cw,'stroke-dasharray':dash,
+    'marker-end':'url(#arw-'+(mv.key?'key':'foot')+')'},$('net'));
+  /* the travel-mode glyph rides the path, as on every drawn move */
+  var pt=pointAt(mv.pts,mv.t),bx=pt.x-13,by=pt.y-7;
+  svg('rect',{x:f(bx),y:f(by),width:26,height:15,rx:7.5,fill:'#1b2b3c',opacity:.94},$('net'));
+  svg('rect',{x:f(bx),y:f(by),width:26,height:15,rx:7.5,fill:'none',stroke:col,'stroke-width':1.1,
+    opacity:.9},$('net'));
+  var gl=svg('g',{transform:'translate('+f(bx+5)+','+f(by+1.5)+') scale(.72)'},$('net'));
+  svg('ellipse',{cx:5.9,cy:5.7,rx:2.1,ry:3.4,transform:'rotate(-14 5.9 5.7)',fill:'#eaf6f8',stroke:'none'},gl);
+  svg('ellipse',{cx:10.3,cy:10.9,rx:2.1,ry:3.4,transform:'rotate(-14 10.3 10.9)',fill:'#eaf6f8',stroke:'none'},gl);
+});
+/* the key beat spells itself out, because n6 is genuinely a neighbour of n5 */
+txt($('net'),{x:178,y:203,size:8.4,fill:'#8f241c',halo:'#f6f2e7',ls:'.07em'},'THIS TURN');
+
+/* --- the Reveal Pulse: expanding rings centred on the revealed node n6 --- */
+(function(){
+  var n=N[REVEAL],ox=n.x+'px '+n.y+'px';
+  var host=$('pulse');
+  host.setAttribute('style','transform-box:view-box;transform-origin:'+ox);
+  svg('circle',{class:'flash',cx:n.x,cy:n.y,r:52,fill:'#ff5a2e',opacity:.09,
+    style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('circle',{class:'rip',cx:n.x,cy:n.y,r:56,fill:'none',stroke:'#ff6a3d','stroke-width':3,
+    'stroke-dasharray':'13 8',filter:'url(#ringGlow)',
+    style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('circle',{class:'rip b',cx:n.x,cy:n.y,r:56,fill:'none',stroke:'#ff8a2b','stroke-width':2.6,
+    'stroke-dasharray':'8 12',filter:'url(#ringGlow)',
+    style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('circle',{class:'rip c',cx:n.x,cy:n.y,r:56,fill:'none',stroke:'#ff4d6d','stroke-width':2,
+    filter:'url(#ringGlow)',style:'transform-box:view-box;transform-origin:'+ox},host);
+  /* a second, slower pair of dashed rings, so the reveal keeps breathing */
+  svg('circle',{class:'rip x',cx:n.x,cy:n.y,r:44,fill:'none',stroke:'#b43135','stroke-width':1.6,
+    opacity:.7,style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('circle',{class:'rip x b',cx:n.x,cy:n.y,r:44,fill:'none',stroke:'#ffffff','stroke-width':1.2,
+    opacity:.7,style:'transform-box:view-box;transform-origin:'+ox},host);
+  /* a slow sweep of warm light over the quarter */
+  var beam=svg('g',{class:'beam',style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('path',{d:'M'+n.x+' '+n.y+' L'+f(n.x+40)+' '+f(n.y-58)+' A78 78 0 0 0 '+n.x+' '+f(n.y-80)+' Z',
+    fill:'#ff7a2e',opacity:.09},beam);
+  /* a stationary reticle plus hard highlight, so the beat reads on a still frame */
+  var ret=svg('g',{class:'ret',style:'transform-box:view-box;transform-origin:'+ox},host);
+  svg('circle',{cx:n.x,cy:n.y,r:26,fill:'none',stroke:'#ffffff','stroke-opacity':.9,'stroke-width':1.3,
+    'stroke-dasharray':'3 5'},ret);
+  var rg=svg('g',{fill:'#e0483a'},ret);
+  [[0,-26],[0,26],[-26,0],[26,0],[-18.4,-18.4],[18.4,-18.4],[-18.4,18.4],[18.4,18.4]].forEach(function(o){
+    svg('circle',{cx:f(n.x+o[0]),cy:f(n.y+o[1]),r:(o[0]===0||o[1]===0)?1.9:1.5},rg);
+  });
+})();
+
+/* --- stations: class reads by shape, and every id stays legible ----------- */
+function hex(x,y,r){
+  var s2='',k,a;
+  for(k=0;k<6;k++){a=Math.PI/6+k*Math.PI/3;s2+=(k?' L':'M')+f(x+r*Math.cos(a))+' '+f(y+r*Math.sin(a));}
+  return s2+' Z';
+}
+function marker(sid){
+  var n=N[sid],g=$('stn');
+  if(n.c==='street'){
+    svg('circle',{cx:n.x,cy:n.y,r:8.4,fill:'#fffdf6',stroke:'#f6efdf','stroke-width':3.2},g);
+    svg('circle',{cx:n.x,cy:n.y,r:7.4,fill:'#fffdf6',stroke:'#2f4053','stroke-width':2.6},g);
+    svg('circle',{cx:n.x,cy:n.y,r:2,fill:'#2f4053'},g);
+  }else if(n.c==='hub'){
+    svg('path',{d:hex(n.x,n.y,11),fill:'#f3e0bb',stroke:'#2f4053','stroke-width':3},g);
+    svg('path',{d:hex(n.x,n.y,6.8),fill:'none',stroke:'#2f4053','stroke-width':1.6},g);
+    svg('circle',{cx:n.x,cy:n.y,r:1.8,fill:'#2f4053'},g);
+  }else{
+    svg('rect',{x:n.x-12,y:n.y-12,width:24,height:24,rx:4.5,fill:'#3d4d69',stroke:'#fffdf6','stroke-width':3},g);
+    svg('rect',{x:n.x-11,y:n.y-11,width:22,height:22,rx:3.6,fill:'#3d4d69',stroke:'#1d2b3a','stroke-width':1.6},g);
+    svg('path',{d:'M'+f(n.x-4.6)+' '+f(n.y+4.6)+' V'+f(n.y-.4)+' a4.6 4.6 0 0 1 9.2 0 V'+f(n.y+4.6),
+      fill:'none',stroke:'#dbe4f2','stroke-width':1.8},g);
+  }
+}
+['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10'].forEach(marker);
+/* n6 also carries the revealed arrow: a white chevron dropped on the node */
+(function(){
+  var n=N[REVEAL],g=$('stn');
+  svg('path',{d:'M'+f(n.x)+' '+f(n.y-4.6)+' L'+f(n.x+4.4)+' '+f(n.y+2.6)+' L'+n.x+' '+f(n.y+.6)+
+    ' L'+f(n.x-4.4)+' '+f(n.y+2.6)+' Z',fill:'#c8342a'},g);
+})();
+/* station numbers are the navigation aid, so each one is drawn clear of its
+   own token and of every plate */
+[['n1', 33, 96],['n2',148, 76],['n3',233,144],['n4',344,196],['n5', 78,202],
+ ['n6',205,262],['n7',293,320],['n8', 47,355],['n9',210,382],['n10',312,232]]
+  .forEach(function(l){
+    txt($('stn'),{x:l[1],y:l[2],size:11,fill:'#25384a',halo:'#f4ecd9',ls:'.02em'},l[0]);
+  });
+
+/* --- Harrier at n10: a marker of their own, with its own plate ------------ */
+svg('ellipse',{cx:N[OTHER].x+2,cy:N[OTHER].y+13,rx:11,ry:3.6,fill:'#2b3a46',opacity:.22},$('stn'));
+svg('rect',{x:N[OTHER].x-11.5,y:N[OTHER].y-11.5,width:23,height:23,rx:5.5,fill:'#fff',
+  stroke:'#0a1420','stroke-width':1.6},$('stn'));
+svg('rect',{x:N[OTHER].x-9.5,y:N[OTHER].y-9.5,width:19,height:19,rx:4.5,fill:'#6b5a97'},$('stn'));
+svg('circle',{cx:N[OTHER].x,cy:N[OTHER].y-.5,r:6.4,fill:'#fff',opacity:.95},$('stn'));
+txt($('stn'),{x:N[OTHER].x,y:N[OTHER].y+2.9,size:8.6,fill:'#3d3163'},'H');
+
+/* --- Falcon at n5: this phase has not run yet ---------------------------- */
+svg('circle',{cx:N[ME].x,cy:N[ME].y,r:15,fill:'#0f7d90',opacity:.2},$('stn'));
+svg('ellipse',{cx:N[ME].x+2,cy:N[ME].y+14,rx:12.5,ry:3.8,fill:'#2b3a46',opacity:.22},$('stn'));
+svg('rect',{x:N[ME].x-11.5,y:N[ME].y-11.5,width:23,height:23,rx:5.5,fill:'#fff',
+  stroke:'#0a1420','stroke-width':1.6},$('stn'));
+svg('rect',{x:N[ME].x-9.5,y:N[ME].y-9.5,width:19,height:19,rx:4.5,fill:'#0f8fa3'},$('stn'));
+svg('circle',{cx:N[ME].x,cy:N[ME].y-.5,r:6.6,fill:'#fff',opacity:.96},$('stn'));
+svg('path',{d:'M'+N[ME].x+' '+f(N[ME].y-5.6)+' C'+f(N[ME].x+3.5)+' '+f(N[ME].y-3.1)+' '+
+  f(N[ME].x+3.5)+' '+f(N[ME].y+3.1)+' '+N[ME].x+' '+f(N[ME].y+5.6)+' C'+f(N[ME].x-3.5)+' '+
+  f(N[ME].y+3.1)+' '+f(N[ME].x-3.5)+' '+f(N[ME].y-3.1)+' '+N[ME].x+' '+f(N[ME].y-5.6)+' Z',
+  fill:'#0a5f6e'},$('stn'));
+
+/* ------------------------------------------------- 10 · name plates + reveal */
+function plate(x,y,w,h,big,small,color,ptr,bigSize){
+  var g=$('chr'),bs=bigSize||9.4;
+  /* the leader touches the token's own ring, so a plate can never read as
+     belonging to a different node */
+  if(ptr)svg('path',{d:'M'+f(ptr[0])+' '+f(ptr[1])+' L'+f(ptr[2])+' '+f(ptr[3]),
+    stroke:color,'stroke-width':1.4,'stroke-dasharray':'2.4 2.4',fill:'none',opacity:.85},g);
+  svg('rect',{x:x,y:y,width:w,height:h,rx:7,fill:'#fffdf6',stroke:color,'stroke-width':1.6,opacity:.97},g);
+  if(h>=28){
+    txt(g,{x:x+8,y:y+15,size:bs,fill:color,anchor:'start',ls:'.04em'},big);
+    txt(g,{x:x+8,y:y+25.4,size:7.2,fill:'#6e7c8a',anchor:'start',ls:'.05em'},small);
+  }else{
+    txt(g,{x:x+9,y:y+14.4,size:bs,fill:color,anchor:'start',ls:'.04em'},big);
+    txt(g,{x:x+w-9,y:y+14.4,size:7.4,fill:'#6e7c8a',anchor:'end',ls:'.05em'},small);
+  }
+  return g;
+}
+plate(22,208,76,25,'A1 FALCON','AT n5',"#0f7f8f",[98,218,96,231],8.8);
+/* Harrier's plate sits clear to the south-east, and its leader points straight
+   at their own token, so the plate can never read as being at another node */
+plate(298,174,78,20,'A2 HARRIER','AT n10','#4d58c4',[310,174,294,216]);
+/* the reveal callout, pointing straight down at n6 */
+(function(){
+  var g=$('chr'),n=N[REVEAL];
+  svg('path',{d:'M'+n.x+' 109 L'+n.x+' 166',stroke:'#8f241c','stroke-width':1.6,
+    'stroke-dasharray':'4 3',fill:'none'},g);
+  svg('path',{d:'M'+n.x+' 174 L'+f(n.x-3.8)+' 166 L'+f(n.x+3.8)+' 166 Z',fill:'#8f241c'},g);
+  svg('rect',{x:105,y:84,width:170,height:25,rx:12.5,fill:'#fff',stroke:'#d8352a','stroke-width':1.8},g);
+  svg('rect',{x:105,y:84,width:170,height:25,rx:12.5,fill:'#c8342a',opacity:.07},g);
+  svg('path',{d:'M117 88.5 L127 100.5 M127 88.5 L117 100.5',stroke:'#d8352a','stroke-width':2.6,
+    'stroke-linecap':'round',fill:'none'},g);
+  txt(g,{x:200,y:101,size:9.5,fill:'#8f241c',ls:'.04em'},'VULTURE REVEALED');
+})();
+
+/* --- the figures: upright, on their own ground ring, all idle-animated ---- */
+function figureStr(col,hair,ghost){
+  var body=ghost?'fill="#ccd6dd" stroke="#3f4d59" stroke-width="1.2" stroke-dasharray="2.6 2.2"':'fill="'+col+'"';
+  var leg=ghost?'fill="#b9c5ce"':'fill="#2b3a4a"';
+  var head=ghost?'fill="#dbe3e9" stroke="#3f4d59" stroke-width="1.2"':'fill="#f0c9a2"';
+  return '<rect x="-2.6" y="-7.6" width="1.9" height="7.6" rx=".9" '+leg+'/>'+
+         '<rect x=".7" y="-7.6" width="1.9" height="7.6" rx=".9" '+leg+'/>'+
+         '<path d="M-3.7,-16.4 q1,-2.6 3.7,-2.6 q2.7,0 3.7,2.6 l.9,9.2 q-4.6,1.5 -9.2,0 z" '+body+'/>'+
+         '<circle cx="0" cy="-18.7" r="2.6" '+head+'/>'+
+         (ghost?'':'<path d="M-2.6,-19.5 a2.6,2.6 0 0 1 5.2,0 z" fill="'+hair+'"/>');
+}
+function character(sid,col,hair,kind,standing){
+  var n=N[sid],g=$('chr'),inner;
+  var y=n.y+(standing?13:0);
+  var host=svg('g',{transform:'translate('+n.x+','+f(y)+')'},g);
+  svg('ellipse',{cx:2.4,cy:2.4,rx:11,ry:4.6,fill:'#33475c',opacity:.18},host);
+  if(kind==='ghost'){
+    svg('ellipse',{rx:11,ry:4.4,fill:'none',stroke:'#8d9aa8','stroke-opacity':.85,
+      'stroke-width':2,'stroke-dasharray':'3.4 3.4'},host);
+    svg('ellipse',{rx:11,ry:4.4,fill:'#8d9aa8','fill-opacity':.1},host);
+    svg('ellipse',{rx:16,ry:6.4,fill:'none',stroke:'#8d9aa8','stroke-opacity':.4,
+      'stroke-width':1.2,'stroke-dasharray':'2 5'},host);
+  }else{
+    svg('ellipse',{rx:11,ry:4.4,fill:col,'fill-opacity':.24},host);
+    svg('ellipse',{rx:11,ry:4.4,fill:'none',stroke:col,'stroke-width':2.6},host);
+    svg('ellipse',{rx:11,ry:4.4,fill:'none',stroke:'#ffffff','stroke-opacity':.65,'stroke-width':1},host);
+  }
+  if(kind==='you')svg('ellipse',{rx:16,ry:6.6,fill:'none',stroke:'#0f7f8f','stroke-width':1.6,
+    class:'ghostfig'},host);
+  inner=svg('g',{class:kind==='ghost'?'ghostfig':(sid===ME?'fig':'fig d1')},host);
+  inner.innerHTML=figureStr(col,hair,kind==='ghost');
+  return host;
+}
+/* Vulture, revealed at their true node n6: dark, hunched, unmistakable, and
+   standing on the node itself so the plate, the rings and the figure agree */
+(function(){
+  var n=N[REVEAL],g=$('chr');
+  var host=svg('g',{transform:'translate('+n.x+','+f(n.y+6)+')'},g);
+  svg('ellipse',{cx:2.6,cy:3.4,rx:12,ry:5,fill:'#33475c',opacity:.24},host);
+  var inner=svg('g',{class:'vg'},host);
+  inner.innerHTML='<path d="M0 -9.4 C-5.6 -6.1 -9.5 0 -10.6 6.4 C-6.6 4.6 -3.2 3.6 0 3.6 C3.2 3.6 6.6 4.6 10.6 6.4 C9.5 0 5.6 -6.1 0 -9.4 Z" fill="#7d180f"/>'+
+    '<path d="M-8.4 -2.6 C-6 -4.6 -3.6 -5.5 -1.9 -5 C-3.4 -2.6 -6.2 -1 -8.4 -.4 Z" fill="#fff" opacity=".55"/>'+
+    '<path d="M-2.6 -8.6 C-1.1 -4.2 1.1 -4.2 2.6 -8.6 L0 -11.1 Z" fill="#ffe6dc"/>'+
+    '<circle cx="0" cy="-7.1" r="1.15" fill="#ffd7cb"/>'+
+    '<path d="M-6 8.6 L6 8.6" stroke="#7d180f" stroke-width="1.9" stroke-linecap="round"/>';
+})();
+character('n2','#8d9aa8','#8d9aa8','ghost');
+character(OTHER,'#6b5a97','#3a2b1f','agent');
+character(ME,'#0f8fa3','#123047','you');
+
+/* --- place names sit on their own roofs, where they can hide nothing ------ */
+function placeTag(wxx,wyy,label,col,size){
+  var t=svg('text',{x:f(sx(wxx)),y:f(sy(wyy)),'text-anchor':'middle','font-size':size||8,
+    'font-weight':800,'letter-spacing':'.1em',fill:col,stroke:'#fdfaf0','stroke-width':3,
+    'paint-order':'stroke','stroke-linejoin':'round'},$('plates'));
+  t.textContent=label;
+}
+placeTag(58,66,'CATHEDRAL','#4f3f10',7.6);
+placeTag(318,222,'CENTRAL STATION','#22384a',8);
+placeTag(277,264,'MARKET HALL','#0b544d',7.2);
+placeTag(58,276,'QUEENS PARK','#2c6b3c',7.2);
+placeTag(97,396,'ALLOTMENTS','#5d5a3a',6.8);
+placeTag(36,552,'RIVERSIDE','#4a5563',7.2);
+})();
+</script>
+</body>
+</html>

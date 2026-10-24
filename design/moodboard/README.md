@@ -14,7 +14,18 @@ Game design authority remains [`/GAME_VISION.md`](../../GAME_VISION.md).
 | Round | Folder | Status |
 | --- | --- | --- |
 | 01 — abstract nodes | [`round-01-abstract-nodes/`](round-01-abstract-nodes/) | **Superseded.** Four art directions that drew the *graph* rather than the *city*. Kept as history; only **A — Transit Diagram** is carried forward, as the HUD / information-design reference. |
-| 02 — the city | [`round-02-city/`](round-02-city/) | **Current.** Four city-based directions comparing art style and perspective. |
+| 02 — the city | [`round-02-city/`](round-02-city/) | **Narrowed, not closed.** Four city-based directions comparing art style and perspective; the director kept **F** and **H** and dropped pixel-art. |
+| 03 — mobile-first MVP | [`round-03-mobile/`](round-03-mobile/) | **Current.** Six scenarios from the *ratified MVP* at a real 390 × 844 phone viewport, plus one desktop enhancement. |
+
+### Round 03 — why it looks so different
+
+Rounds 01 and 02 drew **the most complex possible screen**. The director rejected
+that as a starting point: the MVP must be minimal and playable on a phone. Round 03
+therefore shows the *minimum* that works, built on
+[`docs/mvp/README.md`](../../docs/mvp/README.md) rather than on the broad vision —
+no modals, a 92 px top bar, a map, and a 176 px tray. Scenarios 2 and 5 are the
+*same screen* in the two surviving art directions, so the F-versus-H choice can be
+made on the real MVP screen instead of on a showcase.
 
 ### Why round 01 was superseded
 

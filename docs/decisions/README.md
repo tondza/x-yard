@@ -50,3 +50,6 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0007](0007-two-validation-channels.md) | Graph validation splits errors (brief requirements) from warnings (provisional heuristics) |
 | [0008](0008-rename-without-compatibility-aliases.md) | Vocabulary was renamed in place, with no compatibility aliases |
 | [0009](0009-derived-appendix-split-from-the-brief.md) | The derived appendix lives in its own file, separate from the director's brief |
+| [0010](0010-legal-moves-follow-streets.md) | Legal-move paths follow the street network; no straight lines across blocks |
+| [0011](0011-prototype-before-multiplayer-mvp.md) | A bot-filled single-player prototype precedes the multiplayer MVP |
+| [0012](0012-timed-concurrent-turn-windows.md) | Timed, concurrent turn windows replace sequential turns |

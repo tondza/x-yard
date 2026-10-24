@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X-Yard — Mobile Prototype Viewer</title>
+    <style>
+      /*
+       * ROBUSTNESS, and why this file looks the way it does.
+       *
+       * The first version of this viewer switched screens with `display:none`,
+       * driven by JavaScript. It came up blank in the harness preview: that
+       * preview inlines the resources it can see, and it does not reach images
+       * that are hidden at load, so every screen except the pre-visible one had
+       * no usable image — and switching revealed nothing.
+       *
+       * This version removes every assumption that could fail there:
+       *   - NOTHING is hidden. All eight screens are laid out and visible.
+       *   - There is NO JavaScript. Nothing has to run for the visuals to appear.
+       *   - There are NO iframes and NO outbound links.
+       *   - The sidebar is an index of in-page anchors; if anchors are blocked,
+       *     scrolling still reaches every screen.
+       *
+       * It has no `.stage` element on purpose: it is a scrolling document, not a
+       * fixed-aspect mockup, so the screenshot tooling skips it.
+       */
+      :root {
+        --ink: #14181d;
+        --muted: #5d6874;
+        --line: #d9dee4;
+        --bg: #eef1f4;
+        --card: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        gap: 0;
+        align-items: start;
+      }
+
+      /* ---- sidebar index ---- */
+      .nav {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        max-height: 100vh;
+        overflow: auto;
+        background: var(--card);
+        border-right: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+        padding: 16px 12px 18px;
+      }
+      .nav h1 { margin: 0 0 2px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+      .nav p { margin: 0 0 10px; font-size: 11.5px; color: var(--muted); }
+      .nav ol { list-style: none; margin: 0; padding: 0; counter-reset: scr; }
+      .nav li { margin: 1px 0; }
+      .nav a {
+        display: flex;
+        gap: 9px;
+        align-items: baseline;
+        padding: 7px 9px;
+        border-radius: 8px;
+        color: inherit;
+        text-decoration: none;
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .nav a:hover { background: #f3f5f8; }
+      .nav a .n {
+        flex: none;
+        width: 15px;
+        font-size: 11px;
+        font-weight: 700;
+        opacity: 0.55;
+        font-variant-numeric: tabular-nums;
+      }
+      .nav .foot {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      /* ---- the eight screens, one after another ---- */
+      .main { padding: 26px 24px 72px; display: flex; flex-direction: column; gap: 46px; }
+      .screen-card {
+        display: grid;
+        grid-template-columns: 390px minmax(0, 1fr);
+        gap: 26px;
+        align-items: start;
+        scroll-margin-top: 18px;
+      }
+      .device {
+        width: 390px;
+        height: 844px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #0b0e13;
+        box-shadow: 0 10px 26px rgba(20, 24, 29, 0.16);
+      }
+      .device img { display: block; width: 390px; height: 844px; }
+      .notes { padding-top: 4px; }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 2px 8px;
+        color: var(--muted);
+        background: var(--card);
+      }
+      .badge.compare { background: #14181d; color: #fff; border-color: #14181d; }
+      .notes h2 { margin: 9px 0 4px; font-size: 17px; }
+      .notes .tone { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+      .notes .body { margin: 0; font-size: 13px; }
+      .notes .file {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      code {
+        background: #e4e8ec;
+        padding: 1px 4px;
+        border-radius: 4px;
+        font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        word-break: break-all;
+      }
+      @media (max-width: 980px) {
+        .page { grid-template-columns: 1fr; }
+        .nav { position: static; max-height: none; border-left: none; border-bottom: 1px solid var(--line); }
+        .screen-card { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <nav class="nav" aria-label="Prototype index">
+        <h1>X-Yard · Mobile</h1>
+        <p>Eight MVP screens, 390 × 844, all on this page. Scroll, or jump from the list.</p>
+        <ol>
+          <li><a href="#scr-1"><span class="n">1</span><span>The Fugitive's turn</span></a></li>
+          <li><a href="#scr-2"><span class="n">2</span><span>Agent deducing</span></a></li>
+          <li><a href="#scr-3"><span class="n">3</span><span>Reveal Pulse</span></a></li>
+          <li><a href="#scr-4"><span class="n">4</span><span>Capture &amp; result</span></a></li>
+          <li><a href="#scr-5"><span class="n">5</span><span>The same screen in H</span></a></li>
+          <li><a href="#scr-6"><span class="n">6</span><span>Desktop enhancement</span></a></li>
+          <li><a href="#scr-7"><span class="n">7</span><span>Agent window · 30 s</span></a></li>
+          <li><a href="#scr-8"><span class="n">8</span><span>Fugitive window · 30 s</span></a></li>
+        </ol>
+        <div class="foot">
+          These are static renders. For the animated versions, open the <code>.html</code>
+          named beside each screen from the file-tree sidebar.
+        </div>
+      </nav>
+
+      <main class="main">
+        <!-- 1 -->
+        <section class="screen-card" id="scr-1">
+          <div class="device"><img src="shots/s1-fugitive-turn.png" alt="Scenario 1 — the Fugitive's own turn" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 1 of 8</span>
+            <h2>The Fugitive's own turn</h2>
+            <p class="tone">You are the hidden player, and this is the half of the rule nobody else sees.</p>
+            <p class="body">
+              Vulture sees <em>their own</em> icon — no ghost marker and <em>no belief shading</em>,
+              because they already know where they are. Foot, taxi and bus paths bend along the
+              streets; the scooter is a 2-edge double move; metro is visibly disabled because n6 is
+              a hub, not a terminal, so the rule teaches itself.
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s1-fugitive-turn.html</code></div>
+          </div>
+        </section>
+
+        <!-- 2 -->
+        <section class="screen-card" id="scr-2">
+          <div class="device"><img src="shots/s2-agent-deduction.png" alt="Scenario 2 — an Agent deducing" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 2 of 8</span>
+            <h2>Agent deducing</h2>
+            <p class="tone">The most important screen in the set: what an Agent actually knows at turn 7.</p>
+            <p class="body">
+              No Fugitive is drawn at all. There is a <em>ghost</em> at the last-known node,
+              <em>belief shading</em> whose intensity is likelihood, and a <em>top-3 badge</em> —
+              never a candidate list. The public log (mode only, destination hidden) is the deduction
+              input, and bus reads "no line at n5" because a standard street node has no bus.
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s2-agent-deduction.html</code></div>
+          </div>
+        </section>
+
+        <!-- 3 -->
+        <section class="screen-card" id="scr-3">
+          <div class="device"><img src="shots/s3-reveal-pulse.png" alt="Scenario 3 — the Reveal Pulse firing" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 3 of 8</span>
+            <h2>The Reveal Pulse</h2>
+            <p class="tone">The dramatic beat, and the reason the whole design hangs together.</p>
+            <p class="body">
+              The pulse runs <em>before</em> the Agent phase, so Falcon can still act this turn — and
+              n6, where Vulture stands, is reachable by foot. Belief shading is gone because knowledge
+              is now exact. <strong>Note:</strong> the turn model has since changed, so where the pulse
+              sits relative to the new timed windows is still open.
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s3-reveal-pulse.html</code></div>
+          </div>
+        </section>
+
+        <!-- 4 -->
+        <section class="screen-card" id="scr-4">
+          <div class="device"><img src="shots/s4-capture-result.png" alt="Scenario 4 — capture resolved and the result" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 4 of 8</span>
+            <h2>Capture and result</h2>
+            <p class="tone">One clear hierarchy instead of a dialog.</p>
+            <p class="body">
+              A full-screen surface, <em>not a modal</em> — the MVP has zero modals. Capture landed on
+              turn 12 of 16, two pulses survived, capture range one edge, and the tickets spent per
+              seat. Two actions and nothing else.
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s4-capture-result.html</code></div>
+          </div>
+        </section>
+
+        <!-- 5 -->
+        <section class="screen-card" id="scr-5">
+          <div class="device"><img src="shots/s5-agent-deduction-night-H.png" alt="Scenario 5 — the same Agent screen in style H at night" /></div>
+          <div class="notes">
+            <span class="badge compare">Compare with 2</span>
+            <h2>The same screen in style H</h2>
+            <p class="tone">Identical state to scenario 2 — only the look changes, so this is the fair comparison.</p>
+            <p class="body">
+              Painterly, pure top-down, night. The product recommendation on file is to ship F and
+              treat H as a later art pass, but the trade is real: H is far more atmospheric, while
+              belief badges sit further from their stations and the city detail competes with the
+              markers. <strong>No fog layer</strong> — the original H fog was rejected as implying a
+              mechanic that does not exist.
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s5-agent-deduction-night-H.html</code></div>
+          </div>
+        </section>
+
+        <!-- 6 -->
+        <section class="screen-card" id="scr-6">
+          <div class="device"><img src="shots/s6-desktop-enhancement.png" alt="Scenario 6 — the additive desktop enhancement" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 6 of 8</span>
+            <h2>Desktop enhancement</h2>
+            <p class="tone">Proof that mobile-first does not paint us into a corner.</p>
+            <p class="body">
+              The same phone Board grown: the bottom tray becomes a side rail, the log strip a
+              persistent panel, and the extra width buys <em>map</em> — 22 stations around the unmoved
+              original 9 — rather than a different game. Nothing is hover-only or drag-only, so every
+              affordance still exists on the phone. (Shown at 1440 × 900, so it is wider than the
+              phone screens around it.)
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/s6-desktop-enhancement.html</code></div>
+          </div>
+        </section>
+
+        <!-- 7 -->
+        <section class="screen-card" id="scr-7">
+          <div class="device"><img src="shots/t1-agent-window.png" alt="The Agent window — four Agents on one shared 30-second clock" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 7 of 8</span>
+            <h2>The Agent window, live</h2>
+            <p class="tone">Four Agents, one 30-second clock, and moves landing as they happen.</p>
+            <p class="body">
+              The clarified turn model: every Agent moves inside the <em>same</em> 30-second window,
+              and a move becomes visible to the other Agents the moment it is made — so a later mover
+              acts on more information. Osprey and Merlin have already moved; Falcon and Harrier are
+              still deciding, and the shared clock is what everyone waits on. Shown at
+              <em>prototype</em> scale (1 Fugitive + 4 Agents).
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/t1-agent-window.html</code></div>
+          </div>
+        </section>
+
+        <!-- 8 -->
+        <section class="screen-card" id="scr-8">
+          <div class="device"><img src="shots/t2-fugitive-window.png" alt="The Fugitive window — four Fugitives, all visible to each other" /></div>
+          <div class="notes">
+            <span class="badge">Scenario 8 of 8</span>
+            <h2>The Fugitive window, live</h2>
+            <p class="tone">The same 30-second window — but only the Fugitives can see this screen.</p>
+            <p class="body">
+              Four Fugitives, all visible to each other, because positions are shared <em>inside</em>
+              a faction. Vulture is the viewer; Kestrel and Magpie have already moved, Shrike is still
+              deciding. Agents see none of this — only the mode log, plus the pulse every fifth turn.
+              Shown at MVP scale (4 Fugitives).
+            </p>
+            <div class="file">Live version: <code>design/moodboard/round-03-mobile/t2-fugitive-window.html</code></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

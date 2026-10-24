@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>X-Yard round 03 — S5 agent deduction — style H (painterly, top-down, night) — 390x844</title>
+<style>
+  :root{
+    --ink:#f4eddd; --mut:#93a3bd; --dim:#6c7c96;
+    --panel:#0a111c;
+    --line:rgba(255,238,205,.13);
+    --taxi:#f7c46a; --bus:#b3a6ff; --metro:#8fe4ff; --special:#e39cf0; --foot:#5fd6b0;
+    --you:#8fe6ff; --ally:#8ad9a6; --ghost:#ff9a72;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#05080f}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;
+  }
+  .stage{
+    width:390px;height:844px;display:flex;flex-direction:column;overflow:hidden;
+    background:#080d16;position:relative;
+  }
+
+  /* ============================= TOP BAR (90px) ============================= */
+  .topbar{
+    flex:0 0 90px;height:90px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;
+    background:linear-gradient(#0d1626,#0a111d 72%,#0a111d);
+    border-bottom:1px solid rgba(255,238,205,.12);
+  }
+  .tb-row{display:flex;align-items:center;gap:6px;height:36px}
+  .chipbar{
+    display:flex;align-items:center;gap:6px;height:36px;padding:0 10px;border-radius:10px;
+    background:#101b2c;border:1px solid var(--line);
+  }
+  .chipbar .lab{
+    font-size:7.2px;letter-spacing:.16em;font-weight:800;color:var(--mut);text-transform:uppercase;
+    display:block;line-height:1;
+  }
+  .turn .num{font-size:19px;font-weight:800;line-height:1;letter-spacing:.01em}
+  .turn .den{font-size:10.5px;font-weight:700;color:var(--mut);line-height:1}
+  .pulse-c{margin-left:auto}
+  .pulse-c .pdot{
+    width:9px;height:9px;border-radius:50%;background:#ffd79a;
+    box-shadow:0 0 0 2px rgba(255,215,154,.22),0 0 8px 1px rgba(255,190,110,.55);
+  }
+  .pulse-c .pt{font-size:14px;font-weight:800;line-height:1;color:#ffe6b8}
+  .pulse-c .sched{font-size:7px;letter-spacing:.11em;color:var(--dim);font-weight:700;margin-top:2px;display:block}
+  .phase{
+    margin-left:auto;background:linear-gradient(#2a1f0d,#1d1608);border-color:rgba(247,196,106,.45);
+  }
+  .phase .pl{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:#ffd792;line-height:1;text-transform:uppercase}
+  .phase .ps{font-size:7.2px;letter-spacing:.13em;color:rgba(255,215,146,.7);font-weight:700;display:block;margin-top:2px}
+  .tb-row.two{height:28px;gap:6px}
+  .who{
+    flex:1 1 0;min-width:0;height:28px;display:flex;align-items:center;gap:6px;padding:0 9px;border-radius:9px;
+    background:#0c1524;border:1px solid rgba(255,255,255,.09);
+  }
+  .who.you{background:linear-gradient(#0e2033,#0b1725);border-color:rgba(143,230,255,.45);flex:1.2 1 0}
+  .who i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;display:block}
+  .who.you i{background:var(--you);box-shadow:0 0 7px 1px rgba(143,230,255,.6)}
+  .who.ally i{background:var(--ally);box-shadow:0 0 6px 1px rgba(138,217,166,.45)}
+  .who b{font-size:9.5px;font-weight:800;letter-spacing:.09em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .who s{font-size:8px;font-weight:700;letter-spacing:.05em;color:var(--mut);text-decoration:none;white-space:nowrap}
+  /* 16-turn rail with the pulse turns marked: turn 7 now, next pulse turn 10 */
+  .rail{display:flex;gap:2px;height:6px}
+  .rail i{flex:1 1 0;height:6px;border-radius:2px;background:rgba(255,255,255,.10)}
+  .rail i.past{background:#2b6f80}
+  .rail i.pp{background:rgba(247,196,106,.55)}
+  .rail i.now{background:#ffffff;box-shadow:0 0 0 2px rgba(255,255,255,.24)}
+  .rail i.next{background:rgba(247,196,106,.22);box-shadow:inset 0 0 0 1.6px var(--taxi)}
+  .rail i.pu{background:rgba(247,196,106,.12);box-shadow:inset 0 0 0 1.6px rgba(247,196,106,.5)}
+
+  /* ================= MAP SLOT (588px = 390x520 city + 68 docked log) ================= */
+  .map{flex:0 0 588px;height:588px;position:relative;background:#0c1526;overflow:hidden}
+  .map svg{display:block;width:390px;height:520px}
+
+  /* public log: docked inside the map slot, never a fourth slot */
+  .log{
+    position:absolute;left:0;top:520px;width:390px;height:68px;padding:5px 12px 3px;
+    background:linear-gradient(#0b1424,#0e1727);
+    border-top:1px solid rgba(255,238,205,.14);
+    box-shadow:0 -4px 12px rgba(0,0,0,.42);
+  }
+  .loghead{display:flex;align-items:baseline;justify-content:space-between;height:14px}
+  .loghead b{font-size:7.3px;letter-spacing:.12em;font-weight:800;color:var(--mut);text-transform:uppercase}
+  .loghead s{font-size:6.8px;letter-spacing:.05em;font-weight:700;color:var(--dim);text-decoration:none}
+  .lrow{display:flex;align-items:center;gap:7px;height:15px;padding:0 4px;border-radius:4px}
+  .lrow.latest{background:linear-gradient(90deg,rgba(247,196,106,.17),rgba(247,196,106,0) 72%);
+    box-shadow:-3px 0 0 var(--taxi)}
+  .lrow .t{font-size:9px;font-weight:800;color:#cdd8ea;width:16px;flex:0 0 auto}
+  .lrow .sw{width:22px;height:4px;border-radius:2px;flex:0 0 auto}
+  .lrow .mg{width:11px;height:11px;flex:0 0 auto;display:block}
+  .lrow .nm{font-size:9.5px;font-weight:800;letter-spacing:.11em;flex:1 1 auto;min-width:0;
+    white-space:nowrap;overflow:hidden}
+  .lrow .dest{font-size:8px;font-weight:800;letter-spacing:.06em;color:var(--dim)}
+
+  /* ============================= BOTTOM TRAY (166px) ============================= */
+  .tray{
+    flex:0 0 166px;height:166px;padding:8px 12px 6px;display:flex;flex-direction:column;
+    background:linear-gradient(#0a111d,#0d1624);
+    border-top:1px solid rgba(255,238,205,.12);
+  }
+  .trayhead{display:flex;align-items:baseline;justify-content:space-between;height:17px}
+  .trayhead b{font-size:8.6px;letter-spacing:.14em;font-weight:800;color:var(--mut);text-transform:uppercase}
+  .trayhead s{font-size:7.3px;font-weight:700;letter-spacing:.05em;color:var(--dim);text-decoration:none;white-space:nowrap}
+  .chips{display:flex;gap:6px;height:112px;margin-top:7px}
+  .chip{
+    flex:1 1 0;min-width:0;position:relative;border-radius:11px;overflow:hidden;
+    background:linear-gradient(#121c2e,#0e1726);border:1px solid rgba(255,255,255,.10);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:10px 2px 6px;
+  }
+  .chip .pbar{position:absolute;left:0;right:0;top:0;height:4px}
+  .chip .cg{width:21px;height:21px;color:#dfe9f6;margin-top:4px}
+  .chip .cc{font-size:20px;font-weight:800;line-height:1.15;color:var(--ink);font-variant-numeric:tabular-nums}
+  .chip .cn{font-size:7.6px;font-weight:800;letter-spacing:.1em;color:var(--mut)}
+  .chip .cs{font-size:6.5px;font-weight:800;letter-spacing:.03em;color:var(--dim);margin-top:2px;white-space:nowrap}
+  .chip.use .cs{color:#7fe3d0}
+  .chip.off{background:linear-gradient(#0f1725,#0c1420)}
+  .chip.off .cg,.chip.off .cc,.chip.off .cn{color:#5d6b83}
+  .chip.off .pbar{opacity:.42}
+  .trayfoot{margin-top:5px;height:11px;font-size:7.2px;font-weight:700;letter-spacing:.03em;
+    color:var(--dim);white-space:nowrap;overflow:hidden}
+
+  /* ==================== ambient motion (CSS only, calm + looping) ==================== */
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.8px)}}
+  .idle{animation:bob 3.6s ease-in-out infinite}
+  @keyframes lampflick{0%,100%{opacity:.82}45%{opacity:1}70%{opacity:.9}}
+  .flick{animation:lampflick 6.4s ease-in-out infinite}
+  @keyframes shim{0%,100%{opacity:.30}50%{opacity:.72}}
+  .shimmer{animation:shim 7.5s ease-in-out infinite}
+  @keyframes sway{0%,100%{transform:rotate(-1.4deg)}50%{transform:rotate(1.4deg)}}
+  .sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 9s ease-in-out infinite}
+  @keyframes drive{0%{transform:translateX(0)}100%{transform:translateX(168px)}}
+  .drive{animation:drive 20s linear infinite}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <header class="topbar">
+    <div class="tb-row">
+      <div class="chipbar turn">
+        <div>
+          <span class="lab">Turn</span>
+          <span class="num">7</span><span class="den"> / 16</span>
+        </div>
+      </div>
+      <div class="chipbar pulse-c">
+        <span class="pdot"></span>
+        <div>
+          <span class="lab">Next pulse</span>
+          <span class="pt">TURN 10</span>
+          <span class="sched">PULSES 5 · 10 · 15</span>
+        </div>
+      </div>
+      <div class="chipbar phase">
+        <div>
+          <span class="pl">Agent phase</span>
+          <span class="ps">A1 TO MOVE</span>
+        </div>
+      </div>
+    </div>
+    <div class="tb-row two">
+      <div class="who you"><i></i><b>A1 FALCON</b><s>n5 · your move</s></div>
+      <div class="who ally"><i></i><b>A2 HARRIER</b><s>n10</s></div>
+    </div>
+    <div class="rail" id="rail"></div>
+  </header>
+
+  <div class="map">
+    <svg id="map" viewBox="0 0 390 520" width="390" height="520"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- ============ night ground grain / stipple (flat texture only) ============ -->
+        <pattern id="pGrain" width="150" height="150" patternUnits="userSpaceOnUse">
+          <circle cx="21" cy="37" r="15" fill="#8ea6c8" opacity=".05"/>
+          <circle cx="79" cy="15" r="10" fill="#7990b2" opacity=".045"/>
+          <circle cx="127" cy="57" r="20" fill="#8ea6c6" opacity=".04"/>
+          <circle cx="47" cy="93" r="23" fill="#7b92b4" opacity=".045"/>
+          <circle cx="111" cy="116" r="13" fill="#9db3d0" opacity=".045"/>
+          <circle cx="15" cy="137" r="19" fill="#869dbd" opacity=".04"/>
+          <circle cx="83" cy="148" r="11" fill="#a3b8d4" opacity=".045"/>
+          <ellipse cx="63" cy="63" rx="31" ry="11" fill="#6f86a6" opacity=".03"/>
+          <ellipse cx="135" cy="144" rx="24" ry="9" fill="#9fb4d0" opacity=".03"/>
+        </pattern>
+        <pattern id="pStipple" width="11" height="11" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="3" r="1" fill="#cfe0f6" opacity=".07"/>
+          <circle cx="7" cy="6" r="0.85" fill="#050a14" opacity=".11"/>
+          <circle cx="4.5" cy="10" r="0.7" fill="#b9cde8" opacity=".05"/>
+        </pattern>
+
+        <!-- ======================= roof materials ======================= -->
+        <pattern id="pSlate" width="30" height="20" patternUnits="userSpaceOnUse">
+          <rect width="30" height="20" fill="#2a3550"/>
+          <rect x="1" y="1" width="13" height="8" rx="1.3" fill="#35435e"/>
+          <rect x="16" y="1" width="13" height="8" rx="1.3" fill="#2e3b53"/>
+          <rect x="-6" y="11" width="13" height="8" rx="1.3" fill="#313e57"/>
+          <rect x="9" y="11" width="13" height="8" rx="1.3" fill="#38465f"/>
+          <rect x="24" y="11" width="13" height="8" rx="1.3" fill="#2c3950"/>
+          <path d="M1 9.6h28M-6 19.6h42" stroke="#1d2637" stroke-width="1" opacity=".85"/>
+        </pattern>
+        <pattern id="pSlate2" width="24" height="17" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+          <rect width="24" height="17" fill="#25304a"/>
+          <rect x="1" y="1" width="10" height="6.8" rx="1.1" fill="#2e3a52"/>
+          <rect x="13" y="1" width="10" height="6.8" rx="1.1" fill="#28344a"/>
+          <rect x="-4" y="9.4" width="10" height="6.8" rx="1.1" fill="#2b3750"/>
+          <rect x="8" y="9.4" width="10" height="6.8" rx="1.1" fill="#303d56"/>
+          <path d="M1 8.4h22M-4 16.8h32" stroke="#1b2333" stroke-width="1" opacity=".8"/>
+        </pattern>
+        <pattern id="pClay" width="22" height="24" patternUnits="userSpaceOnUse">
+          <rect width="22" height="24" fill="#4e2c21"/>
+          <path d="M0 8.8h22M0 18h22" stroke="#341d19" stroke-width="1.4" opacity=".9"/>
+          <path d="M0 8.8a11 8.8 0 0 1 22 0M-11 18a11 8.8 0 0 1 22 0M11 18a11 8.8 0 0 1 22 0"
+                fill="none" stroke="#7c4b3c" stroke-width="1.4" opacity=".9"/>
+          <rect x="5" y="13" width="11" height="6.4" rx="1" fill="#43241f" opacity=".6"/>
+        </pattern>
+        <pattern id="pClay2" width="19" height="21" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+          <rect width="19" height="21" fill="#573428"/>
+          <path d="M0 7.6h19M0 15.2h19" stroke="#3b201a" stroke-width="1.3" opacity=".9"/>
+          <path d="M0 7.6a9.5 7.6 0 0 1 19 0M-9.5 15.2a9.5 7.6 0 0 1 19 0M9.5 15.2a9.5 7.6 0 0 1 19 0"
+                fill="none" stroke="#885845" stroke-width="1.2" opacity=".9"/>
+        </pattern>
+        <pattern id="pTerra" width="18" height="20" patternUnits="userSpaceOnUse">
+          <rect width="18" height="20" fill="#6a3a2a"/>
+          <path d="M0 6.8h18M0 13.6h18" stroke="#43221b" stroke-width="1.2" opacity=".9"/>
+          <path d="M0 6.8a9 6.8 0 0 1 18 0M-9 13.6a9 6.8 0 0 1 18 0M9 13.6a9 6.8 0 0 1 18 0"
+                fill="none" stroke="#a06a4c" stroke-width="1.1" opacity=".85"/>
+        </pattern>
+        <pattern id="pCopper" width="27" height="27" patternUnits="userSpaceOnUse">
+          <rect width="27" height="27" fill="#1d4f46"/>
+          <path d="M0 9h27M0 18h27M0 0h27M0 27h27" stroke="#1b4c44" stroke-width="1.1" opacity=".8"/>
+          <path d="M13.5 0v27" stroke="#1b4c44" stroke-width="1" opacity=".45"/>
+          <ellipse cx="8" cy="5.5" rx="6.4" ry="4.6" fill="#42907e" opacity=".5"/>
+          <ellipse cx="20" cy="21.5" rx="5.5" ry="4.1" fill="#5aa78c" opacity=".38"/>
+          <ellipse cx="18" cy="12.5" rx="3.6" ry="2.7" fill="#70b795" opacity=".26"/>
+          <circle cx="4.5" cy="22" r="2.7" fill="#1a4840" opacity=".6"/>
+        </pattern>
+        <pattern id="pGravel" width="17" height="17" patternUnits="userSpaceOnUse">
+          <rect width="17" height="17" fill="#3b382c"/>
+          <circle cx="3" cy="4.6" r="2" fill="#615c4d"/>
+          <circle cx="11" cy="2.8" r="1.4" fill="#423f33"/>
+          <circle cx="7.5" cy="10.4" r="2.2" fill="#6b6656"/>
+          <circle cx="15" cy="13" r="1.5" fill="#464336"/>
+          <circle cx="3.8" cy="14" r="1.2" fill="#5b564a"/>
+        </pattern>
+        <pattern id="pGlass" width="22" height="22" patternUnits="userSpaceOnUse">
+          <rect width="22" height="22" fill="#123b57"/>
+          <rect width="22" height="22" fill="url(#gGlassShine)"/>
+          <path d="M0 0h22M0 11h22M0 22h22" stroke="#0a2334" stroke-width="1.6"/>
+          <path d="M0 0v22M11 0v22M22 0v22" stroke="#0a2334" stroke-width="1.5" opacity=".8"/>
+        </pattern>
+        <linearGradient id="gGlassShine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2f7fa2"/><stop offset=".45" stop-color="#1d5573"/>
+          <stop offset=".58" stop-color="#f0c489" stop-opacity=".38"/><stop offset="1" stop-color="#1b4a68"/>
+        </linearGradient>
+        <pattern id="pPave" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(14)">
+          <rect width="26" height="26" fill="#434a5f"/>
+          <path d="M0 0h26M0 13h26M0 26h26" stroke="#384054" stroke-width="1.3"/>
+          <path d="M0 0v26M13 0v26M26 0v26" stroke="#384054" stroke-width="1.3" opacity=".7"/>
+          <path d="M0 6.5h26M0 19.5h26" stroke="#4c5468" stroke-width=".8" opacity=".6"/>
+        </pattern>
+        <pattern id="pWater" width="54" height="16" patternUnits="userSpaceOnUse">
+          <path d="M0 5.5q6.75 -2.8 13.5 0t13.5 0t13.5 0t13.5 0" fill="none"
+                stroke="#3d7c8e" stroke-width="1.1" opacity=".4"/>
+          <path d="M-9 12q6.75 -2.8 13.5 0t13.5 0t13.5 0t13.5 0" fill="none"
+                stroke="#2d6675" stroke-width="1" opacity=".34"/>
+        </pattern>
+        <pattern id="pGrass" width="16" height="16" patternUnits="userSpaceOnUse">
+          <rect width="16" height="16" fill="#16321f"/>
+          <circle cx="4" cy="4" r="2.4" fill="#295438" opacity=".85"/>
+          <circle cx="11" cy="9" r="2" fill="#1a3a28" opacity=".8"/>
+          <circle cx="6" cy="13" r="2.2" fill="#2c5a3c" opacity=".7"/>
+          <circle cx="13" cy="2" r="1.6" fill="#35654a" opacity=".6"/>
+        </pattern>
+        <pattern id="pHedge" width="14" height="14" patternUnits="userSpaceOnUse">
+          <rect width="14" height="14" fill="#122b1d"/>
+          <circle cx="3.5" cy="3.5" r="3" fill="#1f4830"/>
+          <circle cx="10.5" cy="9.6" r="3.2" fill="#1b4029"/>
+          <circle cx="9" cy="2.6" r="1.9" fill="#244f36" opacity=".8"/>
+        </pattern>
+        <pattern id="pRail" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+          <path d="M6 0v12" stroke="#39404f" stroke-width="3"/>
+        </pattern>
+
+        <!-- ======================= light gradients ======================= -->
+        <radialGradient id="gLamp" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#ffd9a0" stop-opacity=".85"/>
+          <stop offset=".18" stop-color="#ffbf72" stop-opacity=".44"/>
+          <stop offset=".46" stop-color="#f0a04e" stop-opacity=".16"/>
+          <stop offset="1" stop-color="#e08a3c" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="gStation" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#fff0d2" stop-opacity=".80"/>
+          <stop offset=".3" stop-color="#ffd79a" stop-opacity=".30"/>
+          <stop offset="1" stop-color="#ffb968" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="gBelief" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#ffc98a" stop-opacity=".62"/>
+          <stop offset=".34" stop-color="#ff9e63" stop-opacity=".34"/>
+          <stop offset=".68" stop-color="#d9691f" stop-opacity=".13"/>
+          <stop offset="1" stop-color="#b8560f" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="gWindow" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#ffe2b0" stop-opacity=".70"/>
+          <stop offset="1" stop-color="#ffca84" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gGround" x1="0" y1="0" x2=".25" y2="1">
+          <stop offset="0" stop-color="#0c1526"/>
+          <stop offset=".38" stop-color="#111d33"/>
+          <stop offset=".72" stop-color="#0e1a2c"/>
+          <stop offset="1" stop-color="#0a1322"/>
+        </linearGradient>
+        <linearGradient id="gRiver" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#14384e"/>
+          <stop offset=".22" stop-color="#0d2b41"/>
+          <stop offset=".58" stop-color="#0a2134"/>
+          <stop offset=".84" stop-color="#0b2739"/>
+          <stop offset="1" stop-color="#123246"/>
+        </linearGradient>
+        <linearGradient id="gBank" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c2637"/><stop offset="1" stop-color="#243349"/>
+        </linearGradient>
+        <linearGradient id="gRefl" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffcf92" stop-opacity=".52"/>
+          <stop offset="1" stop-color="#ffb866" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="gRefl2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9fd8f0" stop-opacity=".26"/>
+          <stop offset="1" stop-color="#7fc4e4" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="gRoofShade" x1="0" y1="0" x2=".4" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".05"/>
+          <stop offset=".55" stop-color="#000000" stop-opacity=".05"/>
+          <stop offset="1" stop-color="#000000" stop-opacity=".30"/>
+        </linearGradient>
+      </defs>
+
+      <g id="ground"></g>
+      <g id="blockshadows"></g>
+      <g id="blocks"></g>
+      <g id="windows"></g>
+      <g id="shopglow"></g>
+      <g id="parks"></g>
+      <g id="parkdetail"></g>
+      <g id="landmarks"></g>
+      <g id="infra"></g>
+      <g id="roads"></g>
+      <g id="crossings"></g>
+      <g id="water"></g>
+      <g id="riverdetail"></g>
+      <g id="bridges"></g>
+      <g id="trees"></g>
+      <g id="lamps"></g>
+      <g id="belief"></g>
+      <g id="paths"></g>
+      <g id="reach"></g>
+      <g id="ghost"></g>
+      <g id="vehicles"></g>
+      <g id="stations"></g>
+      <g id="beliefbadges"></g>
+      <g id="actors"></g>
+    </svg>
+
+    <div class="log">
+      <div class="loghead">
+        <b>Public log · Vulture (F)</b>
+        <s>1 row / turn · mode only · destination hidden</s>
+      </div>
+      <div class="logrows" id="logrows"></div>
+    </div>
+  </div>
+
+  <footer class="tray">
+    <div class="trayhead">
+      <b>Your kit · turn 7</b>
+      <s>Agent phase · Falcon A1 at n5</s>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="trayfoot">Dashed ring = a legal move from n5 · every legal path follows the streets.</div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var NS='http://www.w3.org/2000/svg';
+  function el(n,a){var e=document.createElementNS(NS,n);if(a)for(var k in a)e.setAttribute(k,a[k]);return e;}
+  function G(id){return document.getElementById(id);}
+  function R(x,y,w,h,a){return el('rect',Object.assign({x:x,y:y,width:w,height:h},a||{}));}
+  function C(cx,cy,r,a){return el('circle',Object.assign({cx:cx,cy:cy,r:r},a||{}));}
+  function E(cx,cy,rx,ry,a){return el('ellipse',Object.assign({cx:cx,cy:cy,rx:rx,ry:ry},a||{}));}
+  function P(d,a){return el('path',Object.assign({d:d},a||{}));}
+  function L(x1,y1,x2,y2,a){return el('line',Object.assign({x1:x1,y1:y1,x2:x2,y2:y2},a||{}));}
+  function T(x,y,t,a){var e=el('text',Object.assign({x:x,y:y},a||{}));e.textContent=String(t);return e;}
+  function PL(pts,a){
+    var s=pts.map(function(p){return r1(p[0])+','+r1(p[1]);}).join(' ');
+    return el('polyline',Object.assign({points:s,fill:'none'},a||{}));
+  }
+  function r1(v){return Math.round(v*10)/10;}
+  function TX(x,y,t,size,fill,stroke,weight,anchor){
+    return T(x,y,t,{fill:fill,'font-size':size,'font-weight':weight||800,'text-anchor':anchor||'middle',
+      'font-family':'ui-sans-serif,system-ui,-apple-system,sans-serif',
+      'paint-order':'stroke','stroke':stroke,'stroke-width':Math.max(2,size*0.24),
+      'stroke-linejoin':'round','letter-spacing':'.06em'});
+  }
+
+  /* deterministic xorshift so the render is stable run to run */
+  var seed=20261016;
+  function rnd(){seed^=seed<<13;seed>>>=0;seed^=seed>>>17;seed^=seed<<5;seed>>>=0;return seed/4294967296;}
+  function ri(a,b){return a+Math.floor(rnd()*(b-a+1));}
+  function rf(a,b){return a+rnd()*(b-a);}
+  function pick(arr){return arr[Math.floor(rnd()*arr.length)];}
+
+  /* ============================ shared cast / map ============================ */
+  var S={1:[55,120],2:[140,95],3:[250,120],4:[330,175],5:[95,225],6:[205,240],
+         7:[300,300],8:[70,340],9:[200,360],10:[345,90]};
+  var CLS={1:'street',2:'street',3:'street',4:'hub',5:'street',6:'hub',7:'terminal',
+           8:'street',9:'street',10:'terminal'};
+
+  /* every street edge is a polyline with real bends, and shared nodes leave in
+     consistent directions so the road reads as continuous */
+  var STREETS=[
+    [[55,120],[98,100],[140,95]],          /* n1-n2 */
+    [[140,95],[196,103],[250,120]],        /* n2-n3 */
+    [[250,120],[298,141],[330,175]],       /* n3-n4 */
+    [[55,120],[61,172],[95,225]],          /* n1-n5 */
+    [[140,95],[168,170],[205,240]],        /* n2-n6 */
+    [[95,225],[150,228],[205,240]],        /* n5-n6 */
+    [[250,120],[236,182],[205,240]],       /* n3-n6 */
+    [[330,175],[323,238],[300,300]],       /* n4-n7 */
+    [[205,240],[252,266],[300,300]],       /* n6-n7 */
+    [[95,225],[84,284],[70,340]],          /* n5-n8 */
+    [[205,240],[203,300],[200,360]],       /* n6-n9 */
+    [[70,340],[134,354],[200,360]],        /* n8-n9 */
+    [[200,360],[253,332],[300,300]]        /* n9-n7 */
+  ];
+  var BUSR=[
+    [[330,175],[352,212],[300,244],[205,240]],  /* n4-n6 */
+    [[330,175],[352,132],[345,90]],             /* n4-n10 */
+    [[345,90],[372,168],[352,246],[300,300]]    /* n10-n7 */
+  ];
+  /* side lanes + the riverside promenade: streets that carry no station edge */
+  var LANES=[
+    [[55,95],[300,94]],
+    [[140,120],[140,175]],
+    [[300,300],[345,301]],
+    [[70,340],[200,360]],
+    [[250,300],[345,301]],
+    [[205,240],[205,300]],
+    [[120,240],[120,300]],
+    [[112,300],[112,360]],
+    [[55,120],[55,300]],
+    [[71,225],[71,424]],
+    [[345,95],[345,424]],
+    [[55,300],[345,301]],
+    [[200,360],[345,361]],
+    [[71,416],[345,416]]
+  ];
+  var ALLROADS=STREETS.concat(BUSR).concat(LANES);
+  var METRO=[[300,300],[315,250],[345,90]];       /* crosses blocks on purpose */
+  var ALLEY=[[140,95],[152,200],[200,360]];       /* crosses blocks on purpose */
+
+  var BELIEF=[{n:2,p:30,r:64},{n:6,p:25,r:59},{n:4,p:20,r:54}];
+
+  /* Falcon at n5. Derived legal set: on foot -> n1, n8, n6. Taxi -> n1.
+     Bus: no line at n5 (bus edges are n4-n6, n4-n10, n10-n7; n5 is a street node).
+     Metro: no line at n5. Special: none held. */
+  function offPoly(pts,o){
+    var out=[];
+    for(var i=0;i<pts.length;i++){
+      var dx,dy;
+      if(i===0){dx=pts[1][0]-pts[0][0];dy=pts[1][1]-pts[0][1];}
+      else if(i===pts.length-1){dx=pts[i][0]-pts[i-1][0];dy=pts[i][1]-pts[i-1][1];}
+      else {dx=pts[i+1][0]-pts[i-1][0];dy=pts[i+1][1]-pts[i-1][1];}
+      var l=Math.sqrt(dx*dx+dy*dy)||1;
+      out.push([pts[i][0]+(dy/l)*o, pts[i][1]-(dx/l)*o]);
+    }
+    return out;
+  }
+  function alongPoly(pts,t){
+    var segs=[],total=0,i;
+    for(i=0;i<pts.length-1;i++){
+      var L2=Math.sqrt(Math.pow(pts[i+1][0]-pts[i][0],2)+Math.pow(pts[i+1][1]-pts[i][1],2));
+      segs.push(L2);total+=L2;
+    }
+    var want=total*t,run=0;
+    for(i=0;i<segs.length;i++){
+      if(run+segs[i]>=want||i===segs.length-1){
+        var f=segs[i]?(want-run)/segs[i]:0;f=Math.max(0,Math.min(1,f));
+        return [pts[i][0]+(pts[i+1][0]-pts[i][0])*f, pts[i][1]+(pts[i+1][1]-pts[i][1])*f];
+      }
+      run+=segs[i];
+    }
+    return pts[pts.length-1];
+  }
+
+  var LEGAL=[
+    {mode:'foot',to:1, t:0.72, pts:offPoly([[95,225],[61,172],[55,120]],0),
+                        lab:[42,150]},
+    {mode:'foot',to:8, t:0.50, pts:offPoly([[95,225],[84,284],[70,340]],0),
+                        lab:[60,278]},
+    {mode:'foot',to:6, t:0.68, pts:offPoly([[95,225],[150,228],[205,240]],0),
+                        lab:[150,254]},
+    {mode:'taxi',to:1, t:0.35, pts:offPoly([[95,225],[61,172],[55,120]],5),
+                        lab:[91,180]}
+  ];
+
+  var MODE={
+    foot   :{c:'#5fd6b0',dark:'#04100c',w:3.4,dash:'2.5 5.5',core:'#eafff7',cw:1.1},
+    taxi   :{c:'#f7c46a',dark:'#120c03',w:4.6,dash:null,     core:'#fff4d8',cw:1.5},
+    bus    :{c:'#b3a6ff',dark:'#0a0818',w:5.2,dash:'11 7',   core:'#efeaff',cw:1.6},
+    metro  :{c:'#8fe4ff',dark:'#04121a',w:6.0,dash:'14 7',   core:'#f0fbff',cw:1.8},
+    special:{c:'#e39cf0',dark:'#14061a',w:4.4,dash:'1.5 4.5',core:'#fdeaff',cw:1.2}
+  };
+
+  var YOU_C='#8fe6ff', ALLY_C='#8ad9a6', GHOST_C='#ff9a72';
+  var FALCON=[114,206], HARRIER=[308,118];
+
+  /* ============================== glyphs ============================== */
+  function glyph(g,mode,color){
+    if(mode==='taxi'){
+      g.appendChild(R(-3.1,-5.8,6.2,11.6,{rx:1.7,fill:color}));
+      g.appendChild(R(-1.9,-3.7,3.8,2.3,{rx:0.6,fill:'rgba(8,14,24,.62)'}));
+      g.appendChild(R(-1.9,-0.3,3.8,3.0,{rx:0.6,fill:'rgba(8,14,24,.45)'}));
+      g.appendChild(R(-4.6,-4.6,1.6,2.2,{rx:0.5,fill:color}));
+      g.appendChild(R(3.0,-4.6,1.6,2.2,{rx:0.5,fill:color}));
+      g.appendChild(R(-4.6,2.4,1.6,2.2,{rx:0.5,fill:color}));
+      g.appendChild(R(3.0,2.4,1.6,2.2,{rx:0.5,fill:color}));
+    } else if(mode==='bus'){
+      g.appendChild(R(-3.5,-5.9,7.0,11.8,{rx:1.3,fill:color}));
+      [-4.7,-1.3,2.1].forEach(function(y){
+        g.appendChild(R(-2.4,y,4.8,2.0,{rx:0.5,fill:'rgba(8,14,24,.6)'}));
+      });
+    } else if(mode==='metro'){
+      g.appendChild(C(0,0,5.2,{fill:'none',stroke:color,'stroke-width':1.9}));
+      g.appendChild(R(-6.6,-1.15,13.2,2.3,{fill:color}));
+    } else if(mode==='special'){
+      g.appendChild(P('M0,-6 L1.8,-1.8 L6,0 L1.8,1.8 L0,6 L-1.8,1.8 L-6,0 L-1.8,-1.8 Z',
+        {fill:color}));
+    } else if(mode==='foot'){
+      g.appendChild(E(-1.3,1.7,2.3,3.3,{fill:color}));
+      g.appendChild(C(0.4,-3.0,1.15,{fill:color}));
+      g.appendChild(C(2.7,-1.5,1.0,{fill:color}));
+      g.appendChild(C(3.4,0.6,0.85,{fill:color}));
+    }
+    return g;
+  }
+  function glyphSVG(mode,size,color){
+    var s=el('svg',{viewBox:'-7 -7 14 14',width:size,height:size});
+    s.appendChild(glyph(el('g',{}),mode,color));
+    return s;
+  }
+  function glyphDisc(x,y,mode,r){
+    var st=MODE[mode],g=el('g',{});
+    g.appendChild(C(x,y,r+2.2,{fill:'#03060c',opacity:.85}));
+    g.appendChild(C(x,y,r,{fill:'#0b1424'}));
+    g.appendChild(C(x,y,r,{fill:'none',stroke:st.c,'stroke-width':1.7}));
+    var s=r/8.5;
+    var inner=el('g',{transform:'translate('+r1(x)+','+r1(y)+') scale('+s.toFixed(3)+')'});
+    glyph(inner,mode,st.c);
+    g.appendChild(inner);
+    return g;
+  }
+
+  /* ============================ ground + city ============================ */
+  function samplePoly(pts,step,out){
+    for(var i=0;i<pts.length-1;i++){
+      var a=pts[i],b=pts[i+1];
+      var L2=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2));
+      var n=Math.max(2,Math.ceil(L2/step));
+      for(var k=0;k<=n;k++)out.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);
+    }
+    return out;
+  }
+  var SAMPLES=[];
+  ALLROADS.forEach(function(pts){samplePoly(pts,4,SAMPLES);});
+  samplePoly(METRO,5,SAMPLES);
+  samplePoly(ALLEY,5,SAMPLES);
+
+  var AVOID=[];
+  Object.keys(S).forEach(function(k){AVOID.push([S[k][0],S[k][1],25]);});
+  AVOID.push([FALCON[0],FALCON[1],24]);
+  AVOID.push([HARRIER[0],HARRIER[1],24]);
+  AVOID.push([44,164,110,112]);       /* cathedral close */
+  AVOID.push([254,358,84,68]);        /* arena */
+  AVOID.push([180,206,52,36]);        /* town hall */
+  AVOID.push([344,174,36,42]);        /* water tower hall */
+  AVOID.push([228,40,150,130]);       /* central station + forecourt */
+  AVOID.push([256,272,92,60]);        /* terminus hall */
+  AVOID.push([14,348,52,48]);         /* gasworks */
+
+  function nearRoad(x,y,w,h,m){
+    for(var i=0;i<SAMPLES.length;i++){
+      var p=SAMPLES[i];
+      if(p[0]>x-m&&p[0]<x+w+m&&p[1]>y-m&&p[1]<y+h+m)return true;
+    }
+    return false;
+  }
+  function nearAvoid(x,y,w,h){
+    for(var i=0;i<AVOID.length;i++){
+      var a=AVOID[i];
+      if(x<a[0]+a[2]&&x+w>a[0]&&y<a[1]+a[3]&&y+h>a[1])return true;
+    }
+    return false;
+  }
+  function overlaps(a,b,gap){
+    return !(a.x+a.w+gap<b.x||b.x+b.w+gap<a.x||a.y+a.h+gap<b.y||b.y+b.h+gap<a.y);
+  }
+
+  function buildGround(){
+    var g=G('ground');
+    g.appendChild(R(0,-28,390,576,{fill:'url(#gGround)'}));
+    g.appendChild(R(0,-28,390,576,{fill:'url(#pGravel)',opacity:.09}));
+  }
+
+  /* =======================================================================
+     CITY FABRIC — individual rooftops, varied materials, one shadow direction
+     (all cast shadows fall south-east, as in the round-02 style-H reference)
+     ======================================================================= */
+  var ROOF={
+    pSlate :{base:'#2a3550',hi:'#3b4a69'},
+    pSlate2:{base:'#25304a',hi:'#36435f'},
+    pClay  :{base:'#4e2c21',hi:'#6d4132'},
+    pClay2 :{base:'#573428',hi:'#75493a'},
+    pTerra :{base:'#6a3a2a',hi:'#8b5540'},
+    pCopper:{base:'#1d4f46',hi:'#2c6b5c'},
+    pGravel:{base:'#3b382c',hi:'#565243'},
+    pGlass :{base:'#123b57',hi:'#2a6d8e'}
+  };
+  /* weighted material mix: slate and clay dominate, copper/glass are accents */
+  var MATERIALS=['pSlate','pSlate','pSlate','pSlate2','pSlate2','pClay','pClay','pClay2',
+                 'pTerra','pTerra','pCopper','pGravel','pGravel','pGlass'];
+
+  function roofFurniture(g,r,mat){
+    var kind=rnd();
+    if(kind<.42&&r.w>20&&r.h>18){                      /* courtyard */
+      var cw=r.w*rf(.30,.46),chh=r.h*rf(.30,.46);
+      var cx=r.x+rf(5,r.w-cw-5),cy=r.y+rf(5,r.h-chh-5);
+      g.appendChild(R(cx-1.6,cy-1.6,cw+3.2,chh+3.2,{fill:'#0b1424',opacity:.9}));
+      g.appendChild(R(cx,cy,cw,chh,{fill:rnd()<.5?'url(#pGrass)':'#3a3527'}));
+      g.appendChild(R(cx,cy,cw,chh,{fill:'none',stroke:'rgba(3,8,16,.75)','stroke-width':1.6}));
+      g.appendChild(E(cx+cw/2,cy+chh/2,7,6,{fill:'url(#gLamp)',opacity:.45}));
+      return;
+    }
+    if(mat==='pGlass'){                                /* glazed ridge lights */
+      for(var m=0;m<Math.max(1,Math.floor(r.w/16));m++){
+        g.appendChild(L(r.x+4+m*16,r.y+3,r.x+4+m*16,r.y+r.h-3,'rgba(6,20,32,.6)'));
+      }
+      return;
+    }
+    if(kind<.72){                                      /* ridge, drawn across the short axis */
+      if(r.w>=r.h){
+        var ry=r.y+r.h*rf(.42,.58);
+        g.appendChild(P('M'+(r.x+1)+' '+(r.y+1)+'L'+(r.x+r.w/2)+' '+ry+'L'+(r.x+r.w-1)+' '+(r.y+1)+'Z',
+          {fill:'rgba(255,255,255,.055)'}));
+        g.appendChild(P('M'+(r.x+1)+' '+(r.y+r.h-1)+'L'+(r.x+r.w/2)+' '+ry+'L'+(r.x+r.w-1)+' '+(r.y+r.h-1)+'Z',
+          {fill:'rgba(0,0,0,.30)'}));
+        g.appendChild(L(r.x+1,r.y+1,r.x+r.w/2,ry,'rgba(0,0,0,.45)'));
+        g.appendChild(L(r.x+r.w-1,r.y+1,r.x+r.w/2,ry,'rgba(0,0,0,.45)'));
+        g.appendChild(L(r.x+r.w/2,ry,r.x+r.w/2,r.y+1,'rgba(255,255,255,.20)'));
+      } else {
+        var vx=r.x+r.w*rf(.42,.58);
+        g.appendChild(P('M'+(r.x+1)+' '+(r.y+1)+'L'+vx+' '+(r.y+r.h/2)+'L'+(r.x+1)+' '+(r.y+r.h-1)+'Z',
+          {fill:'rgba(255,255,255,.055)'}));
+        g.appendChild(P('M'+(r.x+r.w-1)+' '+(r.y+1)+'L'+vx+' '+(r.y+r.h/2)+'L'+(r.x+r.w-1)+' '+(r.y+r.h-1)+'Z',
+          {fill:'rgba(0,0,0,.30)'}));
+        g.appendChild(L(r.x+1,r.y+1,vx,r.y+r.h/2,'rgba(0,0,0,.45)'));
+        g.appendChild(L(r.x+1,r.y+r.h-1,vx,r.y+r.h/2,'rgba(0,0,0,.45)'));
+        g.appendChild(L(vx,r.y+r.h/2,vx,r.y+1,'rgba(255,255,255,.20)'));
+      }
+    } else {                                           /* split into two roof planes */
+      if(r.w>=r.h){
+        g.appendChild(R(r.x+1.5,r.y+1.5,r.w-3,r.h-3,{fill:'url(#'+(mat==='pTerra'?'pClay2':mat)+')',opacity:.5}));
+        g.appendChild(L(r.x+2,r.y+r.h*.5,r.x+r.w-2,r.y+r.h*.5,'rgba(0,0,0,.35)'));
+      } else {
+        g.appendChild(L(r.x+r.w*.5,r.y+2,r.x+r.w*.5,r.y+r.h-2,'rgba(0,0,0,.32)'));
+      }
+    }
+  }
+
+  function addWindow(x,y,warm){
+    var g=G('windows');
+    var wx=Math.max(9,Math.min(381,x));
+    g.appendChild(E(wx,y,7,5.5,{fill:'url(#gWindow)',opacity:.42,'class':'flick',
+      'style':'animation-delay:'+rf(0,5).toFixed(1)+'s'}));
+    g.appendChild(R(wx-1.4,y-.9,2.8,1.8,{rx:.4,fill:'#ffdca6',opacity:.5+rnd()*.35}));
+  }
+
+  function drawBuilding(x,y,w,h){
+    var blocks=G('blocks'),shadows=G('blockshadows');
+    var mat=pick(MATERIALS),meta=ROOF[mat];
+    /* warm light spilling out of the ground-floor frontage */
+    if(rnd()<.30){
+      G('shopglow').appendChild(E(x+w/2,y+h+3,w*.7,5,{fill:'#ffb95f',opacity:.16}));
+    }
+    /* one consistent cast-shadow direction for the whole city */
+    shadows.appendChild(R(x+2.6,y+3.2,w,h,{rx:1.6,fill:'#03060c',opacity:.62}));
+    blocks.appendChild(R(x-.7,y-.7,w+1.4,h+1.4,{rx:1.8,fill:'#04070f',opacity:.7}));
+    blocks.appendChild(R(x,y,w,h,{rx:1.4,fill:meta.base}));
+    blocks.appendChild(R(x,y,w,h,{rx:1.4,fill:'url(#'+mat+')'}));
+    blocks.appendChild(R(x,y,w,h,{rx:1.4,fill:'url(#gRoofShade)'}));
+    blocks.appendChild(R(x,y,w,.9,{fill:meta.hi,opacity:.75}));
+    blocks.appendChild(R(x,y,.9,h,{fill:meta.hi,opacity:.5}));
+    blocks.appendChild(R(x,y+h-1.1,w,1.1,{fill:'rgba(2,5,11,.55)'}));
+    blocks.appendChild(R(x+w-1.1,y,1.1,h,{fill:'rgba(2,5,11,.45)'}));
+    roofFurniture(blocks,{x:x,y:y,w:w,h:h},mat);
+    /* chimneys + water tanks read as roofs, not blocks */
+    var nc=ri(0,2);
+    for(var c=0;c<nc;c++){
+      var chx=x+rf(3,Math.max(3.2,w-4.5)),chy=y+rf(3,Math.max(3.2,h-4.5));
+      blocks.appendChild(C(chx,chy,ri(1,1.6),{fill:'#1b2337',stroke:'rgba(0,0,0,.55)','stroke-width':.7}));
+    }
+    /* lit windows: small, countable, warm — the city's own light */
+    var nlit=rnd()<.55?ri(1,2):0;
+    for(var i=0;i<nlit;i++){
+      addWindow(x+2.4+rnd()*Math.max(.6,w-4.8),y+2.4+rnd()*Math.max(.6,h-4.8),true);
+    }
+  }
+
+  function buildBuildings(){
+    var placed=[];
+    for(var gy=-26;gy<432;gy+=11){
+      for(var gx=1;gx<386;gx+=11){
+        /* two scale classes: big civic masses and small terraced plots */
+        var big=rnd()<.32;
+        var w=big?rf(20,30):rf(12,19);
+        var h=big?rf(16,23):rf(10,16);
+        var x=Math.round(gx+rnd()*7),y=Math.round(gy+rnd()*6);
+        if(x<1||y<-27||x+w>388||y+h>426)continue;
+        var r={x:x,y:y,w:w,h:h};
+        if(nearRoad(x,y,w,h,3.5))continue;
+        if(nearAvoid(x,y,w,h))continue;
+        var bad=false;
+        for(var i=0;i<placed.length;i++){if(overlaps(r,placed[i],1.8)){bad=true;break;}}
+        if(bad)continue;
+        placed.push(r);
+        drawBuilding(x,y,w,h);
+      }
+    }
+  }
+
+  /* =======================================================================
+     PARK, GARDENS, TREES
+     ======================================================================= */
+  var PARK=[[102,203],[160,199],[180,232],[184,272],[150,289],[100,284],[88,240]];
+  function parkPath(){
+    return 'M'+PARK.map(function(p){return p[0]+' '+p[1];}).join(' L')+' Z';
+  }
+  function buildParks(){
+    var parks=G('parks'),det=G('parkdetail');
+    /* north garden square */
+    parks.appendChild(P(parkPath(),{fill:'url(#pGrass)'}));
+    parks.appendChild(P(parkPath(),{fill:'#0d2138',opacity:.35}));
+    /* waterfront green */
+    parks.appendChild(R(104,444,112,52,{rx:8,fill:'url(#pGrass)'}));
+    parks.appendChild(R(104,444,112,52,{rx:8,fill:'#0d2138',opacity:.30}));
+    /* park paths */
+    det.appendChild(P('M92 248 Q132 268 148 234 T180 226',{fill:'none',stroke:'#4a4a52',
+      'stroke-width':5,'stroke-linecap':'round',opacity:.8}));
+    det.appendChild(P('M92 248 Q132 268 148 234 T180 226',{fill:'none',stroke:'#6d6d76',
+      'stroke-width':2,'stroke-dasharray':'1 7','stroke-linecap':'round',opacity:.55}));
+    det.appendChild(P('M132 288 Q128 258 148 234',{fill:'none',stroke:'#4a4a52',
+      'stroke-width':4,'stroke-linecap':'round',opacity:.75}));
+    det.appendChild(P('M108 496 Q146 486 212 492',{fill:'none',stroke:'#4a4a52',
+      'stroke-width':4,'stroke-linecap':'round',opacity:.7}));
+    /* pond in the north square */
+    det.appendChild(P('M118 236 q18 -12 38 -7 t24 14 q4 15 -19 20 t-40 -5 q-12 -11 -3 -22 Z',
+      {fill:'#0f2c40'}));
+    det.appendChild(P('M118 236 q18 -12 38 -7 t24 14 q4 15 -19 20 t-40 -5 q-12 -11 -3 -22 Z',
+      {fill:'none',stroke:'#2b5f4a','stroke-width':2.6,opacity:.6}));
+    det.appendChild(P('M124 238 q14 -8 30 -5',{fill:'none',stroke:'#3f7f92','stroke-width':1.3,opacity:.6}));
+    /* benches + hedge lines */
+    for(var b=0;b<5;b++)det.appendChild(R(104+b*15,282,7,3,{rx:1,fill:'#2a2721'}));
+    det.appendChild(R(104,444,112,5,{fill:'url(#pHedge)'}));
+    det.appendChild(R(104,491,112,5,{fill:'url(#pHedge)'}));
+    det.appendChild(R(282,196,18,4,{fill:'url(#pHedge)'}));
+    det.appendChild(R(252,410,26,4,{fill:'url(#pHedge)'}));
+  }
+
+  function tree(x,y,r,cls){
+    var g=G('trees');
+    var e=el('g',{'class':cls?'sway':''});
+    if(cls)e.setAttribute('style','animation-delay:'+rf(0,4).toFixed(1)+'s');
+    e.appendChild(E(x+2.2,y+2.8,r*1.02,r*.84,{fill:'#04090f',opacity:.6}));
+    for(var i=0;i<5;i++){
+      var a=rf(0,6.283),rr=rf(0,r*.62);
+      e.appendChild(C(x+Math.cos(a)*rr,y+Math.sin(a)*rr*.8,r*rf(.42,.62),
+        {fill:rnd()<.5?'#26583c':'#1c4530'}));
+    }
+    e.appendChild(E(x-r*.3,y-r*.34,r*.34,r*.24,{fill:'#3d7a52',opacity:.32}));
+    g.appendChild(e);
+  }
+  function buildTrees(){
+    var pts=[[100,214],[124,206],[152,208],[172,222],[176,250],[166,274],[138,282],[112,276],
+      [96,254],[148,248],[120,290],[112,412],[129,418],[146,410],[163,417],[180,411],[196,417],
+      [212,410],[254,404],[286,404],[312,412],[236,300],[232,330],[330,340],[316,316],
+      [228,58],[206,132],[276,190],[356,222],[368,258],[232,158],[52,406],[88,412],[190,428]];
+    pts.forEach(function(p,i){tree(p[0],p[1],ri(5,8),i%3===0);});
+    /* tree-lined promenade along the quay: jittered spacing, no wall of blobs */
+    for(var x=24;x<366;x+=22){
+      if(x>48&&x<92)continue;                 /* keep both bridge approaches clear */
+      if(x>326&&x<364)continue;
+      if(x>224&&x<308)continue;               /* the goods pier */
+      var px=x+rf(-4,4),py=413+rf(-4.5,4.5);
+      tree(px,py,ri(4,6),false);
+    }
+  }
+
+  /* =======================================================================
+     LANDMARKS — cathedral, central station, terminals, market yard
+     ======================================================================= */
+  function buildLandmarks(){
+    var g=G('landmarks');
+
+    /* ---- Cathedral + close (north-west quarter, clear of the ghost plate) ---- */
+    var ca=el('g',{});
+    ca.appendChild(R(46,166,104,108,{rx:3,fill:'#39404f'}));
+    ca.appendChild(R(46,166,104,108,{rx:3,fill:'url(#pPave)',opacity:.72}));
+    ca.appendChild(R(46,166,104,108,{rx:3,fill:'none',stroke:'#0a1220','stroke-width':2.4}));
+    /* nave + transept + tower, one shadow direction */
+    ca.appendChild(R(75,178,38,74,{fill:'#03060c',opacity:.5}));
+    ca.appendChild(R(71,174,38,74,{rx:2,fill:'#2c3550'}));
+    ca.appendChild(R(71,174,38,74,{rx:2,fill:'url(#pSlate)',opacity:.92}));
+    ca.appendChild(R(58,202,64,34,{rx:2,fill:'#2c3550'}));
+    ca.appendChild(R(58,202,64,34,{rx:2,fill:'url(#pSlate2)',opacity:.92}));
+    ca.appendChild(R(69,172,42,78,{rx:2,fill:'none',stroke:'#0a1020','stroke-width':2}));
+    /* tower + spire */
+    ca.appendChild(R(64,156,30,30,{rx:2,fill:'#03060c',opacity:.5}));
+    ca.appendChild(R(61,152,30,30,{rx:2,fill:'#33405e'}));
+    ca.appendChild(R(61,152,30,30,{rx:2,fill:'url(#pSlate2)',opacity:.95}));
+    ca.appendChild(R(61,152,30,30,{rx:2,fill:'none',stroke:'#0a1020','stroke-width':2}));
+    ca.appendChild(C(76,168,6.4,{fill:'#20283c'}));
+    ca.appendChild(P('M70 168h12M76 162v12',{fill:'none',stroke:'#c9dbf2','stroke-width':1.6,opacity:.55}));
+    /* warm clerestory glow */
+    for(var c=0;c<6;c++)ca.appendChild(C(78+c*5,180+rf(0,3),2.2,{fill:'#ffcf92',opacity:.6}));
+    /* dormers along the nave roof + the lit west door onto the close */
+    for(var dm=0;dm<3;dm++){
+      ca.appendChild(R(76,182+dm*20,28,2.8,{rx:1.2,fill:'#3f4c6c',opacity:.85}));
+      ca.appendChild(C(90,183.4+dm*20,1.2,{fill:'#ffd79a',opacity:.55}));
+    }
+    ca.appendChild(P('M86 248 a8 8 0 0 1 8 0 v1 h-8 Z',{fill:'#ffcf92',opacity:.5}));
+    ca.appendChild(E(90,254,24,13,{fill:'url(#gLamp)',opacity:.55}));
+    ca.appendChild(E(90,210,48,42,{fill:'url(#gStation)',opacity:.42}));
+    /* bishop's palace, same close, one shadow direction */
+    ca.appendChild(R(124,238,32,22,{rx:2,fill:'#03060c',opacity:.5}));
+    ca.appendChild(R(121,235,32,22,{rx:2,fill:'#2c3550'}));
+    ca.appendChild(R(121,235,32,22,{rx:2,fill:'url(#pClay2)',opacity:.9}));
+    ca.appendChild(R(121,235,32,22,{rx:2,fill:'none',stroke:'#0a1020','stroke-width':1.4}));
+    ca.appendChild(C(137,242,1.6,{fill:'#ffd79a',opacity:.6}));
+    /* close: lamp posts, planting beds, hedge line, market stalls on the south edge */
+    [[54,174],[142,174],[54,264],[142,264]].forEach(function(p){
+      ca.appendChild(C(p[0],p[1],13,{fill:'url(#gLamp)',opacity:.7}));
+      ca.appendChild(C(p[0],p[1],2,{fill:'#fff0d2'}));
+    });
+    ca.appendChild(R(52,262,92,4,{fill:'url(#pHedge)'}));
+    for(var m=0;m<5;m++){
+      var mx=54+m*19;
+      ca.appendChild(R(mx,272,13,8,{rx:1.5,fill:'#333b4d',stroke:'#0b1220','stroke-width':1.1}));
+      ca.appendChild(R(mx+1,270.6,11,3,{rx:1.2,fill:'#8a6a4a',opacity:.85}));
+      ca.appendChild(C(mx+6.5,276,6,{fill:'url(#gLamp)',opacity:.35}));
+    }
+    g.appendChild(ca);
+
+    /* ---- Central station (terminal n10) ---- */
+    var cs=el('g',{});
+    cs.appendChild(E(336,86,52,46,{fill:'url(#gStation)',opacity:.5}));
+    cs.appendChild(R(296,50,82,74,{rx:3,fill:'#2b3140'}));
+    cs.appendChild(R(296,50,82,74,{rx:3,fill:'url(#pPave)',opacity:.55}));
+    cs.appendChild(R(296,50,82,74,{rx:3,fill:'none',stroke:'#0a1220','stroke-width':2.2}));
+    cs.appendChild(R(300,54,74,66,{rx:3,fill:'#0f3348'}));
+    cs.appendChild(R(300,54,74,66,{rx:3,fill:'url(#gGlassShine)',opacity:.85}));
+    for(var i=0;i<4;i++)cs.appendChild(L(303,60+i*17,371,60+i*17,'#081c2b'));
+    for(var j=0;j<4;j++)cs.appendChild(L(306+j*17,56,306+j*17,118,'rgba(10,28,44,.7)'));
+    for(var q=0;q<9;q++){
+      cs.appendChild(E(rf(304,368),rf(58,116),rf(6,11),rf(5,8),{fill:'url(#gWindow)',opacity:.9}));
+      cs.appendChild(E(rf(304,368),rf(58,116),2,1.6,{fill:'#ffe6bb',opacity:.9}));
+    }
+    cs.appendChild(P('M300 88 q37 -20 74 0',{fill:'none',stroke:'#ffdca6','stroke-width':3,opacity:.45}));
+    cs.appendChild(R(292,44,90,7,{rx:3,fill:'#39445a',stroke:'#0a1220','stroke-width':1.4}));
+    cs.appendChild(R(292,124,90,7,{rx:3,fill:'#39445a',stroke:'#0a1220','stroke-width':1.4}));
+    /* forecourt: paved, tram rails, lit entrance, parked cabs */
+    cs.appendChild(R(280,132,100,34,{rx:3,fill:'#3a4155'}));
+    cs.appendChild(R(280,132,100,34,{rx:3,fill:'url(#pPave)',opacity:.6}));
+    cs.appendChild(R(280,132,100,34,{rx:3,fill:'none',stroke:'#0a1220','stroke-width':1.8}));
+    for(var t=0;t<2;t++)cs.appendChild(L(284,140+t*14,378,140+t*14,'#2a3040'));
+    for(var e2=0;e2<4;e2++)cs.appendChild(E(304+e2*15,130,10,7,{fill:'url(#gLamp)',opacity:.85}));
+    [[296,150],[314,156],[356,148]].forEach(function(p){
+      cs.appendChild(R(p[0]-5,p[1]-3,10,6,{rx:2,fill:'#161d2b',stroke:'#0a0f18','stroke-width':1}));
+      cs.appendChild(C(p[0]+4,p[1],1.4,{fill:'#ffe9b8',opacity:.8}));
+    });
+    g.appendChild(cs);
+
+    /* ---- Terminus hall (terminal n7) ---- */
+    var ts=el('g',{});
+    ts.appendChild(E(300,300,48,40,{fill:'url(#gStation)',opacity:.45}));
+    ts.appendChild(R(262,278,78,46,{rx:3,fill:'#2b3140'}));
+    ts.appendChild(R(262,278,78,46,{rx:3,fill:'url(#pPave)',opacity:.5}));
+    ts.appendChild(R(262,278,78,46,{rx:3,fill:'none',stroke:'#0a1220','stroke-width':2.2}));
+    ts.appendChild(R(268,282,66,38,{rx:3,fill:'#0e3149'}));
+    ts.appendChild(R(268,282,66,38,{rx:3,fill:'url(#gGlassShine)',opacity:.8}));
+    for(var s2=0;s2<3;s2++)ts.appendChild(L(271,290+s2*13,331,290+s2*13,'#081c2b'));
+    for(var s3=0;s3<8;s3++){
+      ts.appendChild(E(rf(272,330),rf(285,316),rf(5,9),rf(4,7),{fill:'url(#gWindow)',opacity:.85}));
+      ts.appendChild(E(rf(272,330),rf(285,316),1.8,1.4,{fill:'#ffe6bb',opacity:.9}));
+    }
+    ts.appendChild(R(258,272,86,6,{rx:3,fill:'#364156',stroke:'#0a1220','stroke-width':1.3}));
+    ts.appendChild(R(258,324,86,6,{rx:3,fill:'#364156',stroke:'#0a1220','stroke-width':1.3}));
+    /* clock tower */
+    ts.appendChild(C(340,286,9,{fill:'#03060c',opacity:.5}));
+    ts.appendChild(C(338,284,8.6,{fill:'#33405e'}));
+    ts.appendChild(C(338,284,8.6,{fill:'url(#pSlate2)',opacity:.9}));
+    ts.appendChild(C(338,284,8.6,{fill:'none',stroke:'#0a1020','stroke-width':1.4}));
+    ts.appendChild(C(338,284,4.4,{fill:'#f6e3b4',opacity:.85}));
+    g.appendChild(ts);
+
+    /* ---- Market yard + hub halls (n4, n6) ---- */
+    var mk=el('g',{});
+    mk.appendChild(R(296,196,54,42,{rx:2,fill:'#3a4155'}));
+    mk.appendChild(R(296,196,54,42,{rx:2,fill:'url(#pPave)',opacity:.55}));
+    mk.appendChild(R(296,196,54,42,{rx:2,fill:'none',stroke:'#0a1220','stroke-width':1.8}));
+    for(var s4=0;s4<9;s4++){
+      var sx=298+(s4%3)*17,sy=200+Math.floor(s4/3)*13;
+      mk.appendChild(R(sx,sy,13,9,{rx:1.5,fill:['#7a4b3a','#5d5740','#4a5560'][s4%3],
+        stroke:'#0b1220','stroke-width':1}));
+      mk.appendChild(C(sx+6.5,sy+4.5,6,{fill:'url(#gLamp)',opacity:.32}));
+    }
+    g.appendChild(mk);
+
+    function hubHall(x,y,w,h,copper){
+      var hh=el('g',{});
+      hh.appendChild(R(x+2.6,y+3.2,w,h,{rx:2,fill:'#03060c',opacity:.55}));
+      hh.appendChild(R(x,y,w,h,{rx:2,fill:'#2b3448'}));
+      hh.appendChild(R(x,y,w,h,{rx:2,fill:'url('+(copper?'#pCopper':'#pSlate2')+')'}));
+      hh.appendChild(R(x,y,w,h,{rx:2,fill:'url(#gRoofShade)'}));
+      hh.appendChild(R(x,y,w,1,{fill:'rgba(180,205,238,.16)'}));
+      hh.appendChild(R(x,y,w,h,{rx:2,fill:'none',stroke:'rgba(3,7,15,.85)','stroke-width':1.6}));
+      /* hipped ridge */
+      hh.appendChild(P('M'+x+' '+y+'L'+(x+w/2)+' '+(y+h/2)+'L'+(x+w)+' '+y,{fill:'none',
+        stroke:'rgba(255,255,255,.13)','stroke-width':1}));
+      for(var i=0;i<3;i++)hh.appendChild(C(x+rf(4,w-4),y+rf(4,h-4),1.2,{fill:'#141b2a'}));
+      g.appendChild(hh);
+      return hh;
+    }
+    hubHall(186,210,38,26,true);        /* town hall, north of hub n6 */
+    hubHall(348,178,30,34,false);       /* water tower hall, beside hub n4 */
+
+    /* ---- Arena / sports ground (south-east block, bounded by the bus loop) ---- */
+    var ar=el('g',{});
+    var AX=296,AY=392;
+    ar.appendChild(E(AX+2,AY+3,40,33,{fill:'#03060c',opacity:.55}));
+    ar.appendChild(E(AX,AY,39,32,{fill:'#2b3446'}));
+    ar.appendChild(E(AX,AY,39,32,{fill:'none',stroke:'#0b1322','stroke-width':2.4}));
+    for(var k=0;k<20;k++){                     /* stand roof segments */
+      var a3=k/20*Math.PI*2;
+      var x3=AX+Math.cos(a3)*30,y3=AY+Math.sin(a3)*24;
+      var x4=AX+Math.cos(a3+.15)*37,y4=AY+Math.sin(a3+.15)*30;
+      ar.appendChild(P('M'+r1(x3)+' '+r1(y3)+'L'+r1(x4)+' '+r1(y4),
+        {stroke:k%2?'#3b455a':'#333d52','stroke-width':7,'stroke-linecap':'butt'}));
+    }
+    ar.appendChild(E(AX,AY,25,20,{fill:'#1d4530'}));
+    ar.appendChild(E(AX,AY,25,20,{fill:'url(#pGrass)',opacity:.7}));
+    for(var s5=0;s5<5;s5++)ar.appendChild(R(AX-22,AY-16+s5*7,44,4,
+      {fill:s5%2?'#22523a':'#194028',opacity:.5}));
+    ar.appendChild(E(AX,AY,7,5.6,{fill:'none',stroke:'#dfeaf6','stroke-width':1,opacity:.45}));
+    ar.appendChild(L(AX,AY-20,AX,AY+20,{stroke:'#dfeaf6',opacity:.35}));
+    [[AX-32,AY+24],[AX+32,AY+24],[AX-32,AY-24],[AX+32,AY-24]].forEach(function(f){
+      ar.appendChild(C(f[0],f[1],4,{fill:'#3a4457',stroke:'#0d1420','stroke-width':1.4}));
+      ar.appendChild(C(f[0],f[1],1.6,{fill:'#fff6e2'}));
+    });
+    g.appendChild(ar);
+    /* water tower by the river */
+    var wt=el('g',{});
+    wt.appendChild(C(256,398,14,{fill:'#03060c',opacity:.6}));
+    wt.appendChild(C(254,396,12.6,{fill:'#2f3a4e'}));
+    wt.appendChild(C(254,396,12.6,{fill:'url(#pCopper)',opacity:.92}));
+    wt.appendChild(C(254,396,4.4,{fill:'#1b2334'}));
+    for(var w2=0;w2<8;w2++){
+      var a2=w2/8*6.283;
+      wt.appendChild(L(254+Math.cos(a2)*12.6,396+Math.sin(a2)*12.6,
+                       254+Math.cos(a2)*16,396+Math.sin(a2)*16,{stroke:'#1a2130','stroke-width':2}));
+    }
+    g.appendChild(wt);
+
+    /* ---- gasworks / works yard on the west bank ---- */
+    var gw=el('g',{});
+    gw.appendChild(R(18,352,44,40,{rx:2,fill:'#2a3040'}));
+    gw.appendChild(R(18,352,44,40,{rx:2,fill:'url(#pGravel)'}));
+    gw.appendChild(R(18,352,44,40,{rx:2,fill:'none',stroke:'#0a1220','stroke-width':2}));
+    for(var y2=0;y2<2;y2++)for(var x2=0;x2<2;x2++){
+      var cxx=30+x2*20,cyy=364+y2*17;
+      gw.appendChild(C(cxx+1.6,cyy+2,9,{fill:'#03060c',opacity:.5}));
+      gw.appendChild(C(cxx,cyy,8.6,{fill:'#2d3a4c'}));
+      gw.appendChild(C(cxx,cyy,8.6,{fill:'none',stroke:'#151d2b','stroke-width':1.4}));
+      gw.appendChild(C(cxx,cyy,3,{fill:'#1b2334'}));
+    }
+    g.appendChild(gw);
+  }
+
+  function buildInfra(){
+    var g=G('infra');
+    /* underground: a cut under the blocks, not a highlighted route */
+    g.appendChild(PL(METRO,{stroke:'#03060e','stroke-width':12,opacity:.62,
+      'stroke-linecap':'round','stroke-linejoin':'round'}));
+    g.appendChild(PL(METRO,{stroke:'#16233a','stroke-width':8,opacity:.9,
+      'stroke-linecap':'round','stroke-linejoin':'round'}));
+    g.appendChild(PL(METRO,{stroke:'#6fd6f2','stroke-width':1.3,'stroke-dasharray':'3 9',
+      opacity:.42,'stroke-linecap':'round'}));
+    /* alleyway cut-through */
+    g.appendChild(PL(ALLEY,{stroke:'#03060e','stroke-width':9,opacity:.55,
+      'stroke-linecap':'round','stroke-linejoin':'round'}));
+    g.appendChild(PL(ALLEY,{stroke:'#1a1024','stroke-width':5.4,opacity:.85,
+      'stroke-linecap':'round','stroke-linejoin':'round'}));
+    g.appendChild(PL(ALLEY,{stroke:'#dc9ce8','stroke-width':1.3,'stroke-dasharray':'1.5 4.5',
+      opacity:.4,'stroke-linecap':'round'}));
+  }
+
+  /* =======================================================================
+     STREETS — kerbs, pavements, lane markings, crossings, a junction or two
+     ======================================================================= */
+  var CROSSINGS=[];
+  function buildRoads(){
+    var g=G('roads');
+    function road(pts,w,main){
+      /* pavement, then kerb line, then carriageway, then centre markings */
+      g.appendChild(PL(pts,{stroke:'#4c5570','stroke-width':w+9,opacity:.95,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      g.appendChild(PL(pts,{stroke:'#5c6684','stroke-width':w+9,opacity:.30,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      g.appendChild(PL(pts,{stroke:'#2a3245','stroke-width':w+3.4,opacity:1,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      g.appendChild(PL(pts,{stroke:'#39435c','stroke-width':w,opacity:1,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      g.appendChild(PL(pts,{stroke:'#454f6b','stroke-width':w*0.62,opacity:.42,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      if(main){
+        g.appendChild(PL(pts,{stroke:'#8b96ad','stroke-width':1.5,'stroke-dasharray':'7 9',
+          opacity:.30,'stroke-linecap':'butt'}));
+        g.appendChild(PL(pts,{stroke:'#f0a04e','stroke-width':w*0.8,opacity:.08,
+          'stroke-linecap':'round','stroke-linejoin':'round'}));
+      }
+    }
+    STREETS.forEach(function(p){road(p,12,true);});
+    BUSR.forEach(function(p){road(p,14,true);});
+    LANES.forEach(function(p){road(p,8,false);});
+    /* kerb-side furniture + crossings on the main streets */
+    STREETS.concat(BUSR).forEach(function(pts,pi){
+      for(var i=0;i<pts.length-1;i++){
+        var a=pts[i],b=pts[i+1];
+        var L2=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2));
+        var ux=(b[0]-a[0])/L2,uy=(b[1]-a[1])/L2;
+        var steps=Math.max(1,Math.round(L2/52));
+        for(var k=0;k<steps;k++){
+          var t=(k+0.5)/steps;
+          var x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+          if((pi+k)%3===0)CROSSINGS.push([x,y,-uy,ux]);
+        }
+      }
+    });
+    var cg=G('crossings');
+    CROSSINGS.forEach(function(c){
+      for(var i=-2;i<=2;i++){
+        var bx=c[0]+c[2]*(i*3.2),by=c[1]+c[3]*(i*3.2);
+        cg.appendChild(L(bx-c[3]*2.6,by+c[2]*2.6,bx+c[3]*2.6,by-c[2]*2.6,
+          {stroke:'#c3cde0','stroke-width':2,opacity:.20,'stroke-linecap':'butt'}));
+      }
+    });
+  }
+
+  /* =======================================================================
+     WATER — banks, quay, two structured bridges
+     ======================================================================= */
+  /* the river's north bank is a real edge, not a straight band */
+  function bankY(x){return 439+Math.sin(x/58)*5.5;}
+  function bankPath(y0){
+    var p='M-6 '+r1(y0),x;
+    for(x=0;x<=396;x+=10)p+=' L'+x+' '+r1(bankY(x));
+    return p+' L396 '+r1(y0)+' Z';
+  }
+  function buildWater(){
+    var g=G('water'),d=G('riverdetail');
+    g.appendChild(R(0,430,390,5,{fill:'#03060c',opacity:.30}));  /* bank shadow on the water */
+    g.appendChild(P(bankPath(524),{fill:'#0b1524'}));          /* water body */
+    g.appendChild(P(bankPath(524),{fill:'url(#gRiver)'}));
+    g.appendChild(P(bankPath(524),{fill:'url(#pWater)',opacity:.45}));
+    /* northern embankment: stone quay wall, then the promenade above it */
+    var quay='M-6 430';
+    for(var x=0;x<=396;x+=10)quay+=' L'+x+' '+r1(bankY(x));
+    quay+=' L396 430 Z';
+    d.appendChild(P(quay,{fill:'url(#gBank)'}));
+    d.appendChild(P(quay,{fill:'#243149',opacity:.35}));
+    d.appendChild(PL([[0,430]].concat([[60,bankY(60)],[140,bankY(140)],[220,bankY(220)],
+      [300,bankY(300)],[390,bankY(390)]]),{stroke:'#5e687e','stroke-width':2.4,opacity:.45}));
+    /* soft warm light smeared on the water below the quay lamps */
+    [56,96,168,232,300,352].forEach(function(x,i){
+      d.appendChild(E(x,bankY(x)+9,7.5,5.5,{fill:'url(#gRefl)',opacity:.34,'class':'shimmer',
+        'style':'animation-delay:'+(i*.9).toFixed(1)+'s'}));
+    });
+    /* pale ripple stitching so the river reads as water */
+    var sh=el('g',{'class':'shimmer'});
+    for(var i=0;i<34;i++){
+      var x2=rf(0,384),y2=rf(444,516),w2=rf(8,32);
+      sh.appendChild(L(x2,y2,x2+w2,y2,{stroke:'#5aa0b4',opacity:rf(.08,.20),
+        'stroke-width':rf(.7,1.4),'stroke-linecap':'round'}));
+    }
+    d.appendChild(sh);
+    /* quay: coping, bollards, cranes, parked carts */
+    d.appendChild(R(0,424,390,4.4,{fill:'#3f4759'}));
+    d.appendChild(R(0,424,390,4.4,{fill:'url(#pPave)',opacity:.4}));
+    for(var b=0;b<17;b++){
+      var bx=14+b*23;
+      if(Math.abs(bx-71)<15||Math.abs(bx-345)<13)continue;
+      d.appendChild(C(bx,426.6,1.7,{fill:'#1b2334'}));
+      d.appendChild(C(bx,426,.8,{fill:'#ffd79a',opacity:.35}));
+    }
+    [[40,418],[136,418],[262,418]].forEach(function(c){
+      d.appendChild(R(c[0],c[1]-7,2.6,11,{fill:'#242c3c'}));
+      d.appendChild(L(c[0],c[1]-7,c[0]+13,c[1]-11,{stroke:'#2c3547','stroke-width':2.2}));
+      d.appendChild(C(c[0]+13,c[1]-11,1.5,{fill:'#ffd79a',opacity:.45}));
+    });
+    [[30,420],[110,420]].forEach(function(c){
+      d.appendChild(R(c[0]-5,c[1]-3,10,6,{rx:1.6,fill:'#2b3242',stroke:'#0a0f18','stroke-width':1}));
+      d.appendChild(C(c[0]+3,c[1],1.2,{fill:'#ffe9b8',opacity:.7}));
+    });
+    /* goods pier reaching into the water: deck, pilings, cargo */
+    d.appendChild(R(232,430,70,32,{fill:'#04080f',opacity:.5}));
+    d.appendChild(R(234,426,66,30,{rx:1.5,fill:'#3d4457'}));
+    d.appendChild(R(234,426,66,30,{rx:1.5,fill:'url(#pPave)',opacity:.5}));
+    d.appendChild(R(234,426,66,30,{rx:1.5,fill:'none',stroke:'#101724','stroke-width':1.6}));
+    for(var pk=0;pk<6;pk++)d.appendChild(C(238+pk*12,455,1.8,{fill:'#1b2334'}));
+    [[242,434],[262,436],[282,433]].forEach(function(c){
+      d.appendChild(R(c[0],c[1],11,9,{rx:1.4,fill:'#4a4a56',stroke:'#0b1220','stroke-width':1}));
+      d.appendChild(R(c[0]+1,c[1]-2,9,3,{rx:1,fill:'#8a6a4a',opacity:.7}));
+    });
+    /* moored barges at their buoys */
+    [[104,478],[300,482]].forEach(function(m,i){
+      var x=m[0],y=m[1];
+      d.appendChild(E(x+1,y+2,13,4.2,{fill:'#04080f',opacity:.55,'class':'idle',
+        'style':'animation-delay:'+(i*.7).toFixed(1)+'s'}));
+      d.appendChild(E(x,y,12,3.6,{fill:'#2b3242','class':'idle',
+        'style':'animation-delay:'+(i*.7).toFixed(1)+'s'}));
+      d.appendChild(E(x,y-2.2,5,2.6,{fill:'#333b4d'}));
+      d.appendChild(C(x+5,y-1,2,{fill:'url(#gLamp)',opacity:.7}));
+      d.appendChild(C(x+5,y-1,.9,{fill:'#ffe3b4'}));
+    });
+    /* southern bank + the dark cast shadow the far bank throws on the water */
+    g.appendChild(R(0,514,390,6,{fill:'url(#gBank)'}));
+    g.appendChild(R(0,514,390,2,{fill:'#5b6478',opacity:.45}));
+  }
+
+  function buildBridges(){
+    var g=G('bridges');
+    /* two crossings with roadway, kerbs, railings, piers, lamps and shadows */
+    [{x:71,w:22,k:0},{x:345,w:17,k:1}].forEach(function(b){
+      var x=b.x,w=b.w,top=428,bot=524;
+      g.appendChild(R(x-w/2+4,top,bot-top,w,{rx:3,fill:'#03060c',opacity:.5}));
+      /* abutments on both banks */
+      g.appendChild(R(x-w/2-5,420,w+10,14,{rx:2,fill:'#2a3140'}));
+      g.appendChild(R(x-w/2-5,508,w+10,12,{rx:2,fill:'#2a3140'}));
+      /* pavement + carriageway */
+      g.appendChild(R(x-w/2-4,top,w+8,bot-top,{fill:'#525b72'}));
+      for(var pas=top+2;pas<bot;pas+=7){
+        g.appendChild(L(x-w/2-3.4,pas,x-w/2+.6,pas,{stroke:'#5c6684','stroke-width':1,opacity:.5}));
+        g.appendChild(L(x+w/2-.6,pas,x+w/2+3.4,pas,{stroke:'#5c6684','stroke-width':1,opacity:.5}));
+      }
+      g.appendChild(R(x-w/2,top+2,w,bot-top-2,{fill:'#3d4659'}));
+      g.appendChild(R(x-w/2+2.4,top+2,w-4.8,bot-top-2,{fill:'#464f66',opacity:.5}));
+      g.appendChild(R(x-.7,top+4,1.4,bot-top-8,{fill:'#8b96ad',opacity:.22}));
+      /* kerb rails + railing posts */
+      g.appendChild(R(x-w/2-1.4,top,1.8,bot-top,{fill:'#7c869e',opacity:.6}));
+      g.appendChild(R(x+w/2-.4,top,1.8,bot-top,{fill:'#7c869e',opacity:.6}));
+      g.appendChild(L(x-w/2-.5,top+6,x-w/2-.5,bot-4,{stroke:'#a4aec4','stroke-width':1,opacity:.35}));
+      g.appendChild(L(x+w/2+.5,top+6,x+w/2+.5,bot-4,{stroke:'#a4aec4','stroke-width':1,opacity:.35}));
+      /* piers marching across the water */
+      [470,494,516].forEach(function(py){
+        g.appendChild(R(x-w/2-6,py,w+12,6,{rx:1.5,fill:'#242c3c'}));
+        g.appendChild(R(x-w/2-6,py,w+12,1.6,{rx:1,fill:'#4a5468',opacity:.75}));
+      });
+      /* lamps on the bridge, warm pools spilling onto the water */
+      [438,474,510].forEach(function(ly,i){
+        [x-w/2+1.4,x+w/2-1.4].forEach(function(lx){
+          g.appendChild(E(lx,ly+.5,8,5.5,{fill:'#03060c',opacity:.34,'class':'flick',
+            'style':'animation-delay:'+((i+b.k)*.9).toFixed(1)+'s'}));
+          g.appendChild(E(lx,ly,11,8,{fill:'url(#gLamp)',opacity:.55,'class':'flick',
+            'style':'animation-delay:'+((i+b.k)*.9).toFixed(1)+'s'}));
+          g.appendChild(C(lx,ly,2.5,{fill:'url(#gLamp)',opacity:.9}));
+          g.appendChild(C(lx,ly,1.1,{fill:'#fff0cf'}));
+          g.appendChild(R(lx-.8,ly+2,.8,12,{fill:'url(#gRefl)',opacity:.3,'class':'shimmer'}));
+        });
+      });
+    });
+    /* the bridge decks cast onto the water, one direction */
+    g.appendChild(R(58,522,26,4,{fill:'#03060c',opacity:.4}));
+    g.appendChild(R(334,522,22,4,{fill:'#03060c',opacity:.4}));
+  }
+
+  /* =======================================================================
+     LAMPS — warm light pooling onto the streets
+     ======================================================================= */
+  function buildLamps(){
+    var g=G('lamps');
+    function fits(lx,ly){return lx-30>=2&&lx+30<=388&&ly-20>=-26&&ly+20<=540;}
+    var n=0;
+    STREETS.concat(BUSR).forEach(function(pts){
+      var side=1;
+      for(var i=0;i<pts.length-1;i++){
+        var a=pts[i],b=pts[i+1];
+        var L2=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2));
+        var segs=Math.max(1,Math.round(L2/66));
+        for(var k=0;k<segs;k++){
+          var t=(k+0.5)/segs;
+          var x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+          var ux=(b[0]-a[0])/L2,uy=(b[1]-a[1])/L2;
+          var lx=x+uy*10*side, ly=y-ux*10*side;
+          var ok=fits(lx,ly);
+          if(!ok){lx=x-uy*10*side;ly=y+ux*10*side;ok=fits(lx,ly);}
+          side*=-1;
+          if(!ok)continue;
+          n++;
+          /* pool on the roadway, plus the lamp head itself */
+          var e=E(lx,ly+2,30,19,{fill:'url(#gLamp)',opacity:.46,'class':'flick',
+            'style':'animation-delay:'+(n*0.7).toFixed(1)+'s'});
+          g.appendChild(e);
+          if(n%2===0)g.appendChild(E(lx,ly+6,20,11,{fill:'url(#gLamp)',opacity:.4}));
+          g.appendChild(C(lx,ly,5.6,{fill:'url(#gLamp)',opacity:.85,'class':'flick',
+            'style':'animation-delay:'+(n*0.7).toFixed(1)+'s'}));
+          g.appendChild(C(lx,ly,2.2,{fill:'#ffeecb',opacity:.95}));
+        }
+      }
+    });
+    /* lamps along the promenade and across both bridges */
+    for(var x=26;x<372;x+=44){
+      if(x>52&&x<88)continue;
+      if(x>326)continue;
+      g.appendChild(E(x,420,26,15,{fill:'url(#gLamp)',opacity:.4,'class':'flick',
+        'style':'animation-delay:'+(x*.05).toFixed(1)+'s'}));
+      g.appendChild(C(x,419,2.4,{fill:'#ffeecb',opacity:.9}));
+    }
+    [[65,472],[77,472],[337,472],[353,472]].forEach(function(p,i){
+      g.appendChild(E(p[0],p[1]+8,18,12,{fill:'url(#gLamp)',opacity:.42,'class':'flick',
+        'style':'animation-delay:'+(i*.8).toFixed(1)+'s'}));
+      g.appendChild(E(p[0],p[1]+14,8,20,{fill:'url(#gRefl)',opacity:.4,'class':'shimmer'}));
+      g.appendChild(C(p[0],p[1],1.8,{fill:'#fff0cf'}));
+    });
+  }
+
+  /* ============================== belief ============================== */
+  function buildBelief(){
+    var g=G('belief');
+    BELIEF.forEach(function(b){
+      var p=S[b.n];
+      var op=0.34+b.p/100*1.72;               /* intensity encodes likelihood */
+      g.appendChild(C(p[0],p[1],b.r,{fill:'url(#gBelief)',opacity:op.toFixed(2)}));
+      g.appendChild(C(p[0],p[1],b.r*0.42,{fill:'url(#gBelief)',opacity:(op*0.5).toFixed(2)}));
+    });
+  }
+  function buildBeliefBadges(){
+    var g=G('beliefbadges');
+    var pos={2:[112,140],6:[222,200],4:[290,176]};
+    var conn={2:[[126,137],[130,108]],6:[[214,209],[208,226]]};
+    Object.keys(conn).forEach(function(k){
+      g.appendChild(PL(conn[k],{stroke:'#ffb066','stroke-width':1.2,opacity:.5,
+        'stroke-dasharray':'2 3','stroke-linecap':'round'}));
+    });
+    BELIEF.forEach(function(b){
+      var c=pos[b.n],w=44,h=20;
+      g.appendChild(R(c[0]-w/2+1,c[1]-h/2+1.5,w,h,{rx:7,fill:'#03060c',opacity:.6}));
+      g.appendChild(R(c[0]-w/2,c[1]-h/2,w,h,{rx:7,fill:'#150d06'}));
+      g.appendChild(R(c[0]-w/2,c[1]-h/2,w,h,{rx:7,fill:'none',stroke:'#ffb066',
+        'stroke-width':1.4,opacity:.85}));
+      g.appendChild(TX(c[0],c[1]+5.4,b.p+'%',12,'#ffd7a6','rgba(20,8,0,.85)',800));
+    });
+  }
+
+  /* ============================ legal moves ============================ */
+  function buildPaths(){
+    var g=G('paths');
+    LEGAL.forEach(function(mv){
+      var st=MODE[mv.mode];
+      /* dark backing pass so the route reads against the lit streets */
+      g.appendChild(PL(mv.pts,{stroke:st.dark,'stroke-width':st.w+5.5,opacity:.8,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      g.appendChild(PL(mv.pts,{stroke:'#000000','stroke-width':st.w+2.4,opacity:.35,
+        'stroke-linecap':'round','stroke-linejoin':'round'}));
+      var line={stroke:st.c,'stroke-width':st.w,'stroke-linecap':'round',
+        'stroke-linejoin':'round'};
+      var core={stroke:st.core,'stroke-width':st.cw,'stroke-linecap':'round',
+        'stroke-linejoin':'round',opacity:.85};
+      if(st.dash){line['stroke-dasharray']=st.dash;core['stroke-dasharray']=st.dash;}
+      g.appendChild(PL(mv.pts,line));
+      g.appendChild(PL(mv.pts,core));
+    });
+  }
+  function buildReach(){
+    var g=G('reach');
+    /* destinations */
+    var dest={'1':1,'8':1,'6':1};
+    LEGAL.forEach(function(mv){
+      if(!dest[mv.to])return; dest[mv.to]=0;
+      var p=S[mv.to],cls=CLS[mv.to];
+      var r=(cls==='hub'?13:10.5)+11;
+      g.appendChild(C(p[0],p[1],r,{fill:'none',stroke:'#03060c','stroke-width':5.5,opacity:.7}));
+      g.appendChild(C(p[0],p[1],r,{fill:'none',stroke:'#eaf4ff','stroke-width':2,
+        'stroke-dasharray':'5 5',opacity:.82}));
+    });
+    /* origin */
+    var o=S[5];
+    g.appendChild(C(o[0],o[1],20,{fill:'none',stroke:'#03060c','stroke-width':5,opacity:.6}));
+    g.appendChild(C(o[0],o[1],20,{fill:'none',stroke:YOU_C,'stroke-width':2,
+      'stroke-dasharray':'3 4',opacity:.85}));
+    /* mode glyphs sit on the line they label */
+    LEGAL.forEach(function(mv){
+      var pt=alongPoly(mv.pts,mv.t);
+      g.appendChild(glyphDisc(pt[0],pt[1],mv.mode,8.5));
+      var lab=mv.lab,st=MODE[mv.mode];
+      var w=mv.mode.length*5.6+12;
+      g.appendChild(R(lab[0]-w/2,lab[1]-8,w,16,{rx:5,fill:'#03060c',opacity:.72}));
+      g.appendChild(R(lab[0]-w/2,lab[1]-8,w,16,{rx:5,fill:'#0b1424',opacity:.9}));
+      g.appendChild(R(lab[0]-w/2,lab[1]-8,w,16,{rx:5,fill:'none',stroke:st.c,
+        'stroke-width':1,opacity:.55}));
+      g.appendChild(TX(lab[0],lab[1]+4,mv.mode,9.5,st.c,'rgba(4,8,16,.9)',800));
+    });
+  }
+
+  /* =============================== ghost =============================== */
+  function buildGhost(){
+    var g=G('ghost');
+    var p=S[3];
+    g.appendChild(C(p[0],p[1],23,{fill:'none',stroke:'#03060c','stroke-width':5,opacity:.6}));
+    g.appendChild(C(p[0],p[1],23,{fill:'none',stroke:GHOST_C,'stroke-width':1.8,
+      'stroke-dasharray':'4 5',opacity:.85}));
+    var gx=226,gy=92;
+    g.appendChild(PL([[gx+11,gy+9],[p[0]-13,p[1]-13]],{stroke:GHOST_C,'stroke-width':1.2,
+      'stroke-dasharray':'2 3',opacity:.55,'stroke-linecap':'round'}));
+    /* ghost figure: a remembered outline, not a player token */
+    g.appendChild(C(gx,gy,15,{fill:'#03060c',opacity:.8}));
+    g.appendChild(C(gx,gy,15,{fill:'none',stroke:GHOST_C,'stroke-width':1.3,
+      'stroke-dasharray':'4 4',opacity:.75}));
+    var wrap=el('g',{transform:'translate('+gx+','+gy+')'});
+    wrap.appendChild(P('M-8.4,7 v-5 a8.4,7.6 0 0 1 16.8,0 v5 z',
+      {fill:'rgba(255,154,114,.30)',stroke:GHOST_C,'stroke-width':1.5,'stroke-linejoin':'round'}));
+    wrap.appendChild(C(-3.1,-2.2,1.7,{fill:GHOST_C}));
+    wrap.appendChild(C(3.1,-2.2,1.7,{fill:GHOST_C}));
+    g.appendChild(wrap);
+    /* label plate, above, tethered to the ghost — clear of the n3 badge */
+    var lx=226,ly=46,w=136,h=25;
+    g.appendChild(R(lx-w/2+1,ly-h/2+1.5,w,h,{rx:8,fill:'#03060c',opacity:.6}));
+    g.appendChild(R(lx-w/2,ly-h/2,w,h,{rx:8,fill:'#1a0d08'}));
+    g.appendChild(R(lx-w/2,ly-h/2,w,h,{rx:8,fill:'none',stroke:GHOST_C,'stroke-width':1.3,
+      'stroke-dasharray':'5 4',opacity:.8}));
+    g.appendChild(TX(lx,ly+4.2,'VULTURE · LAST KNOWN n3',9,'#ffcdb4','rgba(20,6,0,.9)',800));
+  }
+
+  /* ============================== stations ============================== */
+  function badgeR(id){var c=CLS[id];return c==='terminal'?16:(c==='hub'?13:10.5);}
+  function buildStations(){
+    var g=G('stations');
+    Object.keys(S).forEach(function(k){
+      var id=parseInt(k,10),p=S[id],x=p[0],y=p[1],r=badgeR(id),cls=CLS[id];
+      /* lamplit base so the number sits on light, not on the dark ground */
+      g.appendChild(C(x,y,r*2.7,{fill:'url(#gStation)',opacity:cls==='street'?0.5:0.7}));
+      g.appendChild(C(x,y,r+6.5,{fill:'#03060c',opacity:.85}));
+      if(cls==='terminal'){
+        g.appendChild(R(x-r-3,y-r-3,(r+3)*2,(r+3)*2,{rx:8,fill:'#f4e4c0'}));
+        g.appendChild(R(x-r,y-r,r*2,r*2,{rx:6,fill:'#0c1423'}));
+        g.appendChild(R(x-r,y-r,r*2,r*2,{rx:6,fill:'none',stroke:'#fff3d8','stroke-width':2.1}));
+        g.appendChild(C(x,y,r+7.5,{fill:'none',stroke:'#8fe4ff','stroke-width':1.5,
+          'stroke-dasharray':'5 5',opacity:.55}));
+      } else if(cls==='hub'){
+        g.appendChild(C(x,y,r+3,{fill:'#edd6a6'}));
+        g.appendChild(C(x,y,r,{fill:'#0c1423'}));
+        g.appendChild(C(x,y,r,{fill:'none',stroke:'#fff3d8','stroke-width':2}));
+        g.appendChild(C(x,y,r+7,{fill:'none',stroke:'#f0c07a','stroke-width':1.4,
+          'stroke-dasharray':'3 4',opacity:.65}));
+      } else {
+        g.appendChild(C(x,y,r+3,{fill:'#e6eefa'}));
+        g.appendChild(C(x,y,r,{fill:'#0c1423'}));
+        g.appendChild(C(x,y,r,{fill:'none',stroke:'#ffffff','stroke-width':1.9}));
+      }
+      var nf=cls==='terminal'?'#ffffff':(cls==='hub'?'#fff4dd':'#eef4ff');
+      var ns=cls==='terminal'?16:(cls==='hub'?13.5:11.5);
+      g.appendChild(TX(x,y+(cls==='terminal'?5.6:(cls==='hub'?5.0:4.4)),id,ns,nf,
+        'rgba(3,7,14,.92)',800));
+    });
+  }
+
+  /* =============================== actors =============================== */
+  function forecourt(g,x,y){
+    g.appendChild(C(x,y,22,{fill:'#46506b',opacity:.26}));
+    g.appendChild(C(x,y,22,{fill:'none',stroke:'rgba(220,235,255,.16)','stroke-width':1}));
+  }
+  function agentToken(g,x,y,color,letter,anchor,delay){
+    g.appendChild(PL([anchor,[x,y]],{stroke:color,'stroke-width':1.2,opacity:.5,
+      'stroke-dasharray':'3 4','stroke-linecap':'round'}));
+    forecourt(g,x,y);
+    var fig=el('g',{'class':'idle'});
+    fig.setAttribute('style','animation-delay:'+delay+'s');
+    fig.appendChild(E(x+3,y+4,19,15,{fill:'#03060c',opacity:.5}));
+    fig.appendChild(C(x,y,17,{fill:'#0a1424',opacity:.96}));
+    fig.appendChild(C(x,y,17,{fill:'none',stroke:'#03060c','stroke-width':5,opacity:.55}));
+    fig.appendChild(C(x,y,17,{fill:'none',stroke:color,'stroke-width':3.4}));
+    fig.appendChild(C(x,y,12.5,{fill:color,opacity:.20}));
+    fig.appendChild(C(x,y,12.5,{fill:'none',stroke:'rgba(255,255,255,.5)','stroke-width':1.1}));
+    fig.appendChild(E(x,y-2.4,5.4,4.8,{fill:'#eef7ff'}));
+    fig.appendChild(E(x,y+3.4,8.8,4.6,{fill:color,opacity:.95}));
+    fig.appendChild(TX(x,y+6.6,letter,9.5,'#06101c','rgba(0,0,0,0)',800));
+    g.appendChild(fig);
+  }
+  function buildActors(){
+    var g=G('actors');
+    agentToken(g,HARRIER[0],HARRIER[1],ALLY_C,'H',S[10],0);
+    agentToken(g,FALCON[0],FALCON[1],YOU_C,'F',S[5],1.6);
+  }
+
+  /* ------- traffic: two vehicles tracing real streets, lamps on ------- */
+  function buildVehicles(){
+    var g=G('vehicles');
+    function car(x,y,vertical,delay){
+      var w=el('g',{'class':'drive'});
+      w.setAttribute('style','animation-delay:'+delay+'s');
+      if(vertical){
+        w.appendChild(R(x-2.6,y-6,5.2,12,{rx:1.6,fill:'#161d2b',stroke:'#0a0f18','stroke-width':1}));
+        w.appendChild(E(x,y+7,7,9,{fill:'#ffe0ac',opacity:.22}));
+        w.appendChild(R(x-.9,y+3,1.8,2.6,{rx:.6,fill:'#fff3d0'}));
+      } else {
+        w.appendChild(R(x-6,y-2.6,12,5.2,{rx:1.6,fill:'#161d2b',stroke:'#0a0f18','stroke-width':1}));
+        w.appendChild(E(x+7,y,9,7,{fill:'#ffe0ac',opacity:.22}));
+        w.appendChild(R(x+3,y-.9,2.6,1.8,{rx:.6,fill:'#fff3d0'}));
+      }
+      g.appendChild(w);
+    }
+    car(52,240.6,false,0);
+    car(205,120,true,7);
+    car(120,300,false,12);
+  }
+
+  /* ================================= run ================================= */
+  buildGround();
+  buildBuildings();
+  buildParks();
+  buildTrees();
+  buildLandmarks();
+  buildInfra();
+  buildRoads();
+  buildWater();
+  buildBridges();
+  buildLamps();
+  buildBelief();
+  buildPaths();
+  buildReach();
+  buildGhost();
+  buildVehicles();
+  buildStations();
+  buildBeliefBadges();
+  buildActors();
+
+  /* ====================== top bar rail + tray + log (HTML) ====================== */
+  /* 16-turn rail: past turns muted, turn 7 is now, 5/10/15 are pulse turns */
+  var rail=G('rail');
+  var PULSES=[5,10,15];
+  for(var turn=1;turn<=16;turn++){
+    var seg=document.createElement('i');
+    if(turn<7){
+      seg.className=PULSES.indexOf(turn)>=0?'past pp':'past';
+    } else if(turn===7){
+      seg.className='now';
+    } else if(PULSES.indexOf(turn)>=0){
+      seg.className=(turn===10)?'next':'pu';
+    }
+    rail.appendChild(seg);
+  }
+
+  var TICKETS=[
+    {mode:'taxi',   name:'TAXI',   count:10,sub:'1 MOVE',      use:true},
+    {mode:'bus',    name:'BUS',    count:5, sub:'NO LINE AT n5',use:false,warn:true},
+    {mode:'metro',  name:'METRO',  count:3, sub:'NO LINE AT n5',use:false,warn:true},
+    {mode:'special',name:'SPECIAL',count:0, sub:'NONE HELD',   use:false},
+    {mode:'foot',   name:'FOOT',   count:6, sub:'3 MOVES',     use:true}
+  ];
+  var STRIP={
+    taxi:'linear-gradient(90deg,#f7c46a,#f7c46a)',
+    bus:'repeating-linear-gradient(90deg,#b3a6ff 0 6px,rgba(179,166,255,0) 6px 10px)',
+    metro:'repeating-linear-gradient(90deg,#8fe4ff 0 2px,rgba(143,228,255,0) 2px 5px)',
+    special:'repeating-linear-gradient(90deg,#e39cf0 0 1.6px,rgba(227,156,240,0) 1.6px 5px)',
+    foot:'repeating-linear-gradient(90deg,#5fd6b0 0 3px,rgba(95,214,176,0) 3px 6px)'
+  };
+  var chips=G('chips');
+  TICKETS.forEach(function(t){
+    var st=MODE[t.mode],d=document.createElement('div');
+    d.className='chip '+(t.use?'use':'off');
+    if(t.use)d.style.borderColor=hexA(st.c,0.5);
+    var pbar=document.createElement('div');pbar.className='pbar';
+    pbar.style.background=STRIP[t.mode];
+    d.appendChild(pbar);
+    d.appendChild(glyphSVG(t.mode,21,t.use?st.c:'#5d6b83'));
+    var cc=document.createElement('div');cc.className='cc';cc.textContent=String(t.count);
+    d.appendChild(cc);
+    var cn=document.createElement('div');cn.className='cn';cn.textContent=t.name;
+    if(t.use)cn.style.color=st.c;
+    d.appendChild(cn);
+    var cs=document.createElement('div');cs.className='cs';cs.textContent=t.sub;
+    if(t.warn)cs.style.color='#ffbf9a';
+    d.appendChild(cs);
+    chips.appendChild(d);
+  });
+
+  var LOG=[{t:'T6',mode:'taxi',name:'TAXI'},{t:'T5',mode:'foot',name:'ON FOOT'},
+           {t:'T4',mode:'bus',name:'BUS'}];
+  var rows=G('logrows');
+  LOG.forEach(function(l,i){
+    var st=MODE[l.mode],d=document.createElement('div');
+    d.className='lrow'+(i===0?' latest':'');
+    var tb=document.createElement('b');tb.className='t';tb.textContent=l.t;
+    d.appendChild(tb);
+    var sw=document.createElement('span');sw.className='sw';
+    sw.style.background=STRIP[l.mode];
+    d.appendChild(sw);
+    var mg=glyphSVG(l.mode,11,st.c);mg.setAttribute('class','mg');
+    d.appendChild(mg);
+    var nm=document.createElement('span');nm.className='nm';nm.textContent=l.name;
+    nm.style.color=st.c;
+    d.appendChild(nm);
+    var dest=document.createElement('span');dest.className='dest';dest.textContent='\u2192 ?';
+    d.appendChild(dest);
+    rows.appendChild(d);
+  });
+
+  function hexA(hex,a){
+    var h=hex.replace('#','');
+    var r=parseInt(h.substring(0,2),16),g=parseInt(h.substring(2,4),16),b=parseInt(h.substring(4,6),16);
+    return 'rgba('+r+','+g+','+b+','+a+')';
+  }
+})();
+</script>
+</body>
+</html>
