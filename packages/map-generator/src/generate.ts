@@ -57,9 +57,21 @@ export function generateMap(requestedSeed: number, options: MapOptions = {}): Ge
 
     const starts = network.starts;
     const reasons: string[] = [...graphReport.errors, ...network.geometry.errors];
+
+    // The grid is derived from targetNodes, but never trust it silently: a seed
+    // that cannot place the requested number of stations must fail, not return a
+    // smaller map.
+    if (network.graph.nodes.length !== city.params.targetNodes) {
+      reasons.push(
+        `placed ${network.graph.nodes.length} stations, expected ${city.params.targetNodes}`,
+      );
+    }
     if (starts === null) {
       lastReasons = [...reasons, 'no start layout satisfies the separation rule'];
       continue;
+    }
+    if (starts.agents.length !== city.params.agentCount) {
+      reasons.push(`placed ${starts.agents.length} Agent starts, expected ${city.params.agentCount}`);
     }
     if (reasons.length > 0) {
       lastReasons = reasons;

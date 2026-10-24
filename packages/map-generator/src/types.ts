@@ -37,7 +37,21 @@ export interface MapOptions {
   readonly rows?: number;
   readonly worldWidth?: number;
   readonly worldHeight?: number;
+  /**
+   * How Agent starts are chosen.
+   *
+   * `farthest` is the lab default and spreads Agents across the whole map;
+   * `encircle` keeps them 3–5 edges from the Fugitive and spreads them by angle,
+   * which is what a realistic 96-station chase needs (a 1+4 game with Agents ten
+   * edges away never closes).
+   */
+  readonly startStrategy?: StartStrategy;
+  /** Agent seats to place. The prototype uses 4; future maps scale this. */
+  readonly agentCount?: number;
 }
+
+/** Start-placement policy. */
+export type StartStrategy = 'farthest' | 'encircle';
 
 /** Fully resolved options, stored on the map so a fixture is self-describing. */
 export interface ResolvedMapOptions {
@@ -46,6 +60,8 @@ export interface ResolvedMapOptions {
   readonly rows: number;
   readonly worldWidth: number;
   readonly worldHeight: number;
+  readonly startStrategy: StartStrategy;
+  readonly agentCount: number;
 }
 
 /** Street ranks drive the schematic width and bus-corridor selection. */

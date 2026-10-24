@@ -55,16 +55,35 @@ export function resolveOptions(options: MapOptions = {}): ResolvedMapOptions {
   }
 
   /*
-   * PROVISIONAL (Q7): the map has no ratified scale. These grid sizes give
-   * roughly 2-2.5 intersections per station, which is enough room for street
-   * paths and blocks without making the schematic unreadable.
+   * PROVISIONAL (Q7): the map has no ratified scale. Up to the 96-station
+   * prototype the grid is pinned so seeds stay stable. Above that, derive a
+   * grid with ~1.75 intersections per station; the previous fixed 12x14 grid was
+   * a hard ceiling at 168 intersections and silently produced fewer stations
+   * than requested.
    */
   const defaults =
     targetNodes <= 30
       ? { cols: 7, rows: 8 }
       : targetNodes <= 70
         ? { cols: 10, rows: 12 }
-        : { cols: 12, rows: 14 };
+        : targetNodes <= 100
+          ? { cols: 12, rows: 14 }
+          : (() => {
+              const intersections = Math.ceil(targetNodes * 1.75);
+              const cols = Math.max(12, Math.ceil(Math.sqrt(intersections * 1.25)));
+              const rows = Math.max(14, Math.ceil(intersections / cols));
+              return { cols, rows };
+            })();
+
+  const startStrategy = options.startStrategy ?? 'farthest';
+  if (startStrategy !== 'farthest' && startStrategy !== 'encircle') {
+    throw new RangeError(`unknown start strategy: ${String(startStrategy)}`);
+  }
+
+  const agentCount = options.agentCount ?? 4;
+  if (!Number.isInteger(agentCount) || agentCount < 1 || agentCount > 16) {
+    throw new RangeError(`agentCount must be an integer in [1, 16], received ${String(agentCount)}`);
+  }
 
   return {
     targetNodes,
@@ -72,6 +91,8 @@ export function resolveOptions(options: MapOptions = {}): ResolvedMapOptions {
     rows: options.rows ?? defaults.rows,
     worldWidth: options.worldWidth ?? 1200,
     worldHeight: options.worldHeight ?? 900,
+    startStrategy,
+    agentCount,
   };
 }
 

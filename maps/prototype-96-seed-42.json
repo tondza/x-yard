@@ -8,7 +8,9 @@
     "cols": 12,
     "rows": 14,
     "worldWidth": 1200,
-    "worldHeight": 900
+    "worldHeight": 900,
+    "startStrategy": "encircle",
+    "agentCount": 4
   },
   "bounds": {
     "width": 1200,
@@ -14608,12 +14610,12 @@
     "safeHouse": "n72"
   },
   "starts": {
-    "fugitive": "n5",
+    "fugitive": "n8",
     "agents": [
-      "n84",
-      "n90",
-      "n61",
-      "n78"
+      "n7",
+      "n38",
+      "n80",
+      "n59"
     ]
   },
   "stats": {
@@ -14634,10 +14636,10 @@
     "meanDegree": 3.5833333333333335,
     "maxDegree": 6,
     "startDistances": [
-      10,
-      10,
-      9,
-      9
+      4,
+      3,
+      4,
+      3
     ]
   },
   "validation": {

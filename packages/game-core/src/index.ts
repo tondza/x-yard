@@ -32,6 +32,7 @@ export type {
   LoggedTransport,
   MapPoint,
   MissionId,
+  MobilityOption,
   NodeClass,
   NodeId,
   Phase,
@@ -116,3 +117,25 @@ export {
 
 /* Scaffold fixture (not a shipped Yard map). */
 export { DEMO_BOARD } from './demo-board';
+
+/* Local 1-vs-N prototype loop (not the full GameState). */
+export type {
+  PrototypeCommand,
+  PrototypeCommandError,
+  PrototypeCommandResult,
+  PrototypeLogEntry,
+  PrototypeMoveOption,
+  PrototypePhase,
+  PrototypeResult,
+  PrototypeSeat,
+  PrototypeState,
+} from './prototype/types';
+
+export {
+  applyFugitiveCommand,
+  chooseAgentMove,
+  createPrototypeGame,
+  legalMoves,
+  recentLog,
+  resolveAgentPhase,
+} from './prototype/engine';

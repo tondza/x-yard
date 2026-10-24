@@ -11,13 +11,15 @@ Last updated: 2026-10-24.
 | Thing | State | Verified by |
 | --- | --- | --- |
 | Monorepo + tooling (pnpm workspaces, TS strict, Vitest) | ✅ done | `pnpm install` / `pnpm typecheck` |
-| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 6 test files, 117 tests |
+| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 129 tests |
 | `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
-| `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, starts, street-following paths, committed fixtures | ✅ first version | 15 generator tests; `maps/*.json` |
-| `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | browser at `:5173/` (dev), screenshots + interaction run |
+| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/pulse/capture/result, deterministic bots | ✅ first playable | 11 prototype tests |
+| `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
+| `apps/web`: **96-station prototype** — F-style city plate, station/route overlay, turn strip, kit, public log, result | ✅ first playable | browser at `:5173/` (dev), full session + screenshots |
+| `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
-| `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `pnpm build` |
+| `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
 | Governance: entry point, enforceable invariants, doc checks | ✅ done | `pnpm check:docs` |
 
 ## Map generator — current shape
@@ -35,16 +37,31 @@ not hidden, and not promoted to an error.
 Committed fixtures: [`maps/`](../maps/). The lab is dev-only; `?board` still opens
 the old server-backed board.
 
+## Prototype — current shape
+
+The playable prototype is a **96-station Cathedral Quarter**, one human Fugitive
+against four deterministic Agent bots, 16 turns, pulses on 5/10/15, all six
+movement options, capture and a result screen. The scale and desktop-first choice
+are [decision 0014](decisions/0014-96-station-desktop-prototype.md). The 96 fixture uses
+`startStrategy: 'encircle'`, so the Agents start 3–5 edges away and spread by
+angle rather than ten edges away. The city is drawn from the generated model:
+buildings, roofs, walls, shadows, streets, parks and landmarks; stations, routes
+and tokens are a live overlay. It is desktop-first at 1440×900; 96 labels are not
+legible on a phone without zoom.
+
+The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
+the full `GameState`: no server projection, no 4-Fugitive model, no missions or
+gadgets. The architecture guard for the real state machine is unchanged.
+
 ## What is next (in order)
 
-1. **Playable prototype on the generated map** — `PrototypeState`,
-   `submitCommand`, turn order, capture, pulses, and a simple local React screen
-   reading `maps/prototype-24-seed-42.json`. This is the first end-to-end game.
-2. **Map generator v2** — an irregular road graph (not a lattice), river and
-   bridges, districts, and the F-style presentation renderer driven by the same
-   model.
+1. **Playtest the 96 prototype** — tune Agent starts/bot pathing before changing
+   any ruled number; add the river/bridges and remaining visual polish.
+2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
+   replace the all-pairs taxi routing with a k-nearest candidate graph, add a
+   camera/LOD renderer. This proves the 20-player MVP scale before committing.
 3. **Four-Fugitive / sixteen-Agent starts** and the separation rule for them.
-4. `hashState` / `replay` — the replay oracle.
+4. `hashState` / `replay` — the replay oracle for the full state.
 5. `projectState` — secret projection. **Until it exists no server code may send
    state to a client.**
 6. Server integration tests, then persistence, reconnect/resume, multi-Yard.

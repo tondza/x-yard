@@ -81,13 +81,27 @@ export type Phase =
 export type CaptureKind = 'occupation';
 
 /** Why a Fugitive's true node became public. */
-export type RevealReason = 'schedule' | 'decoy-ping';
+export type RevealReason = 'schedule' | 'decoy-ping' | 'scooter';
 
 /** Terminal outcome of a Yard. */
 export type YardResult = 'agents-win' | 'fugitives-extracted' | 'abandoned';
 
-/** What a viewer sees in the ticket log for one Fugitive movement. */
-export type LoggedTransport = TransportMode | 'unknown';
+/**
+ * Every movement option a seat can choose.
+ *
+ * `foot` and `scooter` are deliberately not added to `TransportMode`: that union
+ * indexes edges and ticket bags. Keeping them separate is decision E2 in
+ * `docs/project-plan.md`.
+ */
+export type MobilityOption = TransportMode | 'foot' | 'scooter';
+
+/**
+ * What a viewer sees in the ticket log for one movement.
+ *
+ * `foot`, `scooter` and `hold` join the four paid tiers; `unknown` is the
+ * Counterfeit Identity concealment.
+ */
+export type LoggedTransport = TransportMode | 'foot' | 'scooter' | 'hold' | 'unknown';
 
 /* ------------------------------------------------------------------ *
  * Graph

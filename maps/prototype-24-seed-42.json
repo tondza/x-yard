@@ -8,7 +8,9 @@
     "cols": 7,
     "rows": 8,
     "worldWidth": 1200,
-    "worldHeight": 900
+    "worldHeight": 900,
+    "startStrategy": "farthest",
+    "agentCount": 4
   },
   "bounds": {
     "width": 1200,

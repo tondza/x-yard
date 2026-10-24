@@ -14,7 +14,8 @@
     "@x-yard/map-generator": "workspace:*",
     "@x-yard/shared-types": "workspace:*",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "@x-yard/game-core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

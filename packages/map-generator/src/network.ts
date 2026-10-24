@@ -645,7 +645,12 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
     edges,
   };
 
-  const starts = chooseStarts(graph, stations);
+  const starts = chooseStarts(
+    graph,
+    stations,
+    build.params.startStrategy,
+    build.params.agentCount,
+  );
   const stats = statsFor(graph, stations, starts);
 
   const graphReport = validateGraph(graph);
@@ -688,29 +693,103 @@ function distancesFrom(graph: TransitGraph, start: NodeId): Map<NodeId, number> 
   return distances;
 }
 
-/**
- * Pick a Fugitive start with at least four stations beyond the separation
- * radius, then put the four Agents on the farthest of them.
+/*
+ * PROVISIONAL (Q7): the outer bound for the `encircle` start. The rule only
+ * says >= 3 edges; 3-5 is the band in which four Agents can actually close on a
+ * 96-station map. It is not a gameplay rule and may be tuned after playtesting.
  */
-function chooseStarts(graph: TransitGraph, stations: readonly Station[]): MapStarts | null {
+const PROVISIONAL_ENCIRCLE_MAX_EDGES = 5;
+
+interface StartCandidate {
+  readonly id: NodeId;
+  readonly distance: number;
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * Pick a Fugitive start and Agent starts.
+ *
+ * `encircle` is the realistic 1+4 chase: the Fugitive starts where at least
+ * `agentCount` stations sit 3-5 edges away, and the Agents are picked evenly
+ * around the Fugitive by angle rather than all from one side.
+ *
+ * `farthest` is the lab default: the four most distant stations, useful for
+ * inspecting the whole map but not a playable chase.
+ */
+function chooseStarts(
+  graph: TransitGraph,
+  stations: readonly Station[],
+  strategy: 'farthest' | 'encircle',
+  agentCount: number,
+): MapStarts | null {
   const radius = MIN_START_SEPARATION_EDGES;
-  let best: { station: Station; far: readonly { id: NodeId; distance: number }[] } | null = null;
+  const nodeById = new Map(graph.nodes.map((node) => [node.id, node]));
+
+  if (strategy === 'encircle') {
+    let best: { station: Station; candidates: readonly StartCandidate[] } | null = null;
+
+    for (const station of stations) {
+      const distances = distancesFrom(graph, station.id);
+      const candidates: StartCandidate[] = [];
+
+      for (const [id, distance] of distances) {
+        if (id === station.id) continue;
+        if (distance < radius || distance > PROVISIONAL_ENCIRCLE_MAX_EDGES) continue;
+        const node = nodeById.get(id);
+        if (node === undefined) continue;
+        candidates.push({ id, distance, x: node.x, y: node.y });
+      }
+
+      if (candidates.length < agentCount) continue;
+      if (best === null || candidates.length > best.candidates.length) {
+        best = { station, candidates };
+      }
+    }
+
+    if (best !== null) {
+      const origin = best.station.intersection;
+      const sorted = [...best.candidates].sort((a, b) => {
+        const angleA = Math.atan2(a.y - origin.y, a.x - origin.x);
+        const angleB = Math.atan2(b.y - origin.y, b.x - origin.x);
+        return angleA - angleB || a.id.localeCompare(b.id);
+      });
+
+      const picked: NodeId[] = [];
+      for (let index = 0; index < agentCount; index += 1) {
+        const candidate = sorted[Math.floor((index * sorted.length) / agentCount)];
+        if (candidate !== undefined && !picked.includes(candidate.id)) picked.push(candidate.id);
+      }
+
+      if (picked.length === agentCount) {
+        return { fugitive: best.station.id, agents: picked };
+      }
+    }
+    // Fall through to the farthest strategy rather than ship an invalid start.
+  }
+
+  let farthest: { station: Station; far: readonly StartCandidate[] } | null = null;
 
   for (const station of stations) {
     const distances = distancesFrom(graph, station.id);
-    const far = [...distances.entries()]
-      .filter(([id, value]) => id !== station.id && value >= radius)
-      .map(([id, value]) => ({ id, distance: value }))
-      .sort((a, b) => b.distance - a.distance || a.id.localeCompare(b.id));
+    const far: StartCandidate[] = [];
 
-    if (far.length < 4) continue;
-    if (best === null || far.length > best.far.length) best = { station, far };
+    for (const [id, distance] of distances) {
+      if (id === station.id || distance < radius) continue;
+      const node = nodeById.get(id);
+      if (node === undefined) continue;
+      far.push({ id, distance, x: node.x, y: node.y });
+    }
+
+    far.sort((a, b) => b.distance - a.distance || a.id.localeCompare(b.id));
+    if (far.length < agentCount) continue;
+    if (farthest === null || far.length > farthest.far.length) farthest = { station, far };
   }
 
-  if (best === null) return null;
+  if (farthest === null) return null;
   return {
-    fugitive: best.station.id,
-    agents: best.far.slice(0, 4).map((entry) => entry.id),
+    fugitive: farthest.station.id,
+    agents: farthest.far.slice(0, agentCount).map((entry) => entry.id),
   };
 }
 

@@ -57,13 +57,14 @@ Run a single app:
 
 ```bash
 pnpm --filter @x-yard/server dev     # Fastify on :3001  (/health, /board)
-pnpm --filter @x-yard/web dev        # Vite on :5173; dev default is the map lab
+pnpm --filter @x-yard/web dev        # Vite on :5173; dev default is the 96-station prototype
 ```
 
-In development, `http://localhost:5173/` opens the **map lab** — a seeded transit
-network generator with a schematic map, validation report and JSON export.
-`http://localhost:5173/?board` opens the original server-backed board scaffold.
-The lab is dev-only and is not part of the production client.
+In development, `http://localhost:5173/` opens the **96-station playable
+prototype** — the illustrated Cathedral Quarter, one human Fugitive against four
+Agent bots. `?lab` opens the seeded map lab (schematic generator, validation, JSON
+export); `?board` opens the original server-backed board scaffold. Both are
+dev-only and are not part of the production client.
 
 ## Status
 
@@ -74,16 +75,18 @@ RNG with golden vectors; transit graph traversal and validation with the
 errors-vs-warnings split; ticket economy with the ticket-log semantics for
 Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
 **map generator** that emits validated 24/60/96-station transit networks with
-street-following edge geometry. The dev map lab renders those networks
-schematically and exports them as JSON. 6 test files and 117 tests pass, and
-`pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all exit 0.
-`game-core` has zero runtime dependencies.
+street-following edge geometry, and a **local 96-station prototype**: an
+illustrated F-style city plate, 16 turns, all six movement options, pulses,
+capture, result and restart, with deterministic Agent bots. 7 test files and 129
+tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+exit 0. `game-core` has zero runtime dependencies.
 
-**The turn and phase machine is not implemented yet.** There is no turn machine,
-no Capture Resolution, no Reveal Pulse scheduler, no mission lifecycle, no state
-projection, and no persistence. `apps/server` serves `/health` and `/board` and
+**The full server turn machine is not implemented yet.** The prototype loop is
+local and reduced (one Fugitive, four Agents, no projection). There is no
+authoritative server state machine, no multi-Fugitive projection, no mission
+lifecycle, and no persistence. `apps/server` serves `/health` and `/board` and
 rejects every game message explicitly as "not implemented" rather than pretending
-to play. See [PROJECT_LOG.md](PROJECT_LOG.md) for the full list of what remains.
+to play. See [PROJECT_LOG.md](PROJECT_LOG.md) for what remains.
 
 ## Environment note
 

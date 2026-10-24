@@ -23,11 +23,14 @@ import { describe, expect, it } from 'vitest';
 const SRC_DIR = fileURLToPath(new URL('.', import.meta.url));
 const PACKAGE_DIR = join(SRC_DIR, '..');
 
-/** Every `.ts` file in `src/`, tests included. */
-function sourceFiles(): string[] {
-  return readdirSync(SRC_DIR)
-    .filter((name) => name.endsWith('.ts'))
-    .map((name) => join(SRC_DIR, name));
+/** Every `.ts` file under `src/`, recursively, tests included. */
+function sourceFiles(dir: string = SRC_DIR): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) found.push(...sourceFiles(join(dir, entry.name)));
+    else if (entry.name.endsWith('.ts')) found.push(join(dir, entry.name));
+  }
+  return found;
 }
 
 function isTestFile(path: string): boolean {

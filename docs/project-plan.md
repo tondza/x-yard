@@ -5,6 +5,12 @@ director rulings recorded in [`docs/mvp/README.md`](mvp/README.md) and decision
 [0011](decisions/0011-prototype-before-multiplayer-mvp.md); those rulings override
 the agent documents wherever they conflict.
 
+**Revised 2026-10-24 (decision [0014](decisions/0014-96-station-desktop-prototype.md)).**
+The first playable is a **96-station** map, desktop-first, with 1+4 close starts
+(3–5 edges). The ~24-node proposal in §1.4 is retained as a lab/comparison scale,
+not the prototype. Proposed scale ladder: 96 (prototype), 300–400 (20-player MVP),
+600–900 (vision).
+
 **How to read the numbers.** The director stated the seat counts, the phase order,
 the 16-turn limit, the pulse turns 5/10/15, starting separation ≥ 3 edges, random
 faction assignment with a prototype override, one device per seat, node-and-edge
@@ -99,7 +105,12 @@ The prototype needs its own hand-authored board.
 
 ## 1.4 The map the prototype needs — proposal, pending playtest
 
-**Proposal:** one hand-authored map, **~24 nodes / ~40 edges**, node mix roughly
+**Superseded for the first playable by decision
+[0014](decisions/0014-96-station-desktop-prototype.md): 96 generated stations,
+desktop-first, 1+4 close starts.** The 24-node proposal below remains the
+schematic/lab scale and the comparison point; it is not the playable map.
+
+**Proposal:** one map, **~24 nodes / ~40 edges**, node mix roughly
 16 `street` / 6 `hub` / 2 `terminal` (ratio pending playtest), street-following
 edges carrying authored polylines.
 
@@ -221,7 +232,7 @@ All of these must be true, and each must be demonstrated, not asserted.
 | P7 | **Movement follows streets.** Every drawn legal move is a street polyline except `underground` and `special`. | Visual check plus a test that a street-following edge without geometry is refused by authoring review. |
 | P8 | **The override works every time**: with it on, the director is the Fugitive in 100 % of starts; with it off, assignment is random and seeded. | Seeded runs over many seeds. |
 | P9 | **No illegal move, no unspent-ticket desync, no forced hold that should have been a move**, across a full session. | Session plus unit tests on the legal-move enumeration. |
-| P10 | **`pnpm test` is green** across the repo (verified today: **6 test files, 117 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
+| P10 | **`pnpm test` is green** across the repo (verified today: **7 test files, 129 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
 | P11 | **`game-core` still declares `"dependencies": {}`** and TypeScript strict mode is untouched. | `architecture.test.ts` and `tsconfig`. |
 | P12 | **Every new number is a `PROVISIONAL_` constant** naming the open question it stands in for. | `grep -rn PROVISIONAL_` is the complete inventory. |
 
@@ -262,7 +273,7 @@ absent and calls the serialization oracle "still owed", and
 - **no seat abstraction**, no bot, no `GameState` serialization oracle,
   no server integration tests.
 
-Verified today: `pnpm test` is green at **6 test files, 117 tests**
+Verified today: `pnpm test` is green at **7 test files, 129 tests**
 (`architecture.test.ts`, `graph.test.ts`, `rng.test.ts`, `spec-alignment.test.ts`,
 `tickets.test.ts`).
 

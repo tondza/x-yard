@@ -15,6 +15,11 @@ test regenerate each file from its seed and assert it is unchanged.
 Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`,
 `prototype-96-seed-42.png` and `mvp-60-seed-42.png`.
 
+The playable 96-station prototype renders live in the same folder:
+`prototype-96-turn-1.png` (initial city and legal moves),
+`prototype-96-turn-2.png` (after one move), and `prototype-96-result.png`
+(capture overlay).
+
 Regenerate after a generator change:
 
 ```bash

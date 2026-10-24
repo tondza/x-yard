@@ -42,6 +42,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@x-yard/game-core':
+        specifier: workspace:*
+        version: link:../../packages/game-core
       '@x-yard/map-generator':
         specifier: workspace:*
         version: link:../../packages/map-generator

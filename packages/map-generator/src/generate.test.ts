@@ -6,7 +6,7 @@ import { validateGraph, validateStreetGeometry } from '@x-yard/game-core';
 import { describe, expect, it } from 'vitest';
 
 import { generateMap } from './generate';
-import type { GeneratedMap } from './types';
+import type { GeneratedMap, MapOptions } from './types';
 
 const SRC_DIR = fileURLToPath(new URL('.', import.meta.url));
 const MAPS_DIR = fileURLToPath(new URL('../../../maps/', import.meta.url));
@@ -47,10 +47,14 @@ function assertValid(map: GeneratedMap): void {
   expect(map.validation.ok).toBe(true);
   expect(map.validation.errors).toEqual([]);
 
-  expect(map.starts.agents).toHaveLength(4);
-  expect(new Set(map.starts.agents).size).toBe(4);
+  expect(map.starts.agents).toHaveLength(map.params.agentCount);
+  expect(new Set(map.starts.agents).size).toBe(map.params.agentCount);
   expect(map.starts.agents).not.toContain(map.starts.fugitive);
+  expect(map.stats.startDistances).toHaveLength(map.params.agentCount);
   expect(Math.min(...map.stats.startDistances)).toBeGreaterThanOrEqual(3);
+  if (map.params.startStrategy === 'encircle') {
+    expect(Math.max(...map.stats.startDistances)).toBeLessThanOrEqual(5);
+  }
 
   expect(report.warnings.join('\n')).not.toMatch(/taxi-only subgraph/);
   expect(map.stats.minDegree).toBeGreaterThanOrEqual(2);
@@ -128,12 +132,24 @@ describe('generateMap: 60-node MVP-scale maps', () => {
   }
 });
 
-describe('generateMap: stress scale', () => {
+describe('generateMap: the 96-station prototype scale', () => {
   it('scales the class mix with the station count', () => {
-    const map = generateMap(42, { targetNodes: 96 });
+    const map = generateMap(42, { targetNodes: 96, startStrategy: 'encircle' });
     assertValid(map);
     expect(map.stats.nodeCount).toBe(96);
     expect(classMix(map)).toEqual({ street: 64, hub: 22, terminal: 10 });
+  });
+
+  it('places the requested number of Agents inside the encircle band', () => {
+    const map = generateMap(42, {
+      targetNodes: 96,
+      startStrategy: 'encircle',
+      agentCount: 6,
+    });
+    assertValid(map);
+    expect(map.params.agentCount).toBe(6);
+    expect(map.starts.agents).toHaveLength(6);
+    expect(Math.max(...map.stats.startDistances)).toBeLessThanOrEqual(5);
   });
 });
 
@@ -183,12 +199,16 @@ describe('determinism and serialization', () => {
  * Committed fixtures
  * ------------------------------------------------------------------ */
 
-const FIXTURES: readonly { file: string; seed: number; targetNodes: number }[] = [
-  { file: 'prototype-24-seed-42.json', seed: 42, targetNodes: 24 },
-  { file: 'prototype-24-seed-7.json', seed: 7, targetNodes: 24 },
-  { file: 'mvp-60-seed-42.json', seed: 42, targetNodes: 60 },
-  { file: 'mvp-60-seed-7.json', seed: 7, targetNodes: 60 },
-  { file: 'prototype-96-seed-42.json', seed: 42, targetNodes: 96 },
+const FIXTURES: readonly { file: string; seed: number; options: MapOptions }[] = [
+  { file: 'prototype-24-seed-42.json', seed: 42, options: { targetNodes: 24 } },
+  { file: 'prototype-24-seed-7.json', seed: 7, options: { targetNodes: 24 } },
+  { file: 'mvp-60-seed-42.json', seed: 42, options: { targetNodes: 60 } },
+  { file: 'mvp-60-seed-7.json', seed: 7, options: { targetNodes: 60 } },
+  {
+    file: 'prototype-96-seed-42.json',
+    seed: 42,
+    options: { targetNodes: 96, startStrategy: 'encircle' },
+  },
 ];
 
 describe('committed map fixtures', () => {
@@ -197,7 +217,7 @@ describe('committed map fixtures', () => {
 
     for (const fixture of FIXTURES) {
       const path = join(MAPS_DIR, fixture.file);
-      const generated = generateMap(fixture.seed, { targetNodes: fixture.targetNodes });
+      const generated = generateMap(fixture.seed, fixture.options);
 
       if (process.env.WRITE_MAPS === '1') {
         writeFileSync(path, `${JSON.stringify(generated, null, 2)}\n`, 'utf8');

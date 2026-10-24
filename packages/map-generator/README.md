@@ -14,28 +14,36 @@ One `GeneratedMap` from a seed and a target station count:
   network: two lines share one interchange terminal and cover every terminal, so
   there are `terminals - 1` metro edges and no isolated chord pairs;
 - one Black Market and one Safe House, both inert;
-- start positions for 1 Fugitive + 4 Agents, all Agents at least 3 edges away;
+- start positions for 1 Fugitive + N Agents (`agentCount`, default 4), all at
+  least 3 edges away. `startStrategy: 'encircle'` keeps them 3–5 edges away and
+  spreads them by angle; `'farthest'` is the lab default;
 - a validation report (graph errors, street-coverage check, provisional warnings).
 
-The model is authoritative. The lab renders it; a future presentation renderer
-will render the same data with buildings and roofs. No art is baked into the
-generator.
+The model is authoritative. The map lab renders it schematically; the 96-station
+prototype renders the same data as an F-style illustrated city. No art is baked
+into the generator.
 
 ## Use it
 
 ```bash
 pnpm --filter @x-yard/web dev     # Vite on :5173
-# open http://localhost:5173/     (dev default) or /?lab
+# /      = 96-station playable prototype
+# ?lab   = schematic map lab
+# ?board = original server-backed board scaffold
 ```
 
-The lab is dev-only. `/?board` opens the original server-backed board scaffold.
+All three are dev-only.
 
 Programmatically:
 
 ```ts
 import { generateMap } from '@x-yard/map-generator';
 
-const map = generateMap(42, { targetNodes: 24 });
+const map = generateMap(42, {
+  targetNodes: 96,
+  startStrategy: 'encircle',
+  agentCount: 4,
+});
 ```
 
 `generateMap` is pure and deterministic. If a layout fails a hard constraint it
@@ -69,7 +77,8 @@ pnpm --filter @x-yard/map-generator test   # re-run without writing
 - Bus and metro avoid street nodes; metro joins terminals; special joins street
   nodes. The metro subgraph is connected (a tree of `terminals - 1` edges with a
   shared interchange).
-- 1 Fugitive + 4 Agent starts satisfy the >= 3-edge separation rule.
+- 1 Fugitive + N Agent starts satisfy the >= 3-edge separation rule; in
+  `encircle` mode every Agent is 3–5 edges away and spread by angle.
 
 ## Known limitations
 

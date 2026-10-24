@@ -21,6 +21,7 @@ import type {
   DistrictId,
   Facility,
   Gadget,
+  LoggedTransport,
   NodeClass,
   NodeId,
   PlayerId,
@@ -103,7 +104,7 @@ export interface TicketLogEntryDto {
   readonly turn: number;
   readonly fugitiveId: PlayerId;
   /** `'unknown'` when Counterfeit Identity concealed the mode (§5). */
-  readonly mode: TransportMode | 'unknown';
+  readonly mode: LoggedTransport;
 }
 
 /** A contraband run as shown to its owner (§4). */

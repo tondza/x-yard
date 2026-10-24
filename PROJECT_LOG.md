@@ -929,3 +929,73 @@ drawing.
   provisional density warning).
 - Browser at 60 nodes: five metro paths render and meet at the interchange; zero
   page or console errors. `maps/shots/mvp-60-seed-42.png` refreshed.
+
+---
+
+## 2026-10-24 — First playable: a 96-station Cathedral Quarter
+
+**What was built**
+
+1. **96-station generator target.** `MapOptions` now has `startStrategy`
+   (`farthest` | `encircle`) and `agentCount`; the 96 fixture uses `encircle`, so
+   the four Agents start 3–4 edges from the Fugitive and spread by angle instead
+   of starting 9–10 edges away. The generator asserts the placed station count
+   equals `targetNodes` rather than silently returning a smaller map. The 96
+   fixture is committed at `maps/prototype-96-seed-42.json`.
+2. **F-style city plate.** A pure renderer turns the generated blocks into
+   building footprints, roof faces, near walls, windows, chimneys, one
+   south-east shadow and a warm clay/slate palette. Streets get casing, asphalt
+   and markings; parks get trees and ponds; cathedral, station, market and square
+   are drawn as landmarks. The plate is static; stations, legal routes, tokens
+   and the pulse ring are a live overlay.
+3. **Prototype loop.** `game-core/src/prototype/` now holds `PrototypeState`:
+   one Fugitive plus N Agents, six movement options (taxi, bus, metro, special,
+   foot, scooter), pulses on 5/10/15, scooter exact-node reveal, capture on
+   end-position equality, 16-turn survival, public mode-only log. Agent bots are
+   deterministic BFS pursuit that surrounds the last known node.
+4. **Desktop prototype screen** at the Vite dev root: 1440×900, illustrated map,
+   turn strip with pulse markers, six-mode kit, public log, Agent positions,
+   hold, result overlay and restart. `?lab` keeps the schematic map lab;
+   `?board` keeps the old scaffold.
+
+**Decisions and rejected alternatives**
+
+1. **96 stations, desktop-first, F-day, local.** Recorded as
+   [0014](docs/decisions/0014-96-station-desktop-prototype.md). **Rejected:** the
+   24/60 map (the director's original objection — not a realistic chase);
+   **rejected:** phone-first without zoom (96 labels and a dense city are not
+   legible at 390 px); **rejected:** building the server/20-player MVP first (no
+   evidence the loop or look is worth carrying into projection and sockets).
+2. **Close, encircling Agent starts.** **Rejected:** the previous farthest
+   selection — it kept the separation rule but made the 96-node map a no-chase
+   demo.
+3. **Static city plate + live overlay.** **Rejected:** re-rendering the buildings
+   on every turn; the city is static and the overlay is the only changing layer.
+4. **A reduced `PrototypeState`.** **Rejected:** calling this the full
+   `GameState`; the projection, 4-Fugitive and event-log contracts are still
+   owed.
+
+**Verified**
+
+- `pnpm test` — **7 test files, 129 tests**, all passing (game-core 113,
+  map-generator 16).
+- `pnpm typecheck` — exit 0 for all five projects.
+- `pnpm build` — exit 0; the dev prototype is a statically excluded lazy chunk,
+  so the production bundle contains only the client entry.
+- `pnpm check:docs` — 45 markdown files, links and counts current.
+- Browser at 1440×900: the 96 station labels, city plate, kit, log and Agents
+  render with zero page or console errors. A destination click applied the
+  Fugitive move, resolved the Agent phase, and advanced the turn. A full autoplay
+  session reached a pulse and a capture on turn 5, with the result overlay naming
+  Falcon.
+- Screenshots are captured in `maps/shots/` (the 96 schematic and the prototype
+  frames are separate artifacts).
+
+**Known limits**
+
+The first city plate is dense at 96 stations and deliberately desktop-only; a
+phone camera and label LOD are a later pass. The river/bridges are not in the
+generator yet, and the bus network is not guaranteed connected (only metro is).
+The prototype is one Fugitive and four Agents: no 4-Fugitive projection, no
+server, no persistence. The 300-node scale rehearsal — derived grid, k-nearest
+taxi graph, camera renderer — is the next architecture step.

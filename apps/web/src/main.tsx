@@ -4,39 +4,42 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 
 /*
- * The lab is internal tooling. Putting the lazy import behind a statically
- * false constant lets the production build drop the chunk entirely, not merely
- * leave it unreachable.
+ * Dev-only screens. Putting each lazy import behind a statically false constant
+ * lets the production build drop their chunks entirely, not merely leave them
+ * unreachable.
  */
+const Prototype = import.meta.env.DEV ? lazy(() => import('./prototype/Prototype')) : null;
 const MapLab = import.meta.env.DEV ? lazy(() => import('./lab/MapLab')) : null;
 
-/**
- * The map lab is the default view of the dev server. `?board` still opens the
- * original server-backed board scaffold. Production builds never route here.
- *
- * Open it with `/` or `/?lab` on the Vite dev server.
- */
-function isMapLab(): boolean {
-  if (MapLab === null) return false;
-  return !new URLSearchParams(window.location.search).has('board');
+type DevRoute = 'prototype' | 'lab' | 'board';
+
+function devRoute(): DevRoute {
+  if (!import.meta.env.DEV) return 'board';
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('board')) return 'board';
+  if (params.has('lab')) return 'lab';
+  return 'prototype';
 }
+
+const route = devRoute();
+const View = route === 'prototype' ? Prototype : route === 'lab' ? MapLab : null;
 
 const container = document.getElementById('root');
 if (container === null) {
   throw new Error('missing #root element in index.html');
 }
 
-const Lab = MapLab;
-
 createRoot(container).render(
   <StrictMode>
-    {Lab !== null && isMapLab() ? (
+    {View !== null ? (
       <Suspense
         fallback={
-          <div style={{ padding: 32, fontFamily: 'system-ui, sans-serif' }}>Loading map lab…</div>
+          <div style={{ padding: 32, fontFamily: 'system-ui, sans-serif', color: '#f5efe1' }}>
+            Loading prototype…
+          </div>
         }
       >
-        <Lab />
+        <View />
       </Suspense>
     ) : (
       <App />
