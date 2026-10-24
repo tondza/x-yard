@@ -4,6 +4,7 @@ import { DEMO_BOARD } from './demo-board';
 import {
   createGraph,
   degree,
+  edgePath,
   graphStats,
   hasRoute,
   modesFrom,
@@ -13,8 +14,16 @@ import {
   nodesWithinRadius,
   routeKey,
   validateGraph,
+  validateStreetGeometry,
 } from './graph';
-import type { GraphEdge, GraphNode, TransitGraph } from './types';
+import type {
+  GraphEdge,
+  GraphNode,
+  MapPoint,
+  StreetSegment,
+  TransitGraph,
+  TransportMode,
+} from './types';
 
 /** A mutable copy of the fixture, so each test can break exactly one rule. */
 function clone(): { nodes: GraphNode[]; edges: GraphEdge[] } {
@@ -327,5 +336,159 @@ describe('nodesWithinRadius', () => {
   it('rejects a negative or fractional radius', () => {
     expect(() => nodesWithinRadius(DEMO_BOARD, 's1', -1)).toThrow(RangeError);
     expect(() => nodesWithinRadius(DEMO_BOARD, 's1', 1.5)).toThrow(RangeError);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * Edge geometry (R5)
+ * ------------------------------------------------------------------ */
+
+/** Two nodes 100 units apart on a straight street. */
+function geometryBoard(
+  mode: TransportMode,
+  path?: readonly MapPoint[],
+): TransitGraph {
+  const nodeModes: readonly TransportMode[] =
+    mode === 'underground'
+      ? ['underground']
+      : mode === 'special'
+        ? ['special']
+        : mode === 'bus'
+          ? ['bus']
+          : ['taxi'];
+
+  const nodes: readonly GraphNode[] = [
+    {
+      id: 'a',
+      class: 'hub',
+      modes: nodeModes,
+      district: 'test',
+      facilities: [],
+      x: 0,
+      y: 0,
+    },
+    {
+      id: 'b',
+      class: 'hub',
+      modes: nodeModes,
+      district: 'test',
+      facilities: [],
+      x: 100,
+      y: 0,
+    },
+  ];
+
+  const edge: GraphEdge = {
+    id: `e_${mode}`,
+    a: 'a',
+    b: 'b',
+    mode,
+    ticketCost: 1,
+    symmetric: true,
+    ...(path === undefined ? {} : { path }),
+  };
+
+  return { mapId: 'test', world: { width: 100, height: 100 }, nodes, edges: [edge] };
+}
+
+const STRAIGHT_STREET: readonly StreetSegment[] = [
+  {
+    id: 's1',
+    path: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
+  },
+];
+
+describe('edgePath', () => {
+  it('returns the authored path when one exists', () => {
+    const path = [
+      { x: 0, y: 0 },
+      { x: 50, y: 10 },
+      { x: 100, y: 0 },
+    ];
+    const graph = geometryBoard('taxi', path);
+    expect(edgePath(graph, 'e_taxi')).toEqual(path);
+  });
+
+  it('falls back to a straight chord for a hand-made edge without geometry', () => {
+    const edge = DEMO_BOARD.edges[0];
+    if (edge === undefined) throw new Error('the fixture must have an edge');
+    const from = nodeById(DEMO_BOARD, edge.a);
+    const to = nodeById(DEMO_BOARD, edge.b);
+    if (from === undefined || to === undefined) throw new Error('edge endpoints must exist');
+
+    expect(edgePath(DEMO_BOARD, edge.id)).toEqual([
+      { x: from.x, y: from.y },
+      { x: to.x, y: to.y },
+    ]);
+  });
+
+  it('returns null for an unknown edge id', () => {
+    expect(edgePath(DEMO_BOARD, 'e_missing')).toBeNull();
+  });
+});
+
+describe('validateStreetGeometry (R5)', () => {
+  it('accepts a taxi path that stays on the street network', () => {
+    const graph = geometryBoard('taxi', [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ]);
+    const report = validateStreetGeometry(graph, STRAIGHT_STREET);
+    expect(report.errors).toEqual([]);
+    expect(report.checkedEdges).toBe(1);
+    expect(report.ok).toBe(true);
+  });
+
+  it('rejects a taxi path that cuts across a block', () => {
+    const graph = geometryBoard('taxi', [
+      { x: 0, y: 0 },
+      { x: 50, y: 40 },
+      { x: 100, y: 0 },
+    ]);
+    const report = validateStreetGeometry(graph, STRAIGHT_STREET);
+    expect(report.ok).toBe(false);
+    expect(report.errors.join('\n')).toMatch(/leaves the street network/);
+  });
+
+  it('rejects a taxi edge with no authored path', () => {
+    const report = validateStreetGeometry(geometryBoard('taxi'), STRAIGHT_STREET);
+    expect(report.ok).toBe(false);
+    expect(report.errors.join('\n')).toMatch(/has no street-following path/);
+  });
+
+  it('rejects a path that does not start at its node', () => {
+    const graph = geometryBoard('taxi', [
+      { x: 10, y: 0 },
+      { x: 100, y: 0 },
+    ]);
+    const report = validateStreetGeometry(graph, STRAIGHT_STREET);
+    expect(report.errors.join('\n')).toMatch(/does not start at node a/);
+  });
+
+  it('exempts underground and special edges, which may cut across blocks', () => {
+    for (const mode of ['underground', 'special'] as const) {
+      const graph = geometryBoard(mode, [
+        { x: 0, y: 0 },
+        { x: 50, y: 40 },
+        { x: 100, y: 0 },
+      ]);
+      const report = validateStreetGeometry(graph, STRAIGHT_STREET);
+      expect(report.errors).toEqual([]);
+      expect(report.checkedEdges).toBe(0);
+    }
+  });
+
+  it('checks bus paths as street-following edges', () => {
+    const graph = geometryBoard('bus', [
+      { x: 0, y: 0 },
+      { x: 50, y: 40 },
+      { x: 100, y: 0 },
+    ]);
+    const report = validateStreetGeometry(graph, STRAIGHT_STREET);
+    expect(report.checkedEdges).toBe(1);
+    expect(report.ok).toBe(false);
   });
 });

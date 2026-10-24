@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    /* Tests read and write committed map fixtures; that is tooling, not the
+       generator's runtime. Generator source stays free of Node built-ins. */
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}

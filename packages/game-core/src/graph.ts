@@ -17,11 +17,14 @@
  */
 
 import type {
+  EdgeId,
   Facility,
   GraphEdge,
   GraphNode,
+  MapPoint,
   NodeClass,
   NodeId,
+  StreetSegment,
   TransitGraph,
   TransportMode,
 } from './types';
@@ -45,6 +48,14 @@ export interface GraphValidationReport {
   readonly stats: GraphStats;
 }
 
+/** Result of checking street-following edge geometry against the city streets. */
+export interface StreetGeometryReport {
+  readonly ok: boolean;
+  readonly errors: readonly string[];
+  /** Edges checked (taxi and bus); metro and special are exempt by rule. */
+  readonly checkedEdges: number;
+}
+
 /**
  * Modes each node class may serve (§3). `special` is excluded deliberately:
  * Alleyway and Boat links are secret/specialised and may attach to any node.
@@ -63,6 +74,15 @@ const PROVISIONAL_MIN_DEGREE = 2;
 const PROVISIONAL_MAX_DEGREE = 9;
 const PROVISIONAL_MEAN_DEGREE_RANGE: readonly [number, number] = [4.5, 6.5];
 const PROVISIONAL_MIN_NODE_DISTANCE = 20;
+
+/*
+ * PROVISIONAL (Q7): the geometry check needs a tolerance and a sampling
+ * density, and the brief states neither. World units are the map generator's
+ * coordinate space, so these values are tied to that scale; revisit when the
+ * world extent is ratified.
+ */
+const PROVISIONAL_STREET_GEOMETRY_TOLERANCE = 2;
+const PROVISIONAL_STREET_GEOMETRY_SAMPLE_STEP = 4;
 
 /** Stable, order-independent key for one undirected route. */
 export function routeKey(a: NodeId, b: NodeId, mode: TransportMode): string {
@@ -391,4 +411,144 @@ export function nodesWithinRadius(
   }
 
   return [...found].sort();
+}
+
+/**
+ * The authored polyline for one edge, with a straight-chord fallback.
+ *
+ * The fallback exists so a renderer never has to special-case a hand-made
+ * fixture. It is not a licence for the map generator to omit geometry: the
+ * street-following check below rejects a missing path for taxi and bus edges.
+ *
+ * @returns `null` when the edge id is unknown or its endpoints are missing
+ */
+export function edgePath(graph: TransitGraph, edgeId: EdgeId): readonly MapPoint[] | null {
+  const edge = graph.edges.find((candidate) => candidate.id === edgeId);
+  if (edge === undefined) return null;
+
+  if (edge.path !== undefined && edge.path.length >= 2) return edge.path;
+
+  const from = nodeById(graph, edge.a);
+  const to = nodeById(graph, edge.b);
+  if (from === undefined || to === undefined) return null;
+
+  return [
+    { x: from.x, y: from.y },
+    { x: to.x, y: to.y },
+  ];
+}
+
+/** Shortest distance from a point to a line segment. */
+function distanceToSegment(point: MapPoint, a: MapPoint, b: MapPoint): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+
+  if (lengthSquared === 0) return Math.hypot(point.x - a.x, point.y - a.y);
+
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared),
+  );
+  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
+}
+
+/** Distance from a point to the nearest authored street centreline. */
+function distanceToStreets(point: MapPoint, streets: readonly StreetSegment[]): number {
+  let best = Number.POSITIVE_INFINITY;
+
+  for (const street of streets) {
+    for (let index = 1; index < street.path.length; index += 1) {
+      const a = street.path[index - 1] as MapPoint;
+      const b = street.path[index] as MapPoint;
+      const distance = distanceToSegment(point, a, b);
+      if (distance < best) best = distance;
+    }
+  }
+
+  return best;
+}
+
+/** Sample a polyline densely enough that a shortcut across a block cannot hide. */
+function samplePath(path: readonly MapPoint[], step: number): readonly MapPoint[] {
+  const first = path[0];
+  if (first === undefined) return [];
+
+  const samples: MapPoint[] = [first];
+  for (let index = 1; index < path.length; index += 1) {
+    const from = path[index - 1] as MapPoint;
+    const to = path[index] as MapPoint;
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const steps = Math.max(1, Math.ceil(length / step));
+
+    for (let part = 1; part <= steps; part += 1) {
+      const t = part / steps;
+      samples.push({ x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t });
+    }
+  }
+  return samples;
+}
+
+/** Optional overrides for {@link validateStreetGeometry}. */
+export interface StreetGeometryOptions {
+  readonly tolerance?: number;
+  readonly sampleStep?: number;
+}
+
+/**
+ * R5: every street-following edge (taxi and bus) must stay on the street
+ * network. Metro and special are deliberately exempt — cutting across blocks is
+ * their whole value.
+ *
+ * This is a separate function from {@link validateGraph} because it needs the
+ * city model (street centrelines), which the rules graph does not carry. It is
+ * pure and returns a report; the map generator treats a failure as a bug.
+ */
+export function validateStreetGeometry(
+  graph: TransitGraph,
+  streets: readonly StreetSegment[],
+  options: StreetGeometryOptions = {},
+): StreetGeometryReport {
+  const tolerance = options.tolerance ?? PROVISIONAL_STREET_GEOMETRY_TOLERANCE;
+  const sampleStep = options.sampleStep ?? PROVISIONAL_STREET_GEOMETRY_SAMPLE_STEP;
+  const errors: string[] = [];
+  const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+  let checkedEdges = 0;
+
+  for (const edge of graph.edges) {
+    if (edge.mode !== 'taxi' && edge.mode !== 'bus') continue;
+    checkedEdges += 1;
+
+    if (edge.path === undefined || edge.path.length < 2) {
+      errors.push(`${edge.mode} edge ${edge.id} has no street-following path`);
+      continue;
+    }
+
+    const from = nodes.get(edge.a);
+    const to = nodes.get(edge.b);
+    const start = edge.path[0] as MapPoint;
+    const end = edge.path[edge.path.length - 1] as MapPoint;
+
+    if (from !== undefined && Math.hypot(start.x - from.x, start.y - from.y) > tolerance) {
+      errors.push(`${edge.mode} edge ${edge.id} does not start at node ${edge.a}`);
+    }
+    if (to !== undefined && Math.hypot(end.x - to.x, end.y - to.y) > tolerance) {
+      errors.push(`${edge.mode} edge ${edge.id} does not end at node ${edge.b}`);
+    }
+
+    let worst = 0;
+    for (const point of samplePath(edge.path, sampleStep)) {
+      const distance = distanceToStreets(point, streets);
+      if (distance > worst) worst = distance;
+      if (worst > tolerance) break;
+    }
+
+    if (worst > tolerance) {
+      errors.push(
+        `${edge.mode} edge ${edge.id} leaves the street network by ${worst.toFixed(1)} units`,
+      );
+    }
+  }
+
+  return { ok: errors.length === 0, errors, checkedEdges };
 }

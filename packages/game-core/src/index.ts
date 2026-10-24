@@ -30,6 +30,7 @@ export type {
   GraphEdge,
   GraphNode,
   LoggedTransport,
+  MapPoint,
   MissionId,
   NodeClass,
   NodeId,
@@ -38,6 +39,7 @@ export type {
   RevealReason,
   RiskTier,
   Role,
+  StreetSegment,
   TicketBag,
   TicketBagDelta,
   TicketLogEntry,
@@ -71,11 +73,17 @@ export type { Draw, IntDraw, RngState, ShuffleResult } from './rng';
 export { isRngState, nextRandom, pickRandom, randomInt, seedRngState, shuffleWith } from './rng';
 
 /* Transit graph: traversal and validation. */
-export type { GraphStats, GraphValidationReport } from './graph';
+export type {
+  GraphStats,
+  GraphValidationReport,
+  StreetGeometryOptions,
+  StreetGeometryReport,
+} from './graph';
 
 export {
   createGraph,
   degree,
+  edgePath,
   graphStats,
   hasRoute,
   modesFrom,
@@ -85,6 +93,7 @@ export {
   nodesWithinRadius,
   routeKey,
   validateGraph,
+  validateStreetGeometry,
 } from './graph';
 
 /* Ticket economy and the public ticket log. */

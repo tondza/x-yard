@@ -106,6 +106,24 @@ export interface GraphNode {
   readonly y: number;
 }
 
+/** A point in map-data space (not screen space). */
+export interface MapPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * A street centreline from the map generator.
+ *
+ * Street-following edges are validated against these: a taxi or bus path that
+ * leaves the street network is a map bug, not a rendering choice (R5 in
+ * `docs/mvp/round-03-rules.md`).
+ */
+export interface StreetSegment {
+  readonly id: string;
+  readonly path: readonly MapPoint[];
+}
+
 /** An undirected route. JSON-serializable only. */
 export interface GraphEdge {
   readonly id: EdgeId;
@@ -115,6 +133,14 @@ export interface GraphEdge {
   readonly ticketCost: 1;
   /** Every edge is traversable in both directions. */
   readonly symmetric: true;
+  /**
+   * Authored street-following polyline in map-data space.
+   *
+   * Required by the map generator for `taxi` and `bus`; `underground` and
+   * `special` may legitimately cut across blocks. Optional so a hand-made
+   * fixture can omit it; renderers fall back to a chord via `edgePath`.
+   */
+  readonly path?: readonly MapPoint[];
 }
 
 /** The immutable board. */

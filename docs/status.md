@@ -4,30 +4,50 @@ Edited **in place**. This is the answer to "where are things right now?"; it is
 not a history. History lives in [`PROJECT_LOG.md`](../PROJECT_LOG.md), and unlike
 that file this one is expected to be rewritten as reality changes.
 
-Last updated: 2026-10-16.
+Last updated: 2026-10-24.
 
 ## What works today
 
 | Thing | State | Verified by |
 | --- | --- | --- |
 | Monorepo + tooling (pnpm workspaces, TS strict, Vitest) | ✅ done | `pnpm install` / `pnpm typecheck` |
-| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 5 test files, 93 tests |
+| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 6 test files, 117 tests |
+| `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
+| `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, starts, street-following paths, committed fixtures | ✅ first version | 15 generator tests; `maps/*.json` |
+| `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | browser at `:5173/` (dev), screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `pnpm build` |
 | Governance: entry point, enforceable invariants, doc checks | ✅ done | `pnpm check:docs` |
 
+## Map generator — current shape
+
+The generator produces the model; renderers are views. The first version is
+deliberately schematic: a thinned, jittered street lattice with 24/60/96 stations,
+a taxi spanning subgraph, boulevard bus corridors, terminal-pair metro lines, one
+special shortcut, one Black Market and one Safe House, and 1+4 starts at ≥ 3
+edges. It emits `GraphEdge.path` polylines and passes `validateGraph` with no
+errors and `validateStreetGeometry` clean. Every map carries the same **provisional
+warning**: mean degree is below the `[4.5, 6.5]` heuristic, because a readable
+transit map at this scale is sparser than that heuristic assumed. It is reported,
+not hidden, and not promoted to an error.
+
+Committed fixtures: [`maps/`](../maps/). The lab is dev-only; `?board` still opens
+the old server-backed board.
+
 ## What is next (in order)
 
-1. **`GameState` + `submitCommand` + `applyEvent` + the turn/phase machine** —
-   the single blocking item; almost everything below depends on it.
-2. `hashState` / `replay` — the replay oracle.
-3. `projectState` — secret projection. **Until it exists no server code may send
-   `GameState` to a client.**
-4. Capture Resolution, Reveal Pulse scheduling, mission lifecycle, gadget/skill
-   resolution.
-5. Server integration tests via `fastify.inject()`.
-6. Persistence, reconnect/resume, multi-Yard management, matchmaking.
+1. **Playable prototype on the generated map** — `PrototypeState`,
+   `submitCommand`, turn order, capture, pulses, and a simple local React screen
+   reading `maps/prototype-24-seed-42.json`. This is the first end-to-end game.
+2. **Map generator v2** — an irregular road graph (not a lattice), river and
+   bridges, districts, and the F-style presentation renderer driven by the same
+   model.
+3. **Four-Fugitive / sixteen-Agent starts** and the separation rule for them.
+4. `hashState` / `replay` — the replay oracle.
+5. `projectState` — secret projection. **Until it exists no server code may send
+   state to a client.**
+6. Server integration tests, then persistence, reconnect/resume, multi-Yard.
 
 ## Blocked on the director (and what is now ruled)
 
@@ -81,10 +101,11 @@ Items marked **RULED** are recorded for context. They no longer block anything.
   collapse the four transport tiers into "how far". The real fix for the
   diagonal-drawing complaint is **authored per-edge street geometry**. See
   `docs/research/round-03-map-system.md` and [`docs/mvp/README.md`](mvp/README.md) §4.
-- **Mobile-first MVP mockups** — in flight under
-  `design/moodboard/round-03-mobile/`: phone-portrait scenarios (Fugitive turn,
-  Agent deduction, Reveal Pulse, capture result), one night-style variant for the
-  F-versus-H comparison, and one desktop enhancement.
+- **Mobile-first MVP mockups — complete, not integrated.** Eight round-03 screens
+  (phone portrait plus one desktop enhancement) are rebuilt and verified under
+  `design/moodboard/round-03-mobile/`. They remain static; the F-versus-H choice is
+  still open, and the playable prototype will read the generated map, not a mockup
+  plate.
 - **Open questions Q1–Q12** in
   [`GAME_VISION.appendix.md`](../GAME_VISION.appendix.md) appendix C. Each has a
   recommended default already encoded as a `PROVISIONAL_` constant, so nothing is
@@ -94,11 +115,23 @@ Items marked **RULED** are recorded for context. They no longer block anything.
 
 Tracked here so a session does not rediscover them (full detail in the log):
 
-- Module layout is flat; the brief cites nested paths. Revisit when the turn
-  machine lands.
-- `demo-board.ts` is a fixture, **not** the shipped map.
+- `game-core` module layout is flat; the brief cites nested paths. The new
+  `map-generator` is nested. Revisit `game-core` when the turn machine lands.
+- `demo-board.ts` is a fixture, **not** the shipped map. Generated fixtures live
+  in [`maps/`](../maps/).
 - Node classes (`street`/`hub`/`terminal`) are a provisional taxonomy (Q7).
+- The generator's street skeleton is a thinned, jittered lattice. It is a
+  schematic scaffold, not the final road graph; an irregular road graph, river and
+  bridges are the next generator step.
+- Every generated map emits the **provisional** mean-degree warning. The warning
+  is reported in the lab and not promoted to an error.
+- `GraphEdge.path` is optional so hand-made fixtures still load; `edgePath` falls
+  back to a chord. The generator always writes it for taxi and bus edges, and
+  `validateStreetGeometry` rejects a missing taxi/bus path.
+- The map lab is dev-only: it is loaded by a dynamic import and the dev default
+  route. `?board` keeps the old server-backed scaffold.
 - `TransportMode` has four values and does **not** include on-foot movement,
   which `VISUAL_DIRECTION.md` §1 decision 2 makes a fifth movement option. This
   affects the wire protocol and the ticket log, so it needs a deliberate decision.
-- Playwright is not installed; `pnpm test:e2e` does not exist yet.
+- Playwright is not installed; `pnpm test:e2e` does not exist yet. The lab was
+  verified with an ad-hoc Playwright script outside the pnpm workspace.

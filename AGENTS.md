@@ -46,15 +46,17 @@ authority**. An open question there is not a decision.
 ## Architecture (enforced, not aspirational)
 
 ```
-packages/game-core   pure rules engine      (depends on nothing)
-packages/shared-types wire DTOs             (depends on game-core, types only)
-apps/server          Fastify + Socket.io    (depends on both)
-apps/web             Vite + React + Canvas  (depends on both)
+packages/game-core       pure rules engine      (depends on nothing)
+packages/shared-types    wire DTOs              (depends on game-core, types only)
+packages/map-generator   seeded city + transit  (dev tooling; depends on game-core)
+apps/server              Fastify + Socket.io    (depends on both)
+apps/web                 Vite + React + Canvas  (depends on both; dev-only map lab uses the generator)
 ```
 
-One-way only: `game-core` ← `shared-types` ← apps. **`game-core` must never
-import `shared-types`.** Never re-declare a union that already exists in
-`game-core` — that is how the wire drifts from the rules.
+One-way only: `game-core` ← `shared-types` ← apps, and `game-core` ←
+`map-generator`. **`game-core` must never import `shared-types` or the map
+generator.** Never re-declare a union that already exists in `game-core` — that is
+how the wire drifts from the rules.
 
 `apps/server` is authoritative. Hidden information is projected out inside
 `game-core` (`projectState`), never merely hidden by the client.

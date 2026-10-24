@@ -35,11 +35,13 @@ apps/
   server/         Fastify + Socket.io authority    (no rules)
 packages/
   game-core/      pure rules engine                (zero dependencies)
+  map-generator/  seeded city + transit networks   (dev tooling; depends on game-core)
   shared-types/   wire DTOs and event schemas      (types only)
 ```
 
-Dependency direction is one-way: `game-core` ← `shared-types` ← apps.
-`game-core` must never import a framework, a UI library, or `shared-types`.
+Dependency direction is one-way: `game-core` ← `shared-types` ← apps, and
+`game-core` ← `map-generator`. `game-core` must never import a framework, a UI
+library, `shared-types`, or the map generator.
 
 ## Commands
 
@@ -55,8 +57,13 @@ Run a single app:
 
 ```bash
 pnpm --filter @x-yard/server dev     # Fastify on :3001  (/health, /board)
-pnpm --filter @x-yard/web dev        # Vite on :5173, proxies /api -> :3001
+pnpm --filter @x-yard/web dev        # Vite on :5173; dev default is the map lab
 ```
+
+In development, `http://localhost:5173/` opens the **map lab** — a seeded transit
+network generator with a schematic map, validation report and JSON export.
+`http://localhost:5173/?board` opens the original server-backed board scaffold.
+The lab is dev-only and is not part of the production client.
 
 ## Status
 
@@ -65,9 +72,12 @@ foundation under the new vision — domain vocabulary for Yards, Fugitives/Agent
 transit tiers and facilities, contraband missions, gadgets and skills; xorshift128+
 RNG with golden vectors; transit graph traversal and validation with the
 errors-vs-warnings split; ticket economy with the ticket-log semantics for
-Counterfeit Identity and Alleyway Sprint; and a scaffold board. 5 test files and
-93 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build`
-all exit 0. `game-core` has zero runtime dependencies.
+Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
+**map generator** that emits validated 24/60/96-station transit networks with
+street-following edge geometry. The dev map lab renders those networks
+schematically and exports them as JSON. 6 test files and 117 tests pass, and
+`pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all exit 0.
+`game-core` has zero runtime dependencies.
 
 **The turn and phase machine is not implemented yet.** There is no turn machine,
 no Capture Resolution, no Reveal Pulse scheduler, no mission lifecycle, no state

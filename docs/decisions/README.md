@@ -53,3 +53,4 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0010](0010-legal-moves-follow-streets.md) | Legal-move paths follow the street network; no straight lines across blocks |
 | [0011](0011-prototype-before-multiplayer-mvp.md) | A bot-filled single-player prototype precedes the multiplayer MVP |
 | [0012](0012-timed-concurrent-turn-windows.md) | Timed, concurrent turn windows replace sequential turns |
+| [0013](0013-map-generator-separate-package.md) | The map generator is a separate, model-first package; the map lab renders the model |

@@ -221,7 +221,7 @@ All of these must be true, and each must be demonstrated, not asserted.
 | P7 | **Movement follows streets.** Every drawn legal move is a street polyline except `underground` and `special`. | Visual check plus a test that a street-following edge without geometry is refused by authoring review. |
 | P8 | **The override works every time**: with it on, the director is the Fugitive in 100 % of starts; with it off, assignment is random and seeded. | Seeded runs over many seeds. |
 | P9 | **No illegal move, no unspent-ticket desync, no forced hold that should have been a move**, across a full session. | Session plus unit tests on the legal-move enumeration. |
-| P10 | **`pnpm test` is green** across the repo (verified today: **5 test files, 93 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
+| P10 | **`pnpm test` is green** across the repo (verified today: **6 test files, 117 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
 | P11 | **`game-core` still declares `"dependencies": {}`** and TypeScript strict mode is untouched. | `architecture.test.ts` and `tsconfig`. |
 | P12 | **Every new number is a `PROVISIONAL_` constant** naming the open question it stands in for. | `grep -rn PROVISIONAL_` is the complete inventory. |
 
@@ -262,7 +262,7 @@ absent and calls the serialization oracle "still owed", and
 - **no seat abstraction**, no bot, no `GameState` serialization oracle,
   no server integration tests.
 
-Verified today: `pnpm test` is green at **5 test files, 93 tests**
+Verified today: `pnpm test` is green at **6 test files, 117 tests**
 (`architecture.test.ts`, `graph.test.ts`, `rng.test.ts`, `spec-alignment.test.ts`,
 `tickets.test.ts`).
 
