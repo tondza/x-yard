@@ -520,16 +520,57 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
     }
   }
 
-  /* Metro: pair the terminals across the map, so every line is long. */
+  /*
+   * Metro: a connected network, not a set of disjoint chords. Two lines share
+   * one interchange terminal; each line is a nearest-neighbour path through its
+   * half of the terminals. Every terminal is on one of the two lines, so the
+   * metro subgraph is a tree with T-1 edges and one obvious interchange.
+   */
   const terminals = stations
     .filter((station) => station.class === 'terminal')
     .sort((a, b) => a.intersection.x - b.intersection.x || a.intersection.y - b.intersection.y);
+  const centre = centroid(build);
 
-  for (let index = 0; index < Math.floor(terminals.length / 2); index += 1) {
-    const a = terminals[index];
-    const b = terminals[terminals.length - 1 - index];
-    if (a === undefined || b === undefined) continue;
-    addEdge(a, b, 'underground', streetRoute(a, b), rng.jitter(0.2));
+  const interchange = terminals.reduce<Station | null>((best, candidate) => {
+    if (best === null) return candidate;
+    return distance(candidate.intersection, centre) < distance(best.intersection, centre)
+      ? candidate
+      : best;
+  }, null);
+
+  if (interchange !== null) {
+    const angle = (station: Station): number =>
+      Math.atan2(station.intersection.y - centre.y, station.intersection.x - centre.x);
+    const others = terminals
+      .filter((station) => station.id !== interchange.id)
+      .sort((a, b) => angle(a) - angle(b) || a.id.localeCompare(b.id));
+    const split = Math.ceil(others.length / 2);
+
+    const connectMetroLine = (group: readonly Station[]): void => {
+      const remaining = [...group];
+      let current = interchange;
+
+      while (remaining.length > 0) {
+        let bestIndex = 0;
+        let bestDistance = Number.POSITIVE_INFINITY;
+        for (let index = 0; index < remaining.length; index += 1) {
+          const candidate = remaining[index] as Station;
+          const candidateDistance = distance(current.intersection, candidate.intersection);
+          if (candidateDistance < bestDistance) {
+            bestDistance = candidateDistance;
+            bestIndex = index;
+          }
+        }
+
+        const [next] = remaining.splice(bestIndex, 1);
+        if (next === undefined) break;
+        addEdge(current, next, 'underground', streetRoute(current, next), rng.jitter(0.14));
+        current = next;
+      }
+    };
+
+    connectMetroLine(others.slice(0, split));
+    connectMetroLine(others.slice(split));
   }
 
   /*

@@ -11,6 +11,33 @@ import type { GeneratedMap } from './types';
 const SRC_DIR = fileURLToPath(new URL('.', import.meta.url));
 const MAPS_DIR = fileURLToPath(new URL('../../../maps/', import.meta.url));
 
+function metroIsConnected(map: GeneratedMap): boolean {
+  const terminals = map.graph.nodes
+    .filter((node) => node.class === 'terminal')
+    .map((node) => node.id);
+  if (terminals.length < 2) return true;
+
+  const adjacency = new Map<string, string[]>(terminals.map((id) => [id, []]));
+  for (const edge of map.graph.edges) {
+    if (edge.mode !== 'underground') continue;
+    adjacency.get(edge.a)?.push(edge.b);
+    adjacency.get(edge.b)?.push(edge.a);
+  }
+
+  const first = terminals[0] as string;
+  const seen = new Set<string>([first]);
+  const queue: string[] = [first];
+  while (queue.length > 0) {
+    const current = queue.shift() as string;
+    for (const next of adjacency.get(current) ?? []) {
+      if (seen.has(next)) continue;
+      seen.add(next);
+      queue.push(next);
+    }
+  }
+  return seen.size === terminals.length;
+}
+
 function assertValid(map: GeneratedMap): void {
   const report = validateGraph(map.graph);
   const geometry = validateStreetGeometry(map.graph, map.city.streets);
@@ -34,10 +61,16 @@ function assertValid(map: GeneratedMap): void {
     expect(edge.path?.length ?? 0).toBeGreaterThanOrEqual(2);
   }
 
+  const terminalCount = map.graph.nodes.filter((node) => node.class === 'terminal').length;
   expect(map.stats.byMode.taxi).toBeGreaterThan(0);
   expect(map.stats.byMode.bus).toBeGreaterThan(0);
   expect(map.stats.byMode.underground).toBeGreaterThan(0);
   expect(map.stats.byMode.special).toBeGreaterThan(0);
+
+  // A metro network is connected (a tree of T-1 edges over the terminals), not
+  // a set of disjoint chords. All lines share one interchange.
+  expect(map.stats.byMode.underground).toBe(terminalCount - 1);
+  expect(metroIsConnected(map)).toBe(true);
 
   const classById = new Map(map.graph.nodes.map((node) => [node.id, node.class]));
   for (const edge of map.graph.edges) {

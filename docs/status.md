@@ -24,9 +24,9 @@ Last updated: 2026-10-24.
 
 The generator produces the model; renderers are views. The first version is
 deliberately schematic: a thinned, jittered street lattice with 24/60/96 stations,
-a taxi spanning subgraph, boulevard bus corridors, terminal-pair metro lines, one
-special shortcut, one Black Market and one Safe House, and 1+4 starts at ≥ 3
-edges. It emits `GraphEdge.path` polylines and passes `validateGraph` with no
+a taxi spanning subgraph, boulevard bus corridors, a connected two-line metro
+network with a shared interchange, one special shortcut, one Black Market and one
+Safe House, and 1+4 starts at ≥ 3 edges. It emits `GraphEdge.path` polylines and passes `validateGraph` with no
 errors and `validateStreetGeometry` clean. Every map carries the same **provisional
 warning**: mean degree is below the `[4.5, 6.5]` heuristic, because a readable
 transit map at this scale is sparser than that heuristic assumed. It is reported,

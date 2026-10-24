@@ -10,7 +10,9 @@ One `GeneratedMap` from a seed and a target station count:
 
 - a schematic city: street centrelines, block polygons, parks, landmarks;
 - a validated `TransitGraph` with `taxi`, `bus`, `underground` and `special`
-  edges, each carrying a polyline in `GraphEdge.path`;
+  edges, each carrying a polyline in `GraphEdge.path`. The metro is a connected
+  network: two lines share one interchange terminal and cover every terminal, so
+  there are `terminals - 1` metro edges and no isolated chord pairs;
 - one Black Market and one Safe House, both inert;
 - start positions for 1 Fugitive + 4 Agents, all Agents at least 3 edges away;
 - a validation report (graph errors, street-coverage check, provisional warnings).
@@ -64,7 +66,8 @@ pnpm --filter @x-yard/map-generator test   # re-run without writing
 - Every station has degree >= 2.
 - Station classes follow the target mix: 16/6/2 at 24 nodes, 40/14/6 at 60.
 - Bus and metro avoid street nodes; metro joins terminals; special joins street
-  nodes.
+  nodes. The metro subgraph is connected (a tree of `terminals - 1` edges with a
+  shared interchange).
 - 1 Fugitive + 4 Agent starts satisfy the >= 3-edge separation rule.
 
 ## Known limitations

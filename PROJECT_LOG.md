@@ -896,3 +896,36 @@ are limited to the four boulevards. Starts are 1 Fugitive + 4 Agents only; the
 4-Fugitive/16-Agent layout and its separation rule are MVP work. The playable
 prototype (`PrototypeState`, turn order, capture, pulses) is the next step and
 will read `maps/prototype-24-seed-42.json`.
+
+---
+
+## 2026-10-24 — Metro is a connected network, not disjoint chords
+
+**The problem.** The first generator paired terminals symmetrically — for six
+terminals, three separate metro chords. That is not how a metro network works: the
+lines crossed on the drawing but shared no station, so the network was three
+disconnected routes. The director caught it from the lab.
+
+**The fix.** The metro is now two lines that share one interchange terminal. The
+interchange is the terminal nearest the map centre; the other terminals are split
+by angle into two arcs, and each arc is ordered by nearest-neighbour from the
+interchange. Every terminal is on a line, every line starts at the interchange,
+and the metro subgraph is a tree with `terminals - 1` edges. At 60 nodes that is
+five metro edges over six terminals; at 24 nodes there are two terminals and one
+edge, which is already connected.
+
+**Rejected alternative:** keep the disjoint pairs and only make them cross
+visually. Failure: a crossing that does not share a station is still two
+disconnected routes, and the user's complaint is about the topology, not the
+drawing.
+
+**Verified**
+
+- `pnpm test` — 6 files / 117 tests, all passing. The generator tests now assert
+  `terminals - 1` metro edges and run a BFS over the metro subgraph to prove it is
+  connected, on every generated map.
+- Fixtures regenerated: 24-node maps now have 1 metro edge; 60-node maps have 5
+  (the 60-node map's mean degree rises to 3.67–3.70, still with only the expected
+  provisional density warning).
+- Browser at 60 nodes: five metro paths render and meet at the interchange; zero
+  page or console errors. `maps/shots/mvp-60-seed-42.png` refreshed.
