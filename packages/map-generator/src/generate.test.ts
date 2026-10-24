@@ -188,6 +188,7 @@ const FIXTURES: readonly { file: string; seed: number; targetNodes: number }[] =
   { file: 'prototype-24-seed-7.json', seed: 7, targetNodes: 24 },
   { file: 'mvp-60-seed-42.json', seed: 42, targetNodes: 60 },
   { file: 'mvp-60-seed-7.json', seed: 7, targetNodes: 60 },
+  { file: 'prototype-96-seed-42.json', seed: 42, targetNodes: 96 },
 ];
 
 describe('committed map fixtures', () => {

@@ -49,6 +49,7 @@ Committed maps live in [`../../maps/`](../../maps/):
 
 - `prototype-24-seed-*.json`
 - `mvp-60-seed-*.json`
+- `prototype-96-seed-42.json` (the 96-station prototype target)
 
 The test suite regenerates each fixture from its stored seed and asserts it is
 byte-for-byte equivalent. To refresh them after a generator change:

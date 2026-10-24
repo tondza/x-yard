@@ -10,9 +10,10 @@ test regenerate each file from its seed and assert it is unchanged.
 | `prototype-24-seed-7.json` | 24 | 7 |
 | `mvp-60-seed-42.json` | 60 | 42 |
 | `mvp-60-seed-7.json` | 60 | 7 |
+| `prototype-96-seed-42.json` | 96 | 42 |
 
-Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`
-and `mvp-60-seed-42.png`.
+Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`,
+`prototype-96-seed-42.png` and `mvp-60-seed-42.png`.
 
 Regenerate after a generator change:
 
