@@ -11,6 +11,9 @@ test regenerate each file from its seed and assert it is unchanged.
 | `mvp-60-seed-42.json` | 60 | 42 |
 | `mvp-60-seed-7.json` | 60 | 7 |
 
+Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`
+and `mvp-60-seed-42.png`.
+
 Regenerate after a generator change:
 
 ```bash
