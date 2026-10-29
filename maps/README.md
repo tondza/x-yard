@@ -20,19 +20,25 @@ The first playable's frames remain for comparison:
 `prototype-96-turn-2.png` (after one move), and `prototype-96-result.png`
 (capture overlay).
 
-The **current** prototype (sequential reveal and play/map camera, decision
-[0015](../docs/decisions/0015-sequential-reveal-and-play-map-camera.md)) is
-captured in:
+The **current** prototype is captured in:
 
 | File | Shows |
 | --- | --- |
-| `prototype-96-play-1440.png` | play camera at 1440×900, zoomed to the Fugitive |
+| `prototype-96-play-1440.png` | play camera at 1440×900, permanent transit network |
+| `prototype-96-station-1440.png` | hovering a legal destination opens its station card |
 | `prototype-96-agent-1440.png` | an Agent's move being revealed, route + banner |
+| `prototype-96-appearance-1440.png` | an appearance marker before the Agent phase |
+| `prototype-96-appearance-ghost-1440.png` | the last-appearance `F18` ghost after the Fugitive moves away |
 | `prototype-96-map-1440.png` | the free Map view of the whole quarter |
-| `prototype-96-pulse-1440.png` | a Reveal Pulse before the Agent phase |
 | `prototype-96-result-1440.png` | the capture result overlay |
 | `prototype-96-play-390.png` | the responsive phone layout at 390×844 |
+| `prototype-96-station-390.png` | a station card on the phone |
 | `prototype-96-map-390.png` | the expanded map view on the same phone |
+
+The network, station inspector and ghost are recorded in decisions
+[0016](../docs/decisions/0016-appearance-terminology.md) and
+[0017](../docs/decisions/0017-always-visible-network-and-last-appearance.md).
+There is deliberately no route planner.
 
 Regenerate after a generator change:
 

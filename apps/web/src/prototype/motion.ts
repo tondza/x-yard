@@ -41,7 +41,7 @@ export const STEP_LEAD_MS = 170;
 export const STEP_GAP_MS = 150;
 /** A held turn still needs a visible beat, but shorter than a move. */
 export const HOLD_PAUSE_MS = 420;
-/** A pulse or scooter reveal stays on screen before the Agent phase starts. */
+/** An appearance or scooter reveal stays on screen before the Agent phase starts. */
 export const REVEAL_HOLD_MS = 1150;
 
 export type MoverRole = 'fugitive' | 'agent';

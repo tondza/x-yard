@@ -56,3 +56,5 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0013](0013-map-generator-separate-package.md) | The map generator is a separate, model-first package; the map lab renders the model |
 | [0014](0014-96-station-desktop-prototype.md) | The first playable prototype is 96 stations, desktop-first, with close Agent starts |
 | [0015](0015-sequential-reveal-and-play-map-camera.md) | Prototype turns reveal one mover at a time under a play/map camera with label LOD |
+| [0016](0016-appearance-terminology.md) | The player-facing term is Appearance, not Pulse |
+| [0017](0017-always-visible-network-and-last-appearance.md) | The transit network is always visible; no route planner; last-appearance ghost |

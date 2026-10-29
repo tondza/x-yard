@@ -2,7 +2,7 @@
  * Ticket economy and the public ticket log.
  *
  * Tickets are both the movement price (§3) and the Agents' only information
- * channel between Reveal Pulses (§2). Two Fugitive gadgets attack that channel
+ * channel between appearances (§2). Two Fugitive gadgets attack that channel
  * (§5), so the log is modelled here rather than in the wire layer:
  *
  *   - **Counterfeit Identity** — the log records `'unknown'` instead of the mode.

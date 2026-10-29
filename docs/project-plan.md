@@ -16,8 +16,15 @@ The first playable now reveals each mover sequentially and has a play/map camera
 with label LOD. The 96-station, desktop-first scope of 0014 stands; the phone
 camera pass that 0014 deferred is now part of the prototype.
 
+**Revised 2026-10-29 (decisions [0016](decisions/0016-appearance-terminology.md) and
+[0017](decisions/0017-always-visible-network-and-last-appearance.md)).** The
+player-facing term is **Appearance** (not pulse). The prototype draws the whole
+taxi/bus/metro/special network, opens a station inspector on hover/click, and
+shows the Agents' last-known node as a semi-transparent `F<node>` ghost. There is
+**no route planner** — planning stays with the player.
+
 **How to read the numbers.** The director stated the seat counts, the phase order,
-the 16-turn limit, the pulse turns 5/10/15, starting separation ≥ 3 edges, random
+the 16-turn limit, the appearance turns 5/10/15, starting separation ≥ 3 edges, random
 faction assignment with a prototype override, one device per seat, node-and-edge
 movement and "start the generator early". Every other number here is marked
 **proposal, pending playtest**. None of it is settled, and none of it may be
@@ -52,14 +59,14 @@ must be able to:
   it on merit within a single phone-length session;
 - see the four transit tiers **and** the on-foot and scooter options drawn as
   moves that follow streets;
-- see the Reveal Pulse fire on schedule and watch three bots visibly react to it;
+- see the Appearance fire on schedule and watch three bots visibly react to it;
 - see the capture happen and the result screen name the winner and the reason;
 - reach the end of a session with every rule visibly respected — no dead mode, no
   missing log row, no illegal move line.
 
-**Explicitly NOT the goal:** proving the Reveal Pulse is not dominant. The
-director has accepted pulse dominance for now ("adopted cycle", 16 turns with
-pulses on 5/10/15). The prototype is the first instrument that can produce
+**Explicitly NOT the goal:** proving the Appearance is not dominant. The
+director has accepted appearance dominance for now ("adopted cycle", 16 turns with
+appearances on 5/10/15). The prototype is the first instrument that can produce
 evidence either way, but it is not required to settle it.
 
 **Rejected (the prototype's purpose):** "prove the loop is fun before building
@@ -77,7 +84,7 @@ it was exempted from.
 | Multiplayer | **no** — single-player, local | director ruling |
 | Faction assignment | random, with **prototype override: the director always plays the Fugitive** | director ruling |
 | Session length | **16 turns** | director ruling |
-| Reveal Pulses | turns **5, 10, 15** | director ruling ("adopted cycle") |
+| Appearances | turns **5, 10, 15** | director ruling ("adopted cycle") |
 | Movement model | node-and-edge | director ruling (blocks rejected) |
 | Device policy | not applicable locally; **one device per seat is the rule that governs the MVP**, not this phase | director ruling |
 | Bot intelligence | "need not be clever" | director ruling |
@@ -164,7 +171,7 @@ Random tie-breaks are permitted only from the injected `RngState`, never from
 **Agent bot (minimum viable) — proposal, pending playtest.** Score a destination
 by "does it reduce my distance to where the Fugitive might be":
 
-- maintain a candidate set from the last Reveal Pulse plus every logged row since
+- maintain a candidate set from the last Appearance plus every logged row since
   it, filtered by mode eligibility (the set `round-03-validation.md` §9 already
   reasons over);
 - prefer a destination inside the candidate set;
@@ -184,7 +191,7 @@ a test harness, not a shipping behaviour.
 Failure: it is a search problem with no ground truth until the loop is tuned, and
 it would make bot behaviour a balance variable before the loop has been played
 once. **Rejected:** a scripted Agent that follows a fixed patrol route. Failure:
-it cannot react to the Reveal Pulse at all, so the one beat the prototype exists
+it cannot react to the Appearance at all, so the one beat the prototype exists
 to show would look broken.
 
 ## 1.6 What the director must be able to do in one end-to-end session
@@ -192,12 +199,12 @@ to show would look broken.
 1. **Start** a Yard with a chosen seed and the Fugitive override on.
 2. **Read** the board: own position, Agent positions (Agents are public among
    themselves; from the Fugitive's seat, Agents are visible — proposal, pending
-   playtest), the turn strip with pulse turns marked, and the public log.
+   playtest), the turn strip with appearance turns marked, and the public log.
 3. **Move**, every turn, by picking a mode and then a destination. Illegal modes
    are visibly disabled with the reason printed, because the UI is how a rule is
    learned.
 4. **Watch** the four bots resolve their phases in seat order.
-5. **See the pulse** on turns 5, 10 and 15: own node broadcast, marker and log
+5. **See the appearance** on turns 5, 10 and 15: own node broadcast, marker and log
    row updated.
 6. **Reach an end**: capture (Agent ends a turn on the Fugitive's node) or 16
    turns survived, with the result screen naming the winner.
@@ -207,7 +214,7 @@ to show would look broken.
 
 The first playable is the smallest slice that already exercises the whole spine:
 **the 5-seat setup, the turn machine, the full six-option movement set, spending
-and the public log, capture resolution, the three pulses, and both end screens**,
+and the public log, capture resolution, the three appearances, and both end screens**,
 on the hand-authored map.
 
 It is the same first-playable *intent* M1 §13 described, with three differences
@@ -232,8 +239,8 @@ All of these must be true, and each must be demonstrated, not asserted.
 | P2 | **The whole spine is playable end-to-end** per §1.6. | One recorded session start → result. |
 | P3 | **Determinism.** The same seed and the same command sequence produce an identical final state. | Two runs compared, field by field. |
 | P4 | **The log invariant holds on every turn**, including the capture turn. | Exactly one row per living Fugitive per turn; the capture turn included. |
-| P5 | **Capture is end-position equality only** — co-occupancy is legal, a clean swap is not a capture, the pulse is not a capture moment. | Unit tests over the resolution step. |
-| P6 | **Pulses fire on turns 5, 10, 15 only**, and `reveal-pulse` resolves **before** the Agent phase. | Event log inspection. |
+| P5 | **Capture is end-position equality only** — co-occupancy is legal, a clean swap is not a capture, the appearance is not a capture moment. | Unit tests over the resolution step. |
+| P6 | **Appearances fire on turns 5, 10, 15 only**, and `reveal-pulse` resolves **before** the Agent phase. | Event log inspection. |
 | P7 | **Movement follows streets.** Every drawn legal move is a street polyline except `underground` and `special`. | Visual check plus a test that a street-following edge without geometry is refused by authoring review. |
 | P8 | **The override works every time**: with it on, the director is the Fugitive in 100 % of starts; with it off, assignment is random and seeded. | Seeded runs over many seeds. |
 | P9 | **No illegal move, no unspent-ticket desync, no forced hold that should have been a move**, across a full session. | Session plus unit tests on the legal-move enumeration. |
@@ -242,7 +249,7 @@ All of these must be true, and each must be demonstrated, not asserted.
 | P12 | **Every new number is a `PROVISIONAL_` constant** naming the open question it stands in for. | `grep -rn PROVISIONAL_` is the complete inventory. |
 
 **Not acceptance criteria:** balance, win rate, session length, art quality, and
-whether the pulse dominates. Those are playtest questions the prototype informs.
+whether the appearance dominates. Those are playtest questions the prototype informs.
 
 ## 1.9 Technical approach, grounded in what exists today
 
@@ -291,7 +298,7 @@ Verified today: `pnpm test` is green at **7 test files, 131 tests**
 | E3 | **One log row per living Fugitive per turn, appended during the Fugitive phase unconditionally**, so the capture turn is reconstructible. | **Rejected:** write the row at end of turn. Failure: a capture inside `capture-resolution` ends the Yard before the row exists, which is the exact hole `round-03-validation.md` found on both capture transcripts. |
 | E4 | `GraphEdge` gains optional authored geometry (`MapPoint { x, y }` + a polyline), with a pure fallback accessor for edges that lack it. | **Rejected:** derive the polyline from node coordinates at render time. Failure: it re-draws the chord across buildings — the bug that started this thread. |
 | E5 | Capture: `agent.node === fugitive.node` at `capture-resolution`, **end positions only**; nodes are uncapped; moving onto an occupied node is legal; a clean swap is not a capture. | **Rejected:** a per-node capacity with a bump rule. Failure: a second movement rule layered on the first, needing its own ordering rule, to replace one equality test. |
-| E6 | **`Phase` order changes** to `yard-start → fugitive-phase → reveal-pulse → agent-phase → capture-resolution → yard-end`. | **Rejected:** keep the current union order and resolve the pulse after capture resolution. Failure: Agents act on a pulse a full turn stale, and a capture on the pulse turn is impossible. |
+| E6 | **`Phase` order changes** to `yard-start → fugitive-phase → reveal-pulse → agent-phase → capture-resolution → yard-end`. | **Rejected:** keep the current union order and resolve the appearance after capture resolution. Failure: Agents act on an appearance a full turn stale, and a capture on the appearance turn is impossible. |
 | E7 | Faction assignment is **random from the injected RNG**, with a **prototype override that always gives the director the Fugitive seat**. | **Rejected:** client-assigned, never self-selected (the `round-03-validation.md` recommendation). Failure: it answers a different question (pass-and-play leak prevention) and contradicts the ruling, which is random assignment plus an override. |
 | E8 | The **seat is the abstraction** from day one: a seat has a role, a position, a purse, and a controller that is either a human input or a bot policy. | **Rejected:** build human seats now, refactor bots in later. Failure: mid-Yard human takeover is a ruling, and retro-fitting it would mean rewriting the command path the prototype just proved. |
 | E9 | The prototype runs **locally, with no server and no sockets**. | **Rejected:** stand up the Fastify server in the prototype. Failure: it front-loads the lobby, reconnect and projection surfaces the prototype exists to postpone — and `projectState` does not exist, so a server could not legally send state anyway. |
@@ -305,7 +312,7 @@ Verified today: `pnpm test` is green at **7 test files, 131 tests**
 | B3 | **`GameState` + `submitCommand` + `applyEvent` + the turn/phase machine** (E1, E3, E6), single-Fugitive, 5 seats. | B1, B2 | 2–3 sessions |
 | B4 | **Capture resolution** (E5) plus the result screen's data. | B3 | 1 session |
 | B5 | **The seat abstraction and the two bot policies** (§1.5). | B3 | 1–2 sessions |
-| B6 | **The local board UI**: board, turn strip, mode tray, log strip, pulse reveal, end screens — deliberately not `round-03-product.md`'s S0–S3. | B3, B4 | 2 sessions |
+| B6 | **The local board UI**: board, turn strip, mode tray, log strip, appearance reveal, end screens — deliberately not `round-03-product.md`'s S0–S3. | B3, B4 | 2 sessions |
 | B7 | **`hashState` + replay oracle** so P3 is checkable, and `architecture.test.ts`'s owed serialization check is replaced by the real one. | B3 | 1 session |
 | B8 | **Soak runs**: seeded multi-game runs asserting P4, P5, P6, P9 and no forced hold that should have been a move. | B3–B7 | 1 session |
 
@@ -332,7 +339,7 @@ ship as a product feature. They continue to state no MVP plan beyond this.
 | C2 | **Device policy.** `round-03-product.md` rejected alternative **R3** and its Open Question 2 recommend shipping **same-device pass-and-play**; ruling 3 rejects same-device sharing outright. R3 deleted the lobby surface on the grounds that pass-and-play needed none — so removing pass-and-play **restores the lobby, seat-join and reconnect surface** M2 was avoiding. `round-03-product.md` §10 ("same-device play needs no identity at all") is likewise invalid. | `round-03-product.md` (R3, its Open Question 2, §3 S0, §4 I1, §10) | Before the mobile UI step (M7). |
 | C3 | **Faction assignment.** `docs/mvp/README.md` open question 4 and `round-03-rules.md` §17 leave "who becomes the Fugitive" unanswered; `round-03-validation.md` fix 12 recommends **assigned by the client, never self-selected**. Ruling 6 settles it as **random, with a prototype override** — which invalidates fix 12 and closes the open question. | `docs/mvp/README.md` (open questions), `round-03-rules.md` §17, `round-03-validation.md` fix 12 | With C1. |
 | C4 | **Scooter and starting separation.** `docs/mvp/README.md` §3 (stale, by its own admission) still describes the scooter as buying tempo "with visibility" and does not state starting separation, while its §2 preamble already records the exact-reveal cut and the ≥ 3-edge separation adoption. The documents contradict **themselves**; the ruling's version wins. Separately, **starting separation ≥ 3 edges is stated for one Fugitive** and has no defined meaning with four. | `docs/mvp/README.md` §3 | Before the map generator's requirements are frozen (M1). |
-| C5 | ~~**10-seat ceiling and pre-ruling turn/pulse numbers.**~~ **Resolved 2026-10-16** in `packages/game-core`: `MAX_FUGITIVES_PER_YARD = 4` + `MAX_AGENTS_PER_YARD = 16` = **20 seats**, `YARD_TURN_LIMIT = 16`, `REVEAL_PULSE_TURNS = [5, 10, 15]`, plus `MIN_START_SEPARATION_EDGES = 3`; the four `PROVISIONAL_` names are gone, with no compatibility alias. | `packages/game-core/src/types.ts`, `index.ts`, `spec-alignment.test.ts`, `apps/server/src/index.ts` | Done in the 2026-10-16 ratification change. |
+| C5 | ~~**10-seat ceiling and pre-ruling turn/appearance numbers.**~~ **Resolved 2026-10-16** in `packages/game-core`: `MAX_FUGITIVES_PER_YARD = 4` + `MAX_AGENTS_PER_YARD = 16` = **20 seats**, `YARD_TURN_LIMIT = 16`, `APPEARANCE_TURNS = [5, 10, 15]`, plus `MIN_START_SEPARATION_EDGES = 3`; the four `PROVISIONAL_` names are gone, with no compatibility alias. | `packages/game-core/src/types.ts`, `index.ts`, `spec-alignment.test.ts`, `apps/server/src/index.ts` | Done in the 2026-10-16 ratification change. |
 | C6 | **The block/square question is closed.** `VISUAL_DIRECTION.md` §3 ("Map representation … No representation change is adopted until that lands") and §4 directive 6 are still open in the file even though ruling 4 rejects the block model. | `VISUAL_DIRECTION.md` §3, §4 | When the director next edits the visual file; not blocking. |
 
 **[`docs/status.md`](status.md) needs no rewrite:** it already records the
@@ -347,13 +354,13 @@ Roughly sized in sessions. Order is dependency order, not priority order.
 | # | Step | Depends on | Rough size | Notes |
 | --- | --- | --- | --- | --- |
 | M1 | **Map generator** (`generateMap`-style, seeded, dev tooling with committed output) emitting node classes, transit tiers, **authored street geometry per street-following edge**, ≥ 3-edge starting separation, spanning taxi subgraph, and an inert black-market + safe-house. Output gated by `validateGraph`. | B1's geometry type (Part 1) | 3–5 sessions | Director: "start the generator early." It is a **component, not a late task** — the MVP's map scale is the generator's output, and no acceptance test can be written against a hand-authored board. **Rejected:** generate nodes only and let the client approximate streets. Failure: the diagonal defect returns with no test failing. |
-| M2 | ~~**Ratify the adopted numbers** (`PROVISIONAL_` names → brief)~~ **Partially done 2026-10-16:** the 16-turn limit, pulses 5/10/15, seat counts (4 + 16) and ≥ 3-edge separation are ratified into constants and `spec-alignment.test.ts`. The **ticket/step budgets remain unratified** (appendix C.2, Q1). | director | 0.5 session for the rest | Remaining: the ticket/step economy at the 20-player scale. |
+| M2 | ~~**Ratify the adopted numbers** (`PROVISIONAL_` names → brief)~~ **Partially done 2026-10-16:** the 16-turn limit, appearances 5/10/15, seat counts (4 + 16) and ≥ 3-edge separation are ratified into constants and `spec-alignment.test.ts`. The **ticket/step budgets remain unratified** (appendix C.2, Q1). | director | 0.5 session for the rest | Remaining: the ticket/step economy at the 20-player scale. |
 | M3 | **Multi-Fugitive turn machine**: 4 Fugitives, up to 16 Agents, per-Fugitive log rows, seat ordering, one capture check over all Agents and living Fugitives, last-living-Fugitive / turn-16 end conditions. | M1, B3 | 3–4 sessions | The rules makeover from C1 lands as code, not as prose. |
 | M4 | **`projectState` per viewer and per Fugitive**: each viewer sees its own truth; every Agent sees the schedule reveals, the public log, and nothing about un-revealed Fugitives. | M3 | 2–3 sessions | This is the MVP's single most security-relevant function. **Rejected:** hide on the client. Failure: a hidden node in a payload is not hidden, and the server rule forbids it anyway. |
-| M5 | **Candidate-set / belief solver inside `game-core`**, pure, as the input to Agent-side belief shading and to the real tractability test (`round-03-rules.md` §12's "median candidate set ≤ 12" must be measured, not hoped). | M4 | 2 sessions | Also the only honest instrument for the Reveal Pulse dominance question the director parked. |
+| M5 | **Candidate-set / belief solver inside `game-core`**, pure, as the input to Agent-side belief shading and to the real tractability test (`round-03-rules.md` §12's "median candidate set ≤ 12" must be measured, not hoped). | M4 | 2 sessions | Also the only honest instrument for the Appearance dominance question the director parked. |
 | M6 | **Authoritative server**: Fastify + Socket.io rooms, seat join, command validation, per-viewer projected broadcasts, **interest management** (send a client only what is near it), reconnect. | M4 | 3–4 sessions | `apps/server` boots and serves `/health` and `/board` today; there is no integration suite yet. |
 | M7 | **Bots and takeover on the server**: bot-controlled seats tick through the same command path; a human joining takes a bot's seat mid-Yard, inheriting position, purse and log; a seat whose human drops reverts to a bot after a grace period. | M6, M3 | 2–3 sessions | Tests the Part 1 seat abstraction for real. |
-| M8 | **Mobile UI**: the M2 screen set re-derived for 20 seats and 4 Fugitives — per-seat join (C2), a log strip that does not confuse four trails, belief shading, the pulse beat, the capture result, the rotate prompt. | M4, M6 | 4–5 sessions | Also where the art direction F/H must finally be chosen; the prototype (§1.6) is the evidence base for that choice. |
+| M8 | **Mobile UI**: the M2 screen set re-derived for 20 seats and 4 Fugitives — per-seat join (C2), a log strip that does not confuse four trails, belief shading, the appearance beat, the capture result, the rotate prompt. | M4, M6 | 4–5 sessions | Also where the art direction F/H must finally be chosen; the prototype (§1.6) is the evidence base for that choice. |
 | M9 | **End-to-end and load verification**: full-suite `pnpm test`, `pnpm typecheck`, `pnpm build`, `pnpm check:docs`, plus a booted-server route exercise and a 20-seat Yard. | M1–M8 | 1–2 sessions | Per `AGENTS.md`, report what was actually run. |
 
 **Total, proposal only:** roughly 20–30 sessions of agent work, exclusive of
@@ -371,7 +378,7 @@ beyond 20 seats is out of scope until the director asks.
 1. **Starting separation with four Fugitives.** Is ≥ 3 edges measured from every
    Agent start to *every* Fugitive start, or only from each Agent to its nearest
    Fugitive? The ruling is stated in the singular.
-2. **Whether the pulse still dominates at 20 seats and 4 Fugitives.** The
+2. **Whether the appearance still dominates at 20 seats and 4 Fugitives.** The
    director accepted it "for now"; the prototype and M5 are the evidence, and a
    design call follows, not an engineering one.
 3. **Map scale for 20 seats.** The MVP map is still described by the invalidated

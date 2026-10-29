@@ -121,7 +121,7 @@ describe('applyTicketDelta', () => {
 
 /**
  * The ticket log is the Agents' entire information channel between Reveal
- * Pulses (§2), so the two gadgets that attack it (§5) are tested directly.
+ * appearances (§2), so the two gadgets that attack it (§5) are tested directly.
  */
 describe('ticketLogEntry', () => {
   it('records the mode used for an ordinary move', () => {

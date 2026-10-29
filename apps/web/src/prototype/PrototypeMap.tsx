@@ -1,6 +1,6 @@
 import { memo, useLayoutEffect, useMemo, useRef } from 'react';
 
-import type { GeneratedMap, MapPoint, NodeId } from '@x-yard/map-generator';
+import type { GeneratedMap, GraphEdge, MapPoint, NodeId } from '@x-yard/map-generator';
 import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard/game-core';
 
 import { pathData } from './city';
@@ -22,6 +22,47 @@ const FUGITIVE_RADIUS = 10.5;
 const DESTINATION_RADIUS = 13.5;
 const DESTINATION_HIT = 19;
 const LABEL_ALL_SCALE = 0.78;
+const BADGE_SCALE = 0.62;
+
+/** The permanent transit network. Legal moves are drawn brighter on top. */
+const NETWORK_ORDER = ['taxi', 'bus', 'underground', 'special'] as const;
+const NETWORK_STYLE: Readonly<
+  Record<
+    (typeof NETWORK_ORDER)[number],
+    { readonly width: number; readonly opacity: number; readonly casing: number; readonly dash?: string }
+  >
+> = {
+  taxi: { width: 1.15, opacity: 0.5, casing: 3.2 },
+  bus: { width: 2.1, opacity: 0.82, casing: 4.6 },
+  underground: { width: 2.8, opacity: 0.9, casing: 5.4 },
+  special: { width: 1.8, opacity: 0.85, casing: 4.2, dash: '5 4' },
+};
+
+const STOP_BADGE: Readonly<
+  Record<'bus' | 'underground' | 'special', { readonly label: string; readonly colour: string }>
+> = {
+  bus: { label: 'B', colour: '#2f7a4f' },
+  underground: { label: 'M', colour: '#a93c36' },
+  special: { label: 'S', colour: '#6d4bb5' },
+};
+
+function stationNumber(id: NodeId): string {
+  return id.replace(/^[^0-9]*/, '');
+}
+
+function edgePoints(
+  edge: GraphEdge,
+  nodeById: ReadonlyMap<NodeId, { readonly x: number; readonly y: number }>,
+): readonly MapPoint[] {
+  if (edge.path !== undefined && edge.path.length > 1) return edge.path;
+  const from = nodeById.get(edge.a);
+  const to = nodeById.get(edge.b);
+  if (from === undefined || to === undefined) return [];
+  return [
+    { x: from.x, y: from.y },
+    { x: to.x, y: to.y },
+  ];
+}
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
@@ -145,10 +186,14 @@ interface PrototypeMapContentProps {
   readonly selectedMode: MobilityOption;
   readonly legal: readonly PrototypeMoveOption[];
   readonly onMove: (option: PrototypeMoveOption) => void;
-  readonly pulseNode: NodeId | null;
+  readonly onInspectStation: (node: NodeId) => void;
+  readonly onHoverStation: (node: NodeId | null) => void;
+  readonly appearanceNode: NodeId | null;
+  readonly ghostNode: NodeId | null;
   readonly scale: number;
   readonly activeStep: MoveStep | null;
   readonly trails: readonly Trail[];
+  readonly selectedStation: NodeId | null;
 }
 
 function PrototypeMapContent({
@@ -157,20 +202,42 @@ function PrototypeMapContent({
   selectedMode,
   legal,
   onMove,
-  pulseNode,
+  onInspectStation,
+  onHoverStation,
+  appearanceNode,
+  ghostNode,
   scale,
   activeStep,
   trails,
+  selectedStation,
 }: PrototypeMapContentProps): React.JSX.Element {
   const fugitive = seats[0];
   const agents = seats.slice(1);
   const options = legal.filter((option) => option.mode === selectedMode);
   const style = MOVE_STYLE[selectedMode];
   const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
-  const fastNetwork = useMemo(
-    () => map.graph.edges.filter((edge) => edge.mode !== 'taxi'),
+  const networkEdges = useMemo(
+    () =>
+      [...map.graph.edges].sort(
+        (left, right) =>
+          NETWORK_ORDER.indexOf(left.mode) - NETWORK_ORDER.indexOf(right.mode) ||
+          left.id.localeCompare(right.id),
+      ),
     [map.graph.edges],
   );
+  const stopsByNode = useMemo(() => {
+    const stops = new Map<NodeId, ('bus' | 'underground' | 'special')[]>();
+    for (const edge of map.graph.edges) {
+      if (edge.mode === 'taxi') continue;
+      for (const id of [edge.a, edge.b]) {
+        const current = stops.get(id) ?? [];
+        if (!current.includes(edge.mode)) current.push(edge.mode);
+        stops.set(id, current);
+      }
+    }
+    for (const modes of stops.values()) modes.sort();
+    return stops;
+  }, [map.graph.edges]);
 
   const px = (value: number): number => value / scale;
   const importantNodes = useMemo(() => {
@@ -184,14 +251,17 @@ function PrototypeMapContent({
       ids.add(activeStep.from);
       ids.add(activeStep.to);
     }
-    if (pulseNode !== null) ids.add(pulseNode);
+    if (appearanceNode !== null) ids.add(appearanceNode);
+    if (ghostNode !== null) ids.add(ghostNode);
+    if (selectedStation !== null) ids.add(selectedStation);
     for (const node of map.graph.nodes) {
       if (node.class !== 'street' || node.facilities.length > 0) ids.add(node.id);
     }
     return ids;
-  }, [activeStep, legal, map.graph.nodes, pulseNode, seats]);
+  }, [activeStep, appearanceNode, ghostNode, legal, map.graph.nodes, seats, selectedStation]);
 
   const showAllLabels = scale >= LABEL_ALL_SCALE;
+  const showBadges = scale >= BADGE_SCALE;
   const activeRole = activeStep?.role ?? null;
 
   return (
@@ -223,29 +293,37 @@ function PrototypeMapContent({
         </marker>
       </defs>
 
-      {/* The fast network stays faint; the city is the board, not a graph. */}
-      <g aria-hidden="true" opacity={0.22}>
-        {fastNetwork.map((edge) => (
-          <g key={`net-${edge.id}`}>
-            <path
-              d={pathData(edge.path ?? [])}
-              fill="none"
-              stroke="#fbf8f0"
-              strokeWidth={3.2}
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-            />
-            <path
-              d={pathData(edge.path ?? [])}
-              fill="none"
-              stroke={MOVE_STYLE[edge.mode].colour}
-              strokeWidth={1.7}
-              strokeLinecap="round"
-              strokeDasharray={MOVE_STYLE[edge.mode].dash ?? 'none'}
-              vectorEffect="non-scaling-stroke"
-            />
-          </g>
-        ))}
+      {/* The permanent transit map: taxi streets, bus, metro and special links. */}
+      <g className="transit-network" aria-hidden="true">
+        {networkEdges.map((edge) => {
+          const path = edgePoints(edge, nodeById);
+          const networkStyle = NETWORK_STYLE[edge.mode];
+          return (
+            <g key={`net-${edge.id}`}>
+              <path
+                d={pathData(path)}
+                fill="none"
+                stroke="#fbf8f0"
+                strokeWidth={networkStyle.casing}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={0.55}
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                d={pathData(path)}
+                fill="none"
+                stroke={MOVE_STYLE[edge.mode].colour}
+                strokeWidth={networkStyle.width}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={networkStyle.dash ?? 'none'}
+                opacity={networkStyle.opacity}
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          );
+        })}
       </g>
 
       {/* Completed moves from this turn stay as a thin trace until the next turn. */}
@@ -332,6 +410,7 @@ function PrototypeMapContent({
           const stroke =
             node.class === 'terminal' ? '#a93c36' : node.class === 'hub' ? '#2f7a4f' : '#5a5347';
           const labelled = showAllLabels || importantNodes.has(node.id);
+          const stops = stopsByNode.get(node.id) ?? [];
 
           return (
             <g key={node.id}>
@@ -339,6 +418,28 @@ function PrototypeMapContent({
               {node.class !== 'street' && (
                 <circle cx={node.x} cy={node.y} r={1.9 / scale} fill={stroke} />
               )}
+              {showBadges &&
+                stops.map((mode, index) => {
+                  const badge = STOP_BADGE[mode];
+                  const offset = (index - (stops.length - 1) / 2) * (8.4 / scale);
+                  return (
+                    <text
+                      key={`badge-${node.id}-${mode}`}
+                      x={node.x - radius - 3.8 / scale}
+                      y={node.y + offset + 2.4 / scale}
+                      textAnchor="end"
+                      fontSize={8 / scale}
+                      fontWeight={800}
+                      fill={badge.colour}
+                      paintOrder="stroke"
+                      stroke="#f4efe2"
+                      strokeWidth={2.4 / scale}
+                      strokeLinejoin="round"
+                    >
+                      {badge.label}
+                    </text>
+                  );
+                })}
               {labelled && (
                 <text
                   x={node.x + radius + 2.5 / scale}
@@ -369,6 +470,28 @@ function PrototypeMapContent({
                   {node.facilities.includes('black-market') ? 'BM' : 'SH'}
                 </text>
               )}
+              {selectedStation === node.id && (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={radius + 7.5 / scale}
+                  fill="none"
+                  stroke="#1e88a8"
+                  strokeWidth={2.2}
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={12 / scale}
+                fill="transparent"
+                className="station-hit"
+                data-node={node.id}
+                onClick={() => onInspectStation(node.id)}
+              >
+                <title>{`Station ${node.id} · ${node.class}${stops.length > 0 ? ` · ${stops.map((mode) => STOP_BADGE[mode].label).join(' ')}` : ' · taxi only'}`}</title>
+              </circle>
             </g>
           );
         })}
@@ -414,7 +537,10 @@ function PrototypeMapContent({
                 r={DESTINATION_HIT / scale}
                 fill="transparent"
                 className="dest-hit"
+                data-node={option.to}
                 onClick={() => onMove(option)}
+                onPointerEnter={() => onHoverStation(option.to)}
+                onPointerLeave={() => onHoverStation(null)}
               >
                 <title>
                   {style.label} to {option.to}
@@ -425,8 +551,47 @@ function PrototypeMapContent({
         })}
       </g>
 
+      {/* The Agents' last-known node. It stays after they move away, until the
+          next appearance replaces it. Deliberately not the true position. */}
+      {ghostNode !== null && (() => {
+        const node = nodeById.get(ghostNode);
+        if (node === undefined) return null;
+        const label = `F${stationNumber(ghostNode)}`;
+        return (
+          <g className="appearance-ghost" aria-hidden="true" pointerEvents="none">
+            <circle cx={node.x} cy={node.y} r={18 / scale} fill="#a93c36" opacity={0.1} />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={14.5 / scale}
+              fill="none"
+              stroke="#a93c36"
+              strokeWidth={2}
+              strokeDasharray="4 3"
+              opacity={0.8}
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle cx={node.x} cy={node.y} r={8.5 / scale} fill="#a93c36" opacity={0.3} />
+            <text
+              x={node.x - 12 / scale}
+              y={node.y + 3 / scale}
+              textAnchor="end"
+              fontSize={9 / scale}
+              fontWeight={800}
+              fill="#8e2c26"
+              paintOrder="stroke"
+              stroke="#f4efe2"
+              strokeWidth={2.6 / scale}
+              strokeLinejoin="round"
+            >
+              {label}
+            </text>
+          </g>
+        );
+      })()}
+
       {/* Tokens. Agents are visible from the Fugitive's seat (prototype rule). */}
-      <g>
+      <g className="tokens">
         {agents.map((agent, index) => {
           const node = nodeById.get(agent.node);
           if (!node) return null;
@@ -470,11 +635,11 @@ function PrototypeMapContent({
         })()}
       </g>
 
-      {pulseNode !== null && (() => {
-        const node = nodeById.get(pulseNode);
+      {appearanceNode !== null && (() => {
+        const node = nodeById.get(appearanceNode);
         if (!node) return null;
         return (
-          <g className="pulse-ring" aria-hidden="true">
+          <g className="appearance-ring" aria-hidden="true">
             <circle cx={node.x} cy={node.y} r={px(32)} fill="#a93c36" opacity={0.12} />
             <circle
               cx={node.x}
@@ -529,11 +694,15 @@ interface PrototypeMapProps {
   readonly selectedMode: MobilityOption;
   readonly legal: readonly PrototypeMoveOption[];
   readonly onMove: (option: PrototypeMoveOption) => void;
-  readonly pulseNode: NodeId | null;
+  readonly onInspectStation: (node: NodeId) => void;
+  readonly onHoverStation: (node: NodeId | null) => void;
+  readonly appearanceNode: NodeId | null;
+  readonly ghostNode: NodeId | null;
   readonly viewBox: string;
   readonly scale: number;
   readonly activeStep: MoveStep | null;
   readonly trails: readonly Trail[];
+  readonly selectedStation: NodeId | null;
 }
 
 /** The live layer over the city plate: stations, routes, tokens and input. */
@@ -543,11 +712,15 @@ export function PrototypeMap({
   selectedMode,
   legal,
   onMove,
-  pulseNode,
+  onInspectStation,
+  onHoverStation,
+  appearanceNode,
+  ghostNode,
   viewBox,
   scale,
   activeStep,
   trails,
+  selectedStation,
 }: PrototypeMapProps): React.JSX.Element {
   return (
     <svg
@@ -562,10 +735,14 @@ export function PrototypeMap({
         selectedMode={selectedMode}
         legal={legal}
         onMove={onMove}
-        pulseNode={pulseNode}
+        onInspectStation={onInspectStation}
+        onHoverStation={onHoverStation}
+        appearanceNode={appearanceNode}
+        ghostNode={ghostNode}
         scale={scale}
         activeStep={activeStep}
         trails={trails}
+        selectedStation={selectedStation}
       />
     </svg>
   );

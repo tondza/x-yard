@@ -251,8 +251,12 @@ export const TRANSPORT_MODES: readonly TransportMode[] = [
 /** Turns in one Yard (§2). Ratified 2026-10-16: a 16-turn Yard. */
 export const YARD_TURN_LIMIT = 16;
 
-/** Turns on which a Reveal Pulse fires (§2). Ratified 2026-10-16: 5 / 10 / 15. */
-export const REVEAL_PULSE_TURNS: readonly number[] = [5, 10, 15];
+/**
+ * Turns on which the Fugitive makes a mandatory appearance (§2).
+ * Ratified 2026-10-16 as turns 5 / 10 / 15; the director renamed the
+ * player-facing term from "Reveal Pulse" to "Appearance" on 2026-10-29.
+ */
+export const APPEARANCE_TURNS: readonly number[] = [5, 10, 15];
 
 /** Fugitive seats per Yard (§6). Ratified 2026-10-16. */
 export const MAX_FUGITIVES_PER_YARD = 4;

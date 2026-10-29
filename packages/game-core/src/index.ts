@@ -62,7 +62,7 @@ export {
   PROVISIONAL_HEAVY_CARGO_FORBIDS,
   PROVISIONAL_LOGOFF_GRACE_TURNS,
   PROVISIONAL_MISSION_PAYOUTS,
-  REVEAL_PULSE_TURNS,
+  APPEARANCE_TURNS,
   SENSOR_SWEEP_RADIUS,
   TRANSPORT_MODES,
   YARD_TURN_LIMIT,
@@ -130,7 +130,7 @@ export type {
   PrototypeResult,
   PrototypeSeat,
   PrototypeState,
-} from './prototype/types';
+} from './prototype';
 
 export {
   applyFugitiveCommand,
@@ -139,4 +139,4 @@ export {
   legalMoves,
   recentLog,
   resolveAgentPhase,
-} from './prototype/engine';
+} from './prototype';

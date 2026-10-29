@@ -1,7 +1,7 @@
 /**
  * Local 1-Fugitive / N-Agent prototype loop.
  *
- * The turn shape is the plan's E6 order: the Fugitive moves, a scheduled pulse
+ * The turn shape is the plan's E6 order: the Fugitive moves, a scheduled appearance
  * or a scooter reveal updates the Agents' `lastKnown`, then the Agent phase
  * resolves. Capture is end-position equality only; a clean swap is not a catch.
  *
@@ -15,7 +15,7 @@
 import { neighboursOf } from '../graph';
 import { spend } from '../tickets';
 import {
-  REVEAL_PULSE_TURNS,
+  APPEARANCE_TURNS,
   TRANSPORT_MODES,
   YARD_TURN_LIMIT,
   type NodeId,
@@ -205,8 +205,8 @@ export function createPrototypeGame(
     phase: 'fugitive',
     seats: [fugitive, ...agents],
     lastKnown: starts.fugitive,
-    lastPulseTurn: null,
-    pendingPulse: REVEAL_PULSE_TURNS.includes(1),
+    lastAppearanceTurn: null,
+    pendingAppearance: APPEARANCE_TURNS.includes(1),
     log: [],
     result: null,
   };
@@ -254,7 +254,7 @@ export function applyFugitiveCommand(
       next = {
         ...next,
         lastKnown: move.to,
-        lastPulseTurn: state.turn,
+        lastAppearanceTurn: state.turn,
       };
       next = appendLog(next, {
         turn: state.turn,
@@ -281,7 +281,7 @@ export function applyFugitiveCommand(
     state: {
       ...next,
       phase: 'agents',
-      pendingPulse: REVEAL_PULSE_TURNS.includes(next.turn),
+      pendingAppearance: APPEARANCE_TURNS.includes(next.turn),
     },
   };
 }
@@ -384,17 +384,17 @@ export function resolveAgentPhase(
   let next: PrototypeState = state;
   const agentMoves: PrototypeAgentMove[] = [];
 
-  if (state.pendingPulse) {
+  if (state.pendingAppearance) {
     next = {
       ...next,
       lastKnown: fugitive.node,
-      lastPulseTurn: state.turn,
-      pendingPulse: false,
+      lastAppearanceTurn: state.turn,
+      pendingAppearance: false,
     };
     next = appendLog(next, {
       turn: state.turn,
       seatId: fugitive.id,
-      kind: 'pulse',
+      kind: 'appearance',
       mode: 'unknown',
       node: fugitive.node,
     });
@@ -467,7 +467,7 @@ export function resolveAgentPhase(
       ...next,
       turn: next.turn + 1,
       phase: 'fugitive',
-      pendingPulse: REVEAL_PULSE_TURNS.includes(next.turn + 1),
+      pendingAppearance: APPEARANCE_TURNS.includes(next.turn + 1),
     },
   };
 }

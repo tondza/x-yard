@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  REVEAL_PULSE_TURNS,
+  APPEARANCE_TURNS,
   applyFugitiveCommand,
   createPrototypeGame,
   legalMoves,
@@ -65,7 +65,7 @@ function countFor(state: PrototypeState, mode: MobilityOption): number {
 }
 
 function logRow(entry: PrototypeLogEntry): string {
-  if (entry.kind === 'pulse') return `T${entry.turn} · PULSE · ${entry.node ?? '?'}`;
+  if (entry.kind === 'appearance') return `T${entry.turn} · APPEARANCE · ${entry.node ?? '?'}`;
   if (entry.kind === 'reveal') return `T${entry.turn} · SCOOTER REVEAL · ${entry.node ?? '?'}`;
   if (entry.kind === 'result') return `T${entry.turn} · YARD OVER`;
   return `T${entry.turn} · ${entry.mode.toUpperCase()}`;
@@ -80,9 +80,10 @@ export default function Prototype(): React.JSX.Element {
   const [activeStep, setActiveStep] = useState<MoveStep | null>(null);
   const [trails, setTrails] = useState<readonly Trail[]>([]);
   const [seatNodes, setSeatNodes] = useState<Readonly<Record<string, NodeId>>>({});
-  const [pulseNode, setPulseNode] = useState<NodeId | null>(null);
+  const [appearanceNode, setAppearanceNode] = useState<NodeId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<NodeId | null>(null);
 
   const runIdRef = useRef(0);
   const busyRef = useRef(false);
@@ -160,7 +161,7 @@ export default function Prototype(): React.JSX.Element {
     runIdRef.current += 1;
     busyRef.current = false;
     setActiveStep(null);
-    setPulseNode(null);
+    setAppearanceNode(null);
     setBanner(null);
     setTrails(allStepsRef.current.map(stepTrail));
     setSeatNodes(nodeMap(final));
@@ -204,18 +205,18 @@ export default function Prototype(): React.JSX.Element {
     const fugitiveNode =
       applied.state.seats.find((seat) => seat.role === 'fugitive')?.node ?? applied.state.lastKnown;
 
-    if (applied.state.pendingPulse) {
-      setPulseNode(fugitiveNode);
+    if (applied.state.pendingAppearance) {
+      setAppearanceNode(fugitiveNode);
       setBanner({ kind: 'reveal', node: fugitiveNode, scooter: false });
       await sleep(REVEAL_HOLD_MS);
       if (!alive(runId)) return;
-      setPulseNode(null);
+      setAppearanceNode(null);
     } else if (reveal !== undefined && reveal.node !== null) {
-      setPulseNode(reveal.node);
+      setAppearanceNode(reveal.node);
       setBanner({ kind: 'reveal', node: reveal.node, scooter: true });
       await sleep(REVEAL_HOLD_MS);
       if (!alive(runId)) return;
-      setPulseNode(null);
+      setAppearanceNode(null);
     }
 
     for (let index = 0; index < agentSteps.length; index += 1) {
@@ -232,7 +233,7 @@ export default function Prototype(): React.JSX.Element {
     }
 
     setActiveStep(null);
-    setPulseNode(null);
+    setAppearanceNode(null);
     setBanner(null);
     setSeatNodes(nodeMap(resolved.state));
     setGame(resolved.state);
@@ -267,8 +268,9 @@ export default function Prototype(): React.JSX.Element {
 
       setSeatNodes(nodeMap(game));
       setTrails([]);
-      setPulseNode(null);
+      setAppearanceNode(null);
       setActiveStep(null);
+      setSelectedStation(null);
       setPending(true);
 
       void runTurn(runId, applied, resolved, fugitiveStep, agentSteps);
@@ -294,18 +296,31 @@ export default function Prototype(): React.JSX.Element {
     allStepsRef.current = [];
     setPending(false);
     setActiveStep(null);
-    setPulseNode(null);
+    setAppearanceNode(null);
     setTrails([]);
     setSeatNodes({});
     setBanner(null);
     setError(null);
     setSelectedMode('taxi');
     setExpanded(false);
+    setSelectedStation(null);
     setGame(initialGame());
   }, []);
 
   const toggleExpanded = useCallback((): void => {
     setExpanded((value) => !value);
+  }, []);
+
+  const inspectStation = useCallback(
+    (node: NodeId): void => {
+      if (pending) return;
+      setSelectedStation((current) => (current === node ? null : node));
+    },
+    [pending],
+  );
+
+  const closeStation = useCallback((): void => {
+    setSelectedStation(null);
   }, []);
 
   useEffect(() => {
@@ -318,11 +333,15 @@ export default function Prototype(): React.JSX.Element {
         activeStep: { seatId: string; from: string; to: string; mode: string } | null;
         trails: number;
         expanded: boolean;
+        selectedStation: NodeId | null;
+        lastAppearanceTurn: number | null;
+        lastKnown: NodeId;
         move: (option: PrototypeMoveOption) => void;
         hold: () => void;
         skip: () => void;
         restart: () => void;
         setExpanded: (value: boolean) => void;
+        inspectStation: (node: NodeId) => void;
       };
     };
     scope.__XYARD_PROTOTYPE__ = {
@@ -341,18 +360,42 @@ export default function Prototype(): React.JSX.Element {
             },
       trails: trails.length,
       expanded,
+      selectedStation,
+      lastAppearanceTurn: game.lastAppearanceTurn,
+      lastKnown: game.lastKnown,
       move: handleMove,
       hold: handleHold,
       skip: skipPlayback,
       restart,
       setExpanded,
+      inspectStation,
     };
     return () => {
       delete scope.__XYARD_PROTOTYPE__;
     };
-  }, [activeStep, displaySeats, expanded, game, handleHold, handleMove, legal, pending, restart, skipPlayback, trails.length]);
+  }, [
+    activeStep,
+    displaySeats,
+    expanded,
+    game,
+    handleHold,
+    handleMove,
+    inspectStation,
+    legal,
+    pending,
+    restart,
+    selectedStation,
+    skipPlayback,
+    trails.length,
+  ]);
 
   const agents = displaySeats.slice(1);
+  // The Agents' last-known node, shown as a ghost once it is no longer where the
+  // real Fugitive is standing. Before the first appearance there is nothing to show.
+  const ghostNode =
+    game.lastAppearanceTurn !== null && game.lastKnown !== displaySeats[0]?.node
+      ? game.lastKnown
+      : null;
   const logs = [...recentLog(game, 9)].reverse();
   const selectedOptions = byMode.get(selectedMode) ?? [];
   const showResult = game.result !== null && !pending;
@@ -371,12 +414,12 @@ export default function Prototype(): React.JSX.Element {
           <span>/ 16</span>
         </div>
 
-        <div className="proto-pulses">
-          <span className="pulse-label">PULSES</span>
-          {REVEAL_PULSE_TURNS.map((turn) => (
+        <div className="proto-appearances">
+          <span className="appearance-label">APPEARANCES</span>
+          {APPEARANCE_TURNS.map((turn) => (
             <span
               key={turn}
-              className={`pulse-chip${game.turn === turn ? ' current' : ''}${game.turn > turn ? ' passed' : ''}`}
+              className={`appearance-chip${game.turn === turn ? ' current' : ''}${game.turn > turn ? ' passed' : ''}`}
             >
               {turn}
             </span>
@@ -401,7 +444,8 @@ export default function Prototype(): React.JSX.Element {
           selectedMode={selectedMode}
           legal={legal}
           onMove={handleMove}
-          pulseNode={pulseNode}
+          onInspectStation={inspectStation}
+          appearanceNode={appearanceNode}
           activeStep={activeStep}
           trails={trails}
           banner={banner}
@@ -409,6 +453,9 @@ export default function Prototype(): React.JSX.Element {
           onSkip={skipPlayback}
           expanded={expanded}
           onToggleExpanded={toggleExpanded}
+          selectedStation={selectedStation}
+          ghostNode={ghostNode}
+          onCloseStation={closeStation}
         />
 
         <aside className="proto-side">
@@ -503,8 +550,9 @@ export default function Prototype(): React.JSX.Element {
               <span>Rules reminder</span>
             </div>
             <p>
-              You move first. A pulse on 5, 10 and 15 reveals your node before the
-              Agents move. A scooter move reveals it immediately. Survive to turn 16.
+              You move first. The Fugitive appears on 5, 10 and 15, showing the exact
+              node to the Agents before they move. A scooter move shows it immediately.
+              Survive to turn 16.
             </p>
           </section>
         </aside>

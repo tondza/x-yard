@@ -88,9 +88,9 @@ export type PrototypeCommandResult =
 export interface PrototypeLogEntry {
   readonly turn: number;
   readonly seatId: PlayerId | null;
-  readonly kind: 'move' | 'pulse' | 'reveal' | 'result';
+  readonly kind: 'move' | 'appearance' | 'reveal' | 'result';
   readonly mode: LoggedTransport;
-  /** Set for a pulse or a scooter reveal; `null` for an ordinary move row. */
+  /** Set for an appearance or a scooter reveal; `null` for an ordinary move row. */
   readonly node: NodeId | null;
 }
 
@@ -111,9 +111,10 @@ export interface PrototypeState {
   readonly seats: readonly PrototypeSeat[];
   /** The node the Agents currently believe the Fugitive is at. */
   readonly lastKnown: NodeId;
-  readonly lastPulseTurn: number | null;
-  /** A scheduled pulse is owed at the end of this Fugitive move. */
-  readonly pendingPulse: boolean;
+  /** The turn of the last appearance, or `null` before the first one. */
+  readonly lastAppearanceTurn: number | null;
+  /** A scheduled appearance is owed at the end of this Fugitive move. */
+  readonly pendingAppearance: boolean;
   readonly log: readonly PrototypeLogEntry[];
   readonly result: PrototypeResult | null;
 }

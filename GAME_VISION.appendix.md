@@ -2,6 +2,12 @@
 
 **Not director-authored. No design authority.**
 
+**Terminology note (2026-10-29).** The director renamed the player-facing
+"Reveal Pulse" to **Appearance** (next / previous appearance). The brief,
+prototype and shared constant use the new term; older entries below and
+historical records may still quote the former name. The rule and the 5 / 10 / 15
+schedule are unchanged — see [decision 0016](docs/decisions/0016-appearance-terminology.md).
+
 Engineering bookkeeping split out of [`GAME_VISION.md`](GAME_VISION.md), which
 holds the director-authored brief (§1–§6). Everything here is maintained by
 agent sessions:
@@ -34,7 +40,7 @@ Last updated: 2026-10-15.
 | `game-core`: mission, facility, gadget, skill vocabulary | ✅ types only |
 | `game-core`: turn/phase machine | ⏳ not started |
 | `game-core`: capture resolution | ⏳ not started |
-| `game-core`: reveal pulse scheduling | ⏳ not started |
+| `game-core`: appearance scheduling | ⏳ not started |
 | `game-core`: probability/shadow-set projection | ⏳ not started |
 | Server: yard instances, sockets, matchmaking | ⏳ not started (scaffold only) |
 | Client: canvas map rendering | 🟡 scaffold only |

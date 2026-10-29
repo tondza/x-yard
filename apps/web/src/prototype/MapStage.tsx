@@ -31,7 +31,8 @@ interface MapStageProps {
   readonly selectedMode: MobilityOption;
   readonly legal: readonly PrototypeMoveOption[];
   readonly onMove: (option: PrototypeMoveOption) => void;
-  readonly pulseNode: NodeId | null;
+  readonly appearanceNode: NodeId | null;
+  readonly ghostNode: NodeId | null;
   readonly activeStep: MoveStep | null;
   readonly trails: readonly Trail[];
   readonly banner: PhaseBanner | null;
@@ -39,6 +40,37 @@ interface MapStageProps {
   readonly onSkip: () => void;
   readonly expanded: boolean;
   readonly onToggleExpanded: () => void;
+  readonly selectedStation: NodeId | null;
+  readonly onInspectStation: (node: NodeId) => void;
+  readonly onCloseStation: () => void;
+}
+
+const STATION_MODES = ['taxi', 'bus', 'underground', 'special'] as const;
+
+interface StationLine {
+  readonly mode: (typeof STATION_MODES)[number];
+  readonly destinations: readonly NodeId[];
+}
+
+function stationLines(map: GeneratedMap, nodeId: NodeId): readonly StationLine[] {
+  const found = new Map<(typeof STATION_MODES)[number], NodeId[]>();
+  for (const edge of map.graph.edges) {
+    if (edge.a !== nodeId && edge.b !== nodeId) continue;
+    const other = edge.a === nodeId ? edge.b : edge.a;
+    const list = found.get(edge.mode) ?? [];
+    if (!list.includes(other)) list.push(other);
+    found.set(edge.mode, list);
+  }
+  return STATION_MODES.map((mode) => ({
+    mode,
+    destinations: [...(found.get(mode) ?? [])].sort((left, right) => left.localeCompare(right)),
+  }));
+}
+
+function stationClassLabel(className: 'street' | 'hub' | 'terminal'): string {
+  if (className === 'terminal') return 'Terminal';
+  if (className === 'hub') return 'Hub';
+  return 'Street';
 }
 
 function bannerText(banner: PhaseBanner | null, turn: number): {
@@ -64,7 +96,7 @@ function bannerText(banner: PhaseBanner | null, turn: number): {
 
   if (banner.kind === 'reveal') {
     return {
-      kicker: banner.scooter ? 'SCOOTER REVEAL' : 'REVEAL PULSE',
+      kicker: banner.scooter ? 'SCOOTER REVEAL' : 'APPEARANCE',
       main: `Vulture seen at ${banner.node}`,
       detail: 'The Agents now know this station',
     };
@@ -84,7 +116,8 @@ export function MapStage({
   selectedMode,
   legal,
   onMove,
-  pulseNode,
+  appearanceNode,
+  ghostNode,
   activeStep,
   trails,
   banner,
@@ -92,10 +125,15 @@ export function MapStage({
   onSkip,
   expanded,
   onToggleExpanded,
+  selectedStation,
+  onInspectStation,
+  onCloseStation,
 }: MapStageProps): React.JSX.Element {
   const frameRef = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState<StageSize>({ width: 0, height: 0 });
   const [dragging, setDragging] = useState(false);
+  const [hoveredStation, setHoveredStation] = useState<NodeId | null>(null);
+  const lastPointerTypeRef = useRef<string>('mouse');
   const suppressClickRef = useRef(false);
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchRef = useRef<{ distance: number; x: number; y: number } | null>(null);
@@ -134,6 +172,24 @@ export function MapStage({
 
     return points;
   }, [activeStep, map.graph.nodes, seats]);
+
+  // Hovering a legal destination previews its onward lines without moving there.
+  const cardStation = selectedStation ?? hoveredStation;
+  const cardIsPreview = selectedStation === null && hoveredStation !== null;
+  const selectedNode =
+    cardStation === null ? undefined : map.graph.nodes.find((node) => node.id === cardStation);
+  const selectedLines = useMemo(
+    () => (cardStation === null ? [] : stationLines(map, cardStation)),
+    [cardStation, map],
+  );
+  const stationTenant =
+    cardStation === null ? undefined : seats.find((seat) => seat.node === cardStation);
+  const legalHere =
+    cardStation === null ? [] : legal.filter((option) => option.to === cardStation);
+
+  useEffect(() => {
+    if (pending) setHoveredStation(null);
+  }, [pending]);
 
   const camera = useMapCamera({ bounds: map.bounds, stage, focusPoints });
   const viewBox = cameraViewBox(camera.camera, stage);
@@ -200,14 +256,23 @@ export function MapStage({
   const handleMove = useCallback(
     (option: PrototypeMoveOption): void => {
       if (suppressClickRef.current) return;
+      // Touch has no hover: the first tap previews the destination's lines, the
+      // second tap on the same ring moves. Mouse clicks still move immediately.
+      if (lastPointerTypeRef.current === 'touch' && selectedStation !== option.to) {
+        onInspectStation(option.to);
+        return;
+      }
       onMove(option);
     },
-    [onMove],
+    [onInspectStation, onMove, selectedStation],
   );
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
+    lastPointerTypeRef.current = event.pointerType;
     const target = event.target;
-    if (target instanceof Element && target.closest('.map-hud, .dest-hit') !== null) return;
+    if (target instanceof Element && target.closest('.map-hud, .dest-hit, .station-hit') !== null) {
+      return;
+    }
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -305,11 +370,15 @@ export function MapStage({
           selectedMode={selectedMode}
           legal={legal}
           onMove={handleMove}
-          pulseNode={pulseNode}
+          onInspectStation={onInspectStation}
+          onHoverStation={setHoveredStation}
+          appearanceNode={appearanceNode}
+          ghostNode={ghostNode}
           viewBox={viewBox}
           scale={camera.camera.scale}
           activeStep={activeStep}
           trails={trails}
+          selectedStation={selectedStation ?? hoveredStation}
         />
 
         <div className="map-hud">
@@ -359,22 +428,96 @@ export function MapStage({
             </button>
           </div>
 
-          <div
-            className={`motion-banner kind-${banner?.kind ?? 'idle'}${
-              camera.viewMode === 'map' ? ' free-look' : ''
-            }`}
-          >
-            <div className="banner-copy">
-              <span className="banner-kicker">{bannerInfo.kicker}</span>
-              <strong className="banner-main">{bannerInfo.main}</strong>
-              <span className="banner-detail">{bannerInfo.detail}</span>
+          {(cardStation === null || pending) && (
+            <div
+              className={`motion-banner kind-${banner?.kind ?? 'idle'}${
+                camera.viewMode === 'map' ? ' free-look' : ''
+              }`}
+            >
+              <div className="banner-copy">
+                <span className="banner-kicker">{bannerInfo.kicker}</span>
+                <strong className="banner-main">{bannerInfo.main}</strong>
+                <span className="banner-detail">{bannerInfo.detail}</span>
+              </div>
+              {pending && (
+                <button type="button" className="skip-button" onClick={onSkip}>
+                  Skip
+                </button>
+              )}
             </div>
-            {pending && (
-              <button type="button" className="skip-button" onClick={onSkip}>
-                Skip
-              </button>
-            )}
-          </div>
+          )}
+
+          {cardStation !== null && selectedNode !== undefined && !pending && (
+            <div className="station-card" onPointerDown={(event) => event.stopPropagation()}>
+              {!cardIsPreview && (
+                <button
+                  type="button"
+                  className="station-close"
+                  onClick={() => {
+                    setHoveredStation(null);
+                    onCloseStation();
+                  }}
+                  aria-label="Close station card"
+                >
+                  ×
+                </button>
+              )}
+              <span className="station-kicker">
+                {cardIsPreview ? 'STATION PREVIEW' : 'STATION'}
+              </span>
+              <div className="station-title">
+                <strong>{cardStation}</strong>
+                <span>
+                  {stationClassLabel(selectedNode.class)}
+                  {selectedLines.some((line) => line.destinations.length > 0)
+                    ? ` · ${selectedLines
+                        .filter((line) => line.destinations.length > 0)
+                        .map((line) => MOVE_STYLE[line.mode].label)
+                        .join(' / ')}`
+                    : ''}
+                </span>
+              </div>
+
+              {stationTenant !== undefined && (
+                <div className="station-tenant">
+                  {stationTenant.name} is
+                  {stationTenant.id === seats[0]?.id ? ' here (you)' : ' here'}
+                </div>
+              )}
+
+              {ghostNode === cardStation && (
+                <div className="station-appearance">
+                  Last appearance · F{cardStation.replace(/^[^0-9]*/, '')}
+                </div>
+              )}
+
+              <div className="station-lines">
+                {selectedLines.map((line) => (
+                  <div key={line.mode} className="station-line">
+                    <span
+                      className="station-line-label"
+                      style={{ color: MOVE_STYLE[line.mode].colour }}
+                    >
+                      {MOVE_STYLE[line.mode].label}
+                    </span>
+                    <span className="station-line-dest">
+                      {line.destinations.length > 0 ? line.destinations.join(' · ') : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {!cardIsPreview && legalHere.length > 0 && (
+                <p className="station-move-hint">
+                  Tap the ringed station again to move here.
+                </p>
+              )}
+
+              <p className="station-hint">
+                Foot and scooter use the taxi network. Ticket counts are in the kit.
+              </p>
+            </div>
+          )}
 
           {camera.viewMode === 'map' && (
             <div className="free-look-hint">
@@ -391,8 +534,12 @@ export function MapStage({
             {style.label}
           </span>
         ))}
+        <span className="legend-badges">Stops: B bus · M metro · S special</span>
+        <span className="legend-ghost">
+          <i className="ghost-swatch" /> Last appearance
+        </span>
         <span className="legend-hint">
-          Click a ringed station to move · numbers are station ids
+          Ringed station moves · any station opens its lines
         </span>
       </div>
     </section>

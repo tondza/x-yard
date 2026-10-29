@@ -83,7 +83,7 @@ apps/web             Vite + React + Canvas  (depends on both)
 ## 4. The PROVISIONAL_ rule
 
 The brief pins some numbers down (Sensor Sweep's 2-node radius) and leaves many
-open (ticket counts, reveal-pulse interval, turn limit, payout scale, seat
+open (ticket counts, appearance interval, turn limit, payout scale, seat
 counts). Every number the brief does **not** state must be exposed as a named
 constant whose identifier begins with `PROVISIONAL_`, with a comment citing the
 open question it stands in for.

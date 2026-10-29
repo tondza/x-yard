@@ -36,8 +36,8 @@ name what they invalidate.
    **rejected**, so §4 below still stands. The **map generator is early work** — the
    prototype may use a small hand-authored map, but generator work starts before the
    MVP.
-5. **Reveal Pulse dominance is accepted for now**, and the proposed cycle is adopted:
-   **16 turns, pulses on 5 / 10 / 15.** **Starting separation ≥ 3 edges** between every
+5. **Appearance dominance is accepted for now**, and the proposed cycle is adopted:
+   **16 turns, appearances on 5 / 10 / 15.** **Starting separation ≥ 3 edges** between every
    Agent start and the Fugitive start is adopted.
    → This closes R13 and R15 and sets R14 aside as playtest tuning. The validator's
    candidate-set concern remains *true* — it saturates mid-interval — but it is **not a
@@ -54,7 +54,7 @@ name what they invalidate.
    longer matches: the ruling reads **Agents first, then Fugitives**.
    → **Faction-internal visibility supersedes the simpler rule** in
    `VISUAL_DIRECTION.md` decision 4: Agents see all Agents, Fugitives see all
-   Fugitives, and neither faction sees the other except through a Reveal Pulse and the
+   Fugitives, and neither faction sees the other except through a Appearance and the
    public mode log.
    → **Wall-clock still never decides *what* happens.** The timer lives in the server;
    a timeout reaches `game-core` as an event, so `submitCommand` stays pure. Because
@@ -72,7 +72,7 @@ name what they invalidate.
      same as being stuck.
    - Does the window **close early** the moment every member has moved? (Required, per
      the arithmetic above.)
-   - **Where does the Reveal Pulse sit** now — before the Agent window, so Agents can
+   - **Where does the Appearance sit** now — before the Agent window, so Agents can
      act on it, or after the Fugitive window?
    - **Concurrent-move collisions:** two Agents reaching the same node, and an Agent
      and a Fugitive crossing paths inside one window.
@@ -80,23 +80,23 @@ name what they invalidate.
 ## 1. The validator's verdict
 
 > **"Worth building only if three things change."** As specified, the game reduces
-> to *"don't be adjacent to an Agent at the pulse, be adjacent at the pulse"* — the
-> Reveal Pulse **is** the game, and everything else is bookkeeping around three to
+> to *"don't be adjacent to an Agent at the appearance, be adjacent at the appearance"* — the
+> Appearance **is** the game, and everything else is bookkeeping around three to
 > five one-turn windows.
 
 That is a serious finding and it is the single most important input in this round.
 It is **not** the same as "the MVP is bad" — it means the loop as written is not
 yet interesting, and must be fixed before implementation, not after.
 
-**Director ruling (2026-10-16):** accepted for the beginning. The pulse-dominant loop
+**Director ruling (2026-10-16):** accepted for the beginning. The appearance-dominant loop
 is a known limitation to revisit after the prototype, not a blocker.
 
 ## 2. The three P0 changes (applied here)
 
-1. **Turn limit 16, not 24.** Reveal Pulses on **5 / 10 / 15** (M2's numbers; M1's
+1. **Turn limit 16, not 24.** Appearances on **5 / 10 / 15** (M2's numbers; M1's
    24-turn schedule is wrong). Arithmetic on M2's own 55 s + n×25 s model: 24 turns
    = 11 min 35 s, outside the 5–10 min phone target; 16 turns = 7 min 55 s. M1's
-   turn-23 pulse also left a five-turn unpruned interval followed by a one-turn
+   turn-23 appearance also left a five-turn unpruned interval followed by a one-turn
    "climax" — two uncompensated endgames.
 2. **The scooter's exact-position reveal is cut.** M1 revealed the scooter's ending
    node *before* the Agent phase, while capture is an end-position test — so any
@@ -113,7 +113,7 @@ is a known limitation to revisit after the prototype, not a blocker.
    (~96 s of pure hand-over, ~32 s/turn against a 25 s budget); and a press-and-hold
    hides a glance, not an unattended device between two Agents. **Hot-seat stays as
    M1's first-playable developer harness only.** If the director insists on avoiding
-   netcode, the defensible cheaper variant is **12 turns with pulses 4 / 8 / 12**.
+   netcode, the defensible cheaper variant is **12 turns with appearances 4 / 8 / 12**.
 
 ## 3. The MVP in one page
 
@@ -125,7 +125,7 @@ is a known limitation to revisit after the prototype, not a blocker.
   therefore now stale.
 - **Length:** 16 turns. Target 5–10 minutes on a phone.
 - **Turn order:** fugitive-phase → **reveal-pulse** → agent-phase →
-  capture-resolution. The pulse deliberately runs *before* the Agent phase so Agents
+  capture-resolution. The appearance deliberately runs *before* the Agent phase so Agents
   can act on it the same turn.
 - **Modes:** `taxi`, `bus`, `underground`, `special`, plus **on foot** and
   **electric scooter**. Do **not** widen `TransportMode`; add
@@ -141,14 +141,14 @@ is a known limitation to revisit after the prototype, not a blocker.
 - **Capture:** end-position equality only (`agent.node === fugitive.node`).
   Co-location is a **set**, not a capacity — nodes are uncapped. Moving onto an
   occupied node is legal and can be a self-capture. **A crossing/swap is not a
-  capture** (under staggered ticks they were never co-located). Reveal Pulse is not
+  capture** (under staggered ticks they were never co-located). Appearance is not
   a capture moment.
 - **Log invariant:** exactly one public row per living Fugitive per turn — the move
   row or a forced `hold`. No silent turns. *Known gap:* pin this to the turn
   sequence **unconditionally**; the validation found the capture turn currently has
   zero rows.
 - **Map:** 60 stations (≈40 street / 14 hub / 6 terminal, ~105 edges), median Agent
-  candidate set target ≤ 12 nodes just before a pulse. **Proposal, pending review at
+  candidate set target ≤ 12 nodes just before an appearance. **Proposal, pending review at
   the 20-player scale** — it was sized for 1 Fugitive vs 2 Agents.
 - **Starting separation:** **≥ 3 edges** between every Agent start and every Fugitive
   start (ratified 2026-10-16). Currently stated for a single Fugitive; the four-Fugitive
@@ -171,7 +171,7 @@ expecting it to make occupancy and the "same square?" capture test unambiguous.
   not a representation bug.**
 - **It would collapse the transport tiers.** Mode stops constraining *where* a move
   lands and only says how far. On a uniform lattice every cell has identical
-  neighbours, so after a pulse plus three logged modes an Agent's candidate set goes
+  neighbours, so after an appearance plus three logged modes an Agent's candidate set goes
   from tens of nameable stations to hundreds of interchangeable squares — and
   bus/metro degenerate into "long taxi", destroying the four-tier ticket economy.
 - **The real fix is per-edge street geometry.** A move is an *edge sequence*, and a
@@ -189,16 +189,16 @@ expecting it to make occupancy and the "same square?" capture test unambiguous.
 ## 5. Open questions for the director
 
 1. **The core loop is the real question.** Fixing the three P0s does not by itself
-   answer the validator's finding that the Reveal Pulse dominates. Options:
+   answer the validator's finding that the Appearance dominates. Options:
    (a) ship the corrected 16-turn MVP and accept it as a **thin loop to validate
    the pipeline**, not a finished game; (b) **restore tension by scale** —
    more Agents (1v3) and/or a larger map — which costs more seats and more netcode;
-   (c) **change the loop** — give Agents a second lever between pulses (a
-   search/sweep action) so the pulse is not the only real decision.
+   (c) **change the loop** — give Agents a second lever between appearances (a
+   search/sweep action) so the appearance is not the only real decision.
    *Recommended default:* (a) for the first playable, with (b) as the first
    post-MVP experiment, because a thin loop is still enough to prove the pipeline
    and the deduction UI. But this is a **design call, not an engineering one.**
-2. **Reveal Pulse interval.** V ruled 5/10/15 (for 16 turns), then separately
+2. **Appearance interval.** V ruled 5/10/15 (for 16 turns), then separately
    recommended interval 4 (4/8/12/16) because the candidate set saturates to
    ≥ 14–40 nodes mid-interval. **These conflict.** *Recommended default:*
    4 / 8 / 12 / 16, and run M1 §12's candidate-set bound as a real solver test over

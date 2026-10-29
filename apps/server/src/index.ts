@@ -17,7 +17,7 @@ import { Server as SocketServer } from 'socket.io';
 
 import {
   DEMO_BOARD,
-  REVEAL_PULSE_TURNS,
+  APPEARANCE_TURNS,
   SENSOR_SWEEP_RADIUS,
   TRANSPORT_MODES,
   YARD_TURN_LIMIT,
@@ -62,7 +62,7 @@ export function buildServer(): FastifyInstance {
     sensorSweepRadius: SENSOR_SWEEP_RADIUS,
     // Ratified 2026-10-16; see GAME_VISION.appendix.md C.2.
     turnLimit: YARD_TURN_LIMIT,
-    revealPulseTurns: REVEAL_PULSE_TURNS,
+    appearanceTurns: APPEARANCE_TURNS,
   }));
 
   app.get('/board', () => toBoardDto());

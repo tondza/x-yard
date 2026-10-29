@@ -99,7 +99,7 @@ session does not discover them halfway through an implementation.
   wrong.
 - **Do stations get in-world names**, or stay numbered (101, 102…)? The round-01
   paper dossier invented names ("Kentish Row"); the round-02 brief uses numbers.
-- **Reveal Pulse interval — ratified 2026-10-16.** Now `REVEAL_PULSE_TURNS = [5, 10, 15]`
+- **Appearance interval — ratified 2026-10-16.** Now `APPEARANCE_TURNS = [5, 10, 15]`
   in code, with `YARD_TURN_LIMIT = 16`. The old `PROVISIONAL_REVEAL_PULSE_INTERVAL`
   constant was removed as redundant once the cycle became a fixed list.
 - **Map scale numbers** (`GAME_VISION.appendix.md` Q7) are now partly answered: ~600–900 stations,

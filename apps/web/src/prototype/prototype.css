@@ -86,20 +86,20 @@ body {
   letter-spacing: -0.03em;
 }
 
-.proto-pulses {
+.proto-appearances {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.pulse-label {
+.appearance-label {
   font-size: 9px;
   letter-spacing: 0.14em;
   color: #b7a98f;
   margin-right: 2px;
 }
 
-.pulse-chip {
+.appearance-chip {
   display: inline-grid;
   place-items: center;
   width: 24px;
@@ -110,13 +110,13 @@ body {
   color: #d8cdb9;
 }
 
-.pulse-chip.current {
+.appearance-chip.current {
   border-color: #e0b45a;
   color: #f3d28c;
   background: #3a3222;
 }
 
-.pulse-chip.passed {
+.appearance-chip.passed {
   color: #716756;
   border-color: #3f3a30;
 }
@@ -210,7 +210,7 @@ body {
 }
 
 .map-overlay .dest-hit:hover {
-  fill: #fff3d5;
+  fill: rgba(255, 243, 213, 0.25);
 }
 
 .map-hud {
@@ -459,13 +459,13 @@ body {
 
 /* --------------------------------------------------------------- overlays */
 
-.pulse-ring {
+.appearance-ring {
   transform-box: fill-box;
   transform-origin: center;
-  animation: pulse-ring 1.15s ease-out infinite;
+  animation: appearance-ring 1.15s ease-out infinite;
 }
 
-@keyframes pulse-ring {
+@keyframes appearance-ring {
   0% {
     opacity: 0.4;
     transform: scale(0.9);
@@ -509,6 +509,164 @@ body {
   to {
     stroke-dashoffset: -16;
   }
+}
+
+
+/* ------------------------------------------------------------ station inspector */
+
+.map-overlay .station-hit {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.map-overlay .tokens {
+  pointer-events: none;
+}
+
+.station-card {
+  position: absolute;
+  left: 10px;
+  bottom: 78px;
+  width: min(380px, calc(100% - 20px));
+  max-height: min(56%, 430px);
+  overflow: auto;
+  padding: 10px 11px;
+  border: 1px solid rgba(30, 136, 168, 0.7);
+  border-radius: 8px;
+  background: rgba(251, 247, 236, 0.97);
+  color: var(--proto-ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+}
+
+.station-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  color: #7b7364;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.station-close:hover {
+  color: var(--proto-ink);
+}
+
+.station-kicker {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  font-weight: 800;
+  color: #1e88a8;
+}
+
+.station-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 6px;
+}
+
+.station-title strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.station-title span {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--proto-muted);
+}
+
+.station-tenant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #0e6178;
+}
+
+.station-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.station-line {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 6px;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
+.station-line-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.station-line-dest {
+  overflow-wrap: anywhere;
+  color: #4e473b;
+  font-variant-numeric: tabular-nums;
+}
+
+.station-hint {
+  margin: 7px 0 0;
+  font-size: 8.5px;
+  line-height: 1.4;
+  color: #8d8371;
+}
+
+.station-move-hint {
+  margin: 7px 0 0;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: #eef7fa;
+  color: #0e6178;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.legend-badges {
+  padding-left: 8px;
+  border-left: 1px solid var(--proto-line);
+  color: #6d6455;
+  font-size: 8.5px;
+}
+
+.legend-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8e2c26;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.ghost-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px dashed #a93c36;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.station-appearance {
+  margin-bottom: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #8e2c26;
 }
 
 /* ---------------------------------------------------------------- side panel */
@@ -676,7 +834,7 @@ body {
   border-bottom: 0;
 }
 
-.log-row.kind-pulse,
+.log-row.kind-appearance,
 .log-row.kind-reveal {
   color: var(--proto-red);
   font-weight: 700;
@@ -996,11 +1154,11 @@ body {
     font-size: 21px;
   }
 
-  .pulse-label {
+  .appearance-label {
     display: none;
   }
 
-  .pulse-chip {
+  .appearance-chip {
     width: 20px;
     height: 19px;
     font-size: 9px;
@@ -1107,5 +1265,76 @@ body {
 
   .map-legend {
     display: none;
+  }
+}
+
+@media (max-width: 880px) {
+  .station-card {
+    left: 7px;
+    right: 7px;
+    bottom: 7px;
+    width: auto;
+    max-height: 54%;
+  }
+}
+
+@media (max-width: 560px) {
+  .station-title strong {
+    font-size: 17px;
+  }
+
+  .station-line {
+    grid-template-columns: 56px 1fr;
+    font-size: 9px;
+  }
+
+  .station-hint {
+    display: none;
+  }
+
+  .agent-row {
+    grid-template-columns: 8px 1fr 20px 38px;
+    gap: 5px;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .station-card {
+    left: 7px;
+    bottom: 7px;
+    width: min(360px, calc(100% - 14px));
+    max-height: 40%;
+  }
+}
+
+/* A 532–550 px stage cannot hold every toolbar control and the zoom readout. */
+@media (max-width: 1000px) and (min-width: 881px) {
+  .zoom-readout {
+    display: none;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .zoom-readout {
+    display: none;
+  }
+
+  .map-toolbar {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .view-switch button {
+    padding: 4px 7px;
+  }
+
+  .tool-button {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 5px;
+  }
+
+  .tool-button.expand {
+    font-size: 9px;
   }
 }

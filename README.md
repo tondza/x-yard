@@ -19,7 +19,7 @@ important as the code.
 | File | What it is |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | **Start here.** Entry point that routes a session to the authoritative document for its task |
-| [GAME_VISION.md](GAME_VISION.md) | Authoritative game design brief §1–§6: core loop, Reveal Pulse, transit tiers, contraband missions, gadgets and skills, Yard scalability |
+| [GAME_VISION.md](GAME_VISION.md) | Authoritative game design brief §1–§6: core loop, Appearance, transit tiers, contraband missions, gadgets and skills, Yard scalability |
 | [GAME_VISION.appendix.md](GAME_VISION.appendix.md) | Derived bookkeeping — implementation status, withdrawn concepts, open questions Q1–Q12. No design authority |
 | [AGENT_RULES.md](AGENT_RULES.md) | Binding rules for agent sessions, including the `PROVISIONAL_` convention, validation errors vs warnings, and this machine's constraints |
 | [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | Test layers, required suites, the vision alignment lock, Playwright plan, coverage gate |
@@ -76,9 +76,10 @@ errors-vs-warnings split; ticket economy with the ticket-log semantics for
 Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
 **map generator** that emits validated 24/60/96-station transit networks with
 street-following edge geometry, and a **local 96-station prototype**: an
-illustrated F-style city plate, 16 turns, all six movement options, pulses,
-capture, result and restart, with deterministic Agent bots, one-at-a-time move playback and a follow/map
-camera. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+illustrated F-style city plate, 16 turns, all six movement options, appearances,
+capture, result and restart, with a permanent all-mode transit network, a
+station inspector, a last-appearance ghost, deterministic Agent bots,
+one-at-a-time move playback and a follow/map camera. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
 exit 0. `game-core` has zero runtime dependencies.
 
 **The full server turn machine is not implemented yet.** The prototype loop is

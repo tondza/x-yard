@@ -81,7 +81,7 @@ describe('prototype legal moves', () => {
   });
 });
 
-describe('prototype turn, pulse and capture', () => {
+describe('prototype turn, appearance and capture', () => {
   it('applies a taxi move, spends one ticket and hands the turn to the Agents', () => {
     const result = applyFugitiveCommand(DEMO_BOARD, game(), {
       kind: 'move',
@@ -97,19 +97,19 @@ describe('prototype turn, pulse and capture', () => {
     expect(result.state.log.at(-1)?.mode).toBe('taxi');
   });
 
-  it('reveals the Fugitive on turns 5, 10 and 15 before the Agents move', () => {
+  it('makes the Fugitive appear on turns 5, 10 and 15 before the Agents move', () => {
     const base = game();
-    const state: PrototypeState = { ...base, turn: 5, pendingPulse: false };
+    const state: PrototypeState = { ...base, turn: 5, pendingAppearance: false };
     const applied = applyFugitiveCommand(DEMO_BOARD, state, { kind: 'hold' });
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
-    expect(applied.state.pendingPulse).toBe(true);
+    expect(applied.state.pendingAppearance).toBe(true);
 
     const resolved = resolveAgentPhase(DEMO_BOARD, applied.state);
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
-    expect(resolved.state.lastPulseTurn).toBe(5);
-    expect(resolved.state.log.some((entry) => entry.kind === 'pulse')).toBe(true);
+    expect(resolved.state.lastAppearanceTurn).toBe(5);
+    expect(resolved.state.log.some((entry) => entry.kind === 'appearance')).toBe(true);
   });
 
   it('returns no Agent moves for a Fugitive command', () => {
@@ -156,7 +156,7 @@ describe('prototype turn, pulse and capture', () => {
       seats,
       phase: 'agents',
       lastKnown: 's1',
-      pendingPulse: false,
+      pendingAppearance: false,
     };
 
     const resolved = resolveAgentPhase(DEMO_BOARD, state);
@@ -178,7 +178,7 @@ describe('prototype turn, pulse and capture', () => {
       turn: 16,
       phase: 'agents',
       lastKnown: 's6',
-      pendingPulse: false,
+      pendingAppearance: false,
     };
     const resolved = resolveAgentPhase(DEMO_BOARD, state);
     expect(resolved.ok).toBe(true);

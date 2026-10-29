@@ -22,9 +22,9 @@ Players are divided into two primary factions operating across node-based metrop
   2. **Agent Phase:** Agents view the ticket type used by each Fugitive (e.g., "Fugitive 1 used a Bus ticket") and update their deduction probability overlay. Agents then select their movement actions.
   3. **Capture Resolution:** Evaluated at the end of the Agent Phase. An Agent occupying the exact node of a Fugitive triggers an immediate arrest.
 
-- **The Reveal Pulse (Scotland Yard Mechanic):**
-  - Every $N$ turns (e.g., turns 3, 8, 13, 18), Fugitives undergo a mandatory broadcast pulse, revealing their exact node to all Agents on the map.
-  - Between pulses, Agents rely entirely on ticket logs, transport graph limits, and tactical skills to calculate possible movement locations.
+- **The Appearance (Scotland Yard Mechanic):**
+  - Every $N$ turns (e.g., turns 3, 8, 13, 18), Fugitives make a mandatory appearance, revealing their exact node to all Agents on the map.
+  - Between appearances, Agents rely entirely on ticket logs, transport graph limits, and tactical skills to calculate possible movement locations.
 
 ---
 

@@ -14,9 +14,9 @@ Last updated: 2026-10-29.
 | `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 131 tests |
 | `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
-| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/pulse/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
+| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — F-style city plate, station/route overlay, turn strip, kit, public log, result; sequential one-mover-at-a-time reveal; play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
+| `apps/web`: **96-station prototype** — F-style city plate, permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -40,7 +40,7 @@ the old server-backed board.
 ## Prototype — current shape
 
 The playable prototype is a **96-station Cathedral Quarter**, one human Fugitive
-against four deterministic Agent bots, 16 turns, pulses on 5/10/15, all six
+against four deterministic Agent bots, 16 turns, appearances on 5/10/15, all six
 movement options, capture and a result screen. The scale and desktop-first choice
 are [decision 0014](decisions/0014-96-station-desktop-prototype.md). The 96 fixture uses
 `startStrategy: 'encircle'`, so the Agents start 3–5 edges away and spread by
@@ -50,7 +50,7 @@ and tokens are a live overlay.
 
 **Turn reveal.** The engine still resolves a turn atomically; the client now
 plays the resolution back one mover at a time, each with a 0.17 s camera
-lead-in — the Fugitive's route (~0.85 s), then any pulse/scooter reveal (1.15 s
+lead-in — the Fugitive's route (~0.85 s), then any appearance/scooter reveal (1.15 s
 hold), then each Agent in engine order (0.7 s route + a 0.15 s beat). Every mover follows its real polyline and leaves a
 thin trace for the turn. The whole reveal is skippable, and the result overlay
 waits for it. `resolveAgentPhase` returns the exact `agentMoves` so the view never
@@ -67,6 +67,17 @@ checked at 390×844, 768×1024, 844×390, 1024×768, 1280×720, 1440×900 and
 Fugitive rather than shrinking the whole 4:3 city into 390 px; panning and
 zooming reach the rest.
 
+**Network legibility.** The permanent transit map now draws every taxi, bus,
+metro and special link (legal moves are brighter on top), marks bus/metro/special
+stops with `B` / `M` / `S` badges, and opens a station card on hover (for a legal
+destination) or click (any station) listing each mode's destinations and who is
+standing there. There is deliberately **no Plan mode, reachability overlay or
+route calculator**: the director ruled that planning stays in the player's head
+([decision 0017](decisions/0017-always-visible-network-and-last-appearance.md)).
+The Agents' last-known node is shown as a semi-transparent `F<node>` ghost with a
+dashed ring; it persists until the next appearance and is hidden while the real
+Fugitive stands there.
+
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
 gadgets. The architecture guard for the real state machine is unchanged.
@@ -74,7 +85,8 @@ gadgets. The architecture guard for the real state machine is unchanged.
 ## What is next (in order)
 
 1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
-   movement, no viewport) is addressed; tune Agent starts/bot pathing before
+   movement, no viewport) and the second (hidden network, no last-appearance
+   marker, “pulse” wording) are addressed; tune Agent starts/bot pathing before
    changing any ruled number, then add the river/bridges and remaining polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
@@ -99,7 +111,7 @@ Items marked **RULED** are recorded for context. They no longer block anything.
 - **RULED 2026-10-16 — MVP scope.** Drafted and validated, then **re-scoped by the
   director** the same day. The ratified re-statement is [`docs/mvp/README.md`](mvp/README.md),
   whose top section lists the six rulings and what they invalidate. Three P0 changes
-  are applied there: **16 turns with pulses 5/10/15**, the **scooter's exact-position
+  are applied there: **16 turns with appearances 5/10/15**, the **scooter's exact-position
   reveal cut**, and **pass-and-play rejected** in favour of one device per seat.
 - **RULED 2026-10-16 — phase order: prototype before MVP.** The director added a
   **prototype phase** (5 seats: 1 human + 4 bots, single-player, simple bots) whose
@@ -118,7 +130,7 @@ Items marked **RULED** are recorded for context. They no longer block anything.
 - **Open sub-questions from the turn-model ruling:** confirm Agents-then-Fugitives;
   timeout behaviour (`hold` vs a pure `chooseAutoMove`); early window close (required —
   16 turns × two 30 s windows is up to 16 minutes against a 5–10 minute target); where
-  the Reveal Pulse now sits; and concurrent collisions (two Agents to one node, an
+  the Appearance now sits; and concurrent collisions (two Agents to one node, an
   Agent and a Fugitive crossing in one window).
 - **Invalidated by the re-scope.** `round-03-rules.md`, `round-03-product.md` and
   `round-03-validation.md` were all written for **1 Fugitive vs 2 Agents** and must be
@@ -126,12 +138,12 @@ Items marked **RULED** are recorded for context. They no longer block anything.
   must project per viewer **and per Fugitive**.
 - **The core loop — the real blocker.** The validator's verdict is *"worth building
   only if three things change"*: as specified the game reduces to
-  *"don't be adjacent at the pulse, be adjacent at the pulse"* — the Reveal Pulse is
+  *"don't be adjacent at the appearance, be adjacent at the appearance"* — the Appearance is
   the only real decision and the rest is bookkeeping around 3–5 one-turn windows.
   The three P0s are necessary but may not be sufficient. Options are in
   [`docs/mvp/README.md`](mvp/README.md) §5: ship the thin loop to validate the
   pipeline, restore tension by scale (1v3 and/or a larger map), or add a second
-  Agent lever between pulses. **This is a design call for the director.**
+  Agent lever between appearances. **This is a design call for the director.**
 - **Map representation — researched, recommendation recorded.** Node-and-edge stays
   authoritative. A block/square field was **rejected**: it does not make capture more
   unambiguous (capture is already one exact discrete comparison) and it would

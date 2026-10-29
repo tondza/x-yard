@@ -28,7 +28,7 @@ import {
   MAX_AGENTS_PER_YARD,
   MAX_FUGITIVES_PER_YARD,
   MIN_START_SEPARATION_EDGES,
-  REVEAL_PULSE_TURNS,
+  APPEARANCE_TURNS,
   SENSOR_SWEEP_RADIUS,
   TRANSPORT_MODES,
   YARD_TURN_LIMIT,
@@ -57,8 +57,8 @@ describe('numbers ratified by the director on 2026-10-16 (appendix C.2)', () => 
     expect(YARD_TURN_LIMIT).toBe(16);
   });
 
-  it('§2: Reveal Pulses fire on turns 5, 10, and 15 — not the old 3/8/13/18', () => {
-    expect([...REVEAL_PULSE_TURNS]).toEqual([5, 10, 15]);
+  it('§2: appearances happen on turns 5, 10, and 15 — not the old 3/8/13/18', () => {
+    expect([...APPEARANCE_TURNS]).toEqual([5, 10, 15]);
   });
 
   it('§4: a Yard seats 4 Fugitives and up to 16 Agents — the ruled 20 players', () => {
@@ -113,7 +113,7 @@ describe('unratified defaults are discoverable', () => {
     'MAX_AGENTS_PER_YARD',
     'MAX_FUGITIVES_PER_YARD',
     'MIN_START_SEPARATION_EDGES',
-    'REVEAL_PULSE_TURNS',
+    'APPEARANCE_TURNS',
     'YARD_TURN_LIMIT',
   ];
 
@@ -145,7 +145,7 @@ describe('unratified defaults are discoverable', () => {
    * in `RATIFIED_EXPORTS`; the allowlist is what protects the unratified ones.
    */
   const PROTECTED_QUANTITY =
-    /STARTING_TICKETS|REVEAL_PULSE|TURN_LIMIT|GRACE_TURNS|PAYOUTS|MAX_(?:FUGITIVES|AGENTS)_PER_YARD|START_SEPARATION/;
+    /STARTING_TICKETS|APPEARANCE|TURN_LIMIT|GRACE_TURNS|PAYOUTS|MAX_(?:FUGITIVES|AGENTS)_PER_YARD|START_SEPARATION/;
 
   it('exposes every unratified number under a PROVISIONAL_ name', () => {
     for (const name of PROVISIONAL_EXPORTS) {

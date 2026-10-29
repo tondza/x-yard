@@ -1096,3 +1096,96 @@ city at once. SVG is comfortable at 96 stations but the 300-node scale rehearsal
 still needs a faster renderer and the same camera/LOD contract. Browser checks
 are an ad-hoc script outside the repository; there is still no committed
 `pnpm test:e2e`.
+
+---
+
+## 2026-10-29 — Network legibility, last appearance, and “appearance”
+
+**Why this round exists.** The second playtest found that the map only
+highlighted transport from the current node. The full taxi/bus/metro/special
+network was effectively hidden, so the player could not see that a destination
+was a bus stop, trace “1 bus + 2 taxis”, or reason about what an opponent could
+reach. The director also asked for a persistent marker at the Agents' last-known
+node, and rejected the term “pulse”: in Scotland Yard / Mr. X vocabulary the
+Fugitive makes an **appearance**.
+
+The director then stopped the route-planning direction before it went further:
+*“I don't want any special plan mode. Planning should happen inside the head of
+the player. That's where the beauty lies.”* The problem is legibility, not
+calculation.
+
+**What was built**
+
+1. **A permanent transit map.** Every taxi, bus, metro and special edge is drawn
+   at all times: taxi thin gold, bus green, metro red, special purple dashed. The
+   selected mode's legal moves are brighter on top; they no longer replace the
+   network. Stations carry `B` / `M` / `S` badges where they are stops.
+2. **A station inspector, not a planner.** Hovering a legal destination (desktop)
+   or clicking any station opens a card listing each mode's destinations from
+   that station and who is standing there. On touch, the first tap on a
+   destination previews it and a second tap on the same ring moves, so phone
+   players get the same information without hover. It is a lookup: it computes
+   no path, cost or reachability.
+3. **The last-appearance ghost.** The Agents' `lastKnown` node is a
+   semi-transparent red fugitive ghost with a dashed ring, labelled `F<node>`
+   (e.g. `F18`). It persists after the Agents move away and is replaced at the
+   next appearance. It is hidden while the real Fugitive is on that node. The
+   station card notes “Last appearance · F18” when the station is opened.
+4. **Terminology: Appearance.** The player-facing term is now Appearance
+   (`APPEARANCES`, `APPEARANCE` log row and banner, “appears on 5, 10 and 15”).
+   The prototype state/log and the shared constant are renamed:
+   `lastAppearanceTurn`, `pendingAppearance`, `kind: 'appearance'`,
+   `APPEARANCE_TURNS`, and the scaffold `/health` field `appearanceTurns`.
+   The unimplemented full-game `Phase 'reveal-pulse'` and `RevealPulseMessage`
+   are deliberately left for the turn-machine rename ([decision
+   0016](docs/decisions/0016-appearance-terminology.md)).
+5. **The planner was removed.** A first cut of Plan mode — seat selector, 1–3
+   step reachability, shortest-route/cost card — was built and then deleted. It
+   is not in the tree or the demo. Recorded as [decision
+   0017](docs/decisions/0017-always-visible-network-and-last-appearance.md).
+
+**Decisions and rejected alternatives**
+
+1. **Planning stays in the player's head.** **Rejected:** Plan mode,
+   reachability overlays and route-cost calculators. Failure: they turn deduction
+   into arithmetic and remove the part of the game that is the point.
+2. **The network is always visible.** **Rejected:** only the selected mode's
+   legal moves (the original complaint); **rejected:** hiding the network behind
+   an optional layer (default must show the real map).
+3. **The ghost is `lastKnown`, not the true position.** **Rejected:** a marker at
+   the true position (it would lie about what the Agents know); **rejected:**
+   drawing it while the real Fugitive stands there (ambiguous double-draw).
+4. **Appearance, not pulse.** **Rejected:** keeping “pulse” as the UI term;
+   **rejected:** renaming only the UI while the state/log still say pulse;
+   **rejected:** aliasing both names (decision 0008); **rejected:** renaming the
+   unimplemented full-game wire contract piecemeal.
+
+**Verified**
+
+- `pnpm install` — exit 0.
+- `pnpm typecheck` — exit 0 for all five projects.
+- `pnpm test` — **7 test files, 131 tests**, all passing (game-core 115,
+  map-generator 16). The planner tests are gone with the planner; the prototype
+  suite is back to 13 tests.
+- `pnpm build` — exit 0.
+- `pnpm check:docs` — 48 markdown files, links and counts current.
+- Browser at 1440×900: the all-mode network and station badges render; hovering a
+  legal destination opens `STATION PREVIEW n11` with `Taxi n20 · n8`, not a move;
+  the header reads `APPEARANCES 5 10 15`; the public log reads
+  `T5 · APPEARANCE · n18`; after the turn-5 appearance and a move on turn 6 the
+  ghost `F18` is present at n18 while the real token is at n15.
+- Touch at 390×844: the first tap on `n11` selects it and shows the station card
+  with “Tap the ringed station again to move here”; the second tap starts the
+  move. No page/console errors.
+- Responsive checks at 390×844, 768×1024, 844×390, 1024×768, 1280×720,
+  1440×900 and 1920×1080: no document overflow, no toolbar/banner overlap, no
+  console errors.
+
+**Known limits**
+
+The full-game `Phase 'reveal-pulse'` and `RevealPulseMessage` still use the old
+name; they are unimplemented and will be renamed once with the MVP turn machine.
+Historical log entries and old decision records keep “pulse” as written. The
+ghost is the Agents' last-known marker, not a prediction. There is deliberately
+no route planner. The network is dense on a phone; labels drop out at low zoom.
+The 300-node renderer still needs the next scale rehearsal.
