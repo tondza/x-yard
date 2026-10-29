@@ -258,7 +258,7 @@ function Landmark({ landmark }: { readonly landmark: LandmarkModel }): React.JSX
 }
 
 /** The static illustrated city, drawn from the generated model. */
-function CityPlateView({ map }: { readonly map: GeneratedMap }): React.JSX.Element {
+function CityContent({ map }: { readonly map: GeneratedMap }): React.JSX.Element {
   const buildings = useMemo(() => buildingsForMap(map), [map]);
   const trees = useMemo(() => treesForMap(map), [map]);
   const landmarkBlockIds = useMemo(
@@ -267,12 +267,7 @@ function CityPlateView({ map }: { readonly map: GeneratedMap }): React.JSX.Eleme
   );
 
   return (
-    <svg
-      className="city-plate"
-      viewBox={`0 0 ${map.bounds.width} ${map.bounds.height}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-    >
+    <g>
       <rect x={0} y={0} width={map.bounds.width} height={map.bounds.height} fill="#e9e2d2" />
       <StreetLayer map={map} />
 
@@ -332,6 +327,31 @@ function CityPlateView({ map }: { readonly map: GeneratedMap }): React.JSX.Eleme
             />
           ))}
       </g>
+    </g>
+  );
+}
+
+/**
+ * The heavy city geometry is memoised separately from the SVG wrapper: a camera
+ * pan changes the wrapper's `viewBox` every frame, but the city itself does not
+ * reconcile while the camera moves.
+ */
+const MemoCityContent = memo(CityContent);
+
+export interface CityPlateProps {
+  readonly map: GeneratedMap;
+  readonly viewBox: string;
+}
+
+function CityPlateView({ map, viewBox }: CityPlateProps): React.JSX.Element {
+  return (
+    <svg
+      className="city-plate"
+      viewBox={viewBox}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <MemoCityContent map={map} />
     </svg>
   );
 }

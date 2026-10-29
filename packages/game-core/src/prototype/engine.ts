@@ -23,6 +23,7 @@ import {
   type TransitGraph,
 } from '../types';
 import type {
+  PrototypeAgentMove,
   PrototypeCommand,
   PrototypeCommandResult,
   PrototypeLogEntry,
@@ -276,6 +277,7 @@ export function applyFugitiveCommand(
   return {
     ok: true,
     move,
+    agentMoves: [],
     state: {
       ...next,
       phase: 'agents',
@@ -380,6 +382,7 @@ export function resolveAgentPhase(
 
   const fugitive = fugitiveOf(state);
   let next: PrototypeState = state;
+  const agentMoves: PrototypeAgentMove[] = [];
 
   if (state.pendingPulse) {
     next = {
@@ -398,11 +401,13 @@ export function resolveAgentPhase(
   }
 
   for (const agent of agentsOf(next)) {
+    const from = agent.node;
     const option = chooseAgentMove(graph, { ...next, seats: next.seats }, agent.id);
     if (option === null) continue;
     const moved = applyMove(agent, option);
     if (moved === null) continue;
     next = replaceSeat(next, moved);
+    agentMoves.push({ seatId: agent.id, from, to: moved.node, mode: option.mode });
   }
 
   const captor = agentsOf(next).find((agent) => agent.node === fugitive.node);
@@ -416,6 +421,7 @@ export function resolveAgentPhase(
     return {
       ok: true,
       move: null,
+      agentMoves,
       state: appendLog(
         { ...next, phase: 'result', result },
         {
@@ -439,6 +445,7 @@ export function resolveAgentPhase(
     return {
       ok: true,
       move: null,
+      agentMoves,
       state: appendLog(
         { ...next, phase: 'result', result },
         {
@@ -455,6 +462,7 @@ export function resolveAgentPhase(
   return {
     ok: true,
     move: null,
+    agentMoves,
     state: {
       ...next,
       turn: next.turn + 1,

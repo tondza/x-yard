@@ -5,6 +5,7 @@
  */
 
 export type {
+  PrototypeAgentMove,
   PrototypeCommand,
   PrototypeCommandError,
   PrototypeCommandResult,

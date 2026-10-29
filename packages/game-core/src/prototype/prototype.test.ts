@@ -112,6 +112,40 @@ describe('prototype turn, pulse and capture', () => {
     expect(resolved.state.log.some((entry) => entry.kind === 'pulse')).toBe(true);
   });
 
+  it('returns no Agent moves for a Fugitive command', () => {
+    const applied = applyFugitiveCommand(DEMO_BOARD, game(), { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.agentMoves).toEqual([]);
+  });
+
+  it('reports the Agent moves it applied, in resolution order, for one-at-a-time reveal', () => {
+    const applied = applyFugitiveCommand(DEMO_BOARD, game(), { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+
+    const resolved = resolveAgentPhase(DEMO_BOARD, applied.state);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+
+    expect(resolved.agentMoves.length).toBeGreaterThan(0);
+    expect(resolved.agentMoves.map((move) => move.seatId)).toEqual(
+      applied.state.seats.filter((seat) => seat.role === 'agent').map((seat) => seat.id),
+    );
+
+    for (const move of resolved.agentMoves) {
+      const before = applied.state.seats.find((seat) => seat.id === move.seatId);
+      const after = resolved.state.seats.find((seat) => seat.id === move.seatId);
+      expect(move.from, move.seatId).toBe(before?.node);
+      expect(move.to, move.seatId).toBe(after?.node);
+      expect(legalMoves(DEMO_BOARD, applied.state, move.seatId)).toContainEqual({
+        mode: move.mode,
+        to: move.to,
+        via: null,
+      });
+    }
+  });
+
   it('captures when an Agent ends the Agent phase on the Fugitive node', () => {
     const base = game();
     const seats = base.seats.map((seat) =>

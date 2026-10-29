@@ -15,10 +15,24 @@ test regenerate each file from its seed and assert it is unchanged.
 Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`,
 `prototype-96-seed-42.png` and `mvp-60-seed-42.png`.
 
-The playable 96-station prototype renders live in the same folder:
+The first playable's frames remain for comparison:
 `prototype-96-turn-1.png` (initial city and legal moves),
 `prototype-96-turn-2.png` (after one move), and `prototype-96-result.png`
 (capture overlay).
+
+The **current** prototype (sequential reveal and play/map camera, decision
+[0015](../docs/decisions/0015-sequential-reveal-and-play-map-camera.md)) is
+captured in:
+
+| File | Shows |
+| --- | --- |
+| `prototype-96-play-1440.png` | play camera at 1440×900, zoomed to the Fugitive |
+| `prototype-96-agent-1440.png` | an Agent's move being revealed, route + banner |
+| `prototype-96-map-1440.png` | the free Map view of the whole quarter |
+| `prototype-96-pulse-1440.png` | a Reveal Pulse before the Agent phase |
+| `prototype-96-result-1440.png` | the capture result overlay |
+| `prototype-96-play-390.png` | the responsive phone layout at 390×844 |
+| `prototype-96-map-390.png` | the expanded map view on the same phone |
 
 Regenerate after a generator change:
 

@@ -11,6 +11,11 @@ The first playable is a **96-station** map, desktop-first, with 1+4 close starts
 not the prototype. Proposed scale ladder: 96 (prototype), 300–400 (20-player MVP),
 600–900 (vision).
 
+**Revised 2026-10-29 (decision [0015](decisions/0015-sequential-reveal-and-play-map-camera.md)).**
+The first playable now reveals each mover sequentially and has a play/map camera
+with label LOD. The 96-station, desktop-first scope of 0014 stands; the phone
+camera pass that 0014 deferred is now part of the prototype.
+
 **How to read the numbers.** The director stated the seat counts, the phase order,
 the 16-turn limit, the pulse turns 5/10/15, starting separation ≥ 3 edges, random
 faction assignment with a prototype override, one device per seat, node-and-edge
@@ -232,7 +237,7 @@ All of these must be true, and each must be demonstrated, not asserted.
 | P7 | **Movement follows streets.** Every drawn legal move is a street polyline except `underground` and `special`. | Visual check plus a test that a street-following edge without geometry is refused by authoring review. |
 | P8 | **The override works every time**: with it on, the director is the Fugitive in 100 % of starts; with it off, assignment is random and seeded. | Seeded runs over many seeds. |
 | P9 | **No illegal move, no unspent-ticket desync, no forced hold that should have been a move**, across a full session. | Session plus unit tests on the legal-move enumeration. |
-| P10 | **`pnpm test` is green** across the repo (verified today: **7 test files, 129 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
+| P10 | **`pnpm test` is green** across the repo (verified today: **7 test files, 131 tests**) and the prototype adds its own suites without weakening any existing one. | Full recursive suite. |
 | P11 | **`game-core` still declares `"dependencies": {}`** and TypeScript strict mode is untouched. | `architecture.test.ts` and `tsconfig`. |
 | P12 | **Every new number is a `PROVISIONAL_` constant** naming the open question it stands in for. | `grep -rn PROVISIONAL_` is the complete inventory. |
 
@@ -273,7 +278,7 @@ absent and calls the serialization oracle "still owed", and
 - **no seat abstraction**, no bot, no `GameState` serialization oracle,
   no server integration tests.
 
-Verified today: `pnpm test` is green at **7 test files, 129 tests**
+Verified today: `pnpm test` is green at **7 test files, 131 tests**
 (`architecture.test.ts`, `graph.test.ts`, `rng.test.ts`, `spec-alignment.test.ts`,
 `tickets.test.ts`).
 

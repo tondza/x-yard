@@ -40,6 +40,21 @@ export interface PrototypeMoveOption {
   readonly via: NodeId | null;
 }
 
+/**
+ * One Agent move the engine actually applied, in resolution order.
+ *
+ * This is a *return value*, not state: the client uses it to reveal the moves
+ * one at a time. Without it the view would have to re-run the bot and infer the
+ * mode from the graph, which could draw a different edge than the one the engine
+ * charged for.
+ */
+export interface PrototypeAgentMove {
+  readonly seatId: PlayerId;
+  readonly from: NodeId;
+  readonly to: NodeId;
+  readonly mode: MobilityOption;
+}
+
 /** A command from the human Fugitive. */
 export type PrototypeCommand =
   | {
@@ -60,7 +75,13 @@ export type PrototypeCommandError =
 
 /** Result of a Fugitive command or an Agent phase. */
 export type PrototypeCommandResult =
-  | { readonly ok: true; readonly state: PrototypeState; readonly move: PrototypeMoveOption | null }
+  | {
+      readonly ok: true;
+      readonly state: PrototypeState;
+      readonly move: PrototypeMoveOption | null;
+      /** Agent moves applied by this resolution, in seat order. Empty for a Fugitive command. */
+      readonly agentMoves: readonly PrototypeAgentMove[];
+    }
   | { readonly ok: false; readonly reason: PrototypeCommandError };
 
 /** One row of the local public log. */

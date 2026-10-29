@@ -1,6 +1,8 @@
 # 0014 — The first playable prototype is 96 stations, desktop-first
 
-**Status:** accepted — 2026-10-24
+**Status:** accepted — 2026-10-24. **Partially superseded by
+[0015](0015-sequential-reveal-and-play-map-camera.md)** for the viewport and
+label-LOD decision; the 96-station, desktop-first and close-start decisions stand.
 
 ## Context
 

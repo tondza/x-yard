@@ -4,19 +4,19 @@ Edited **in place**. This is the answer to "where are things right now?"; it is
 not a history. History lives in [`PROJECT_LOG.md`](../PROJECT_LOG.md), and unlike
 that file this one is expected to be rewritten as reality changes.
 
-Last updated: 2026-10-24.
+Last updated: 2026-10-29.
 
 ## What works today
 
 | Thing | State | Verified by |
 | --- | --- | --- |
 | Monorepo + tooling (pnpm workspaces, TS strict, Vitest) | ✅ done | `pnpm install` / `pnpm typecheck` |
-| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 129 tests |
+| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 131 tests |
 | `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
-| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/pulse/capture/result, deterministic bots | ✅ first playable | 11 prototype tests |
+| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/pulse/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — F-style city plate, station/route overlay, turn strip, kit, public log, result | ✅ first playable | browser at `:5173/` (dev), full session + screenshots |
+| `apps/web`: **96-station prototype** — F-style city plate, station/route overlay, turn strip, kit, public log, result; sequential one-mover-at-a-time reveal; play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -46,8 +46,26 @@ are [decision 0014](decisions/0014-96-station-desktop-prototype.md). The 96 fixt
 `startStrategy: 'encircle'`, so the Agents start 3–5 edges away and spread by
 angle rather than ten edges away. The city is drawn from the generated model:
 buildings, roofs, walls, shadows, streets, parks and landmarks; stations, routes
-and tokens are a live overlay. It is desktop-first at 1440×900; 96 labels are not
-legible on a phone without zoom.
+and tokens are a live overlay.
+
+**Turn reveal.** The engine still resolves a turn atomically; the client now
+plays the resolution back one mover at a time, each with a 0.17 s camera
+lead-in — the Fugitive's route (~0.85 s), then any pulse/scooter reveal (1.15 s
+hold), then each Agent in engine order (0.7 s route + a 0.15 s beat). Every mover follows its real polyline and leaves a
+thin trace for the turn. The whole reveal is skippable, and the result overlay
+waits for it. `resolveAgentPhase` returns the exact `agentMoves` so the view never
+re-simulates a bot or guesses an edge. Recorded as [decision
+0015](decisions/0015-sequential-reveal-and-play-map-camera.md).
+
+**Viewport.** A play camera follows the Fugitive and frames the active mover's
+route; **Map** is a free pan/zoom view, expandable to fill the screen. Station
+labels and tokens are drawn at a constant screen size, while the city plate
+zooms; street numbers drop out at low zoom and facility/terminal labels stay.
+The layout is responsive (ResizeObserver plus CSS breakpoints) and has been
+checked at 390×844, 768×1024, 844×390, 1024×768, 1280×720, 1440×900 and
+1920×1080. On a portrait phone the map view uses a cover crop centred on the
+Fugitive rather than shrinking the whole 4:3 city into 390 px; panning and
+zooming reach the rest.
 
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
@@ -55,11 +73,13 @@ gadgets. The architecture guard for the real state machine is unchanged.
 
 ## What is next (in order)
 
-1. **Playtest the 96 prototype** — tune Agent starts/bot pathing before changing
-   any ruled number; add the river/bridges and remaining visual polish.
+1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
+   movement, no viewport) is addressed; tune Agent starts/bot pathing before
+   changing any ruled number, then add the river/bridges and remaining polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
-   replace the all-pairs taxi routing with a k-nearest candidate graph, add a
-   camera/LOD renderer. This proves the 20-player MVP scale before committing.
+   replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
+   the prototype's camera/LOD contract into a faster renderer. This proves the
+   20-player MVP scale before committing.
 3. **Four-Fugitive / sixteen-Agent starts** and the separation rule for them.
 4. `hashState` / `replay` — the replay oracle for the full state.
 5. `projectState` — secret projection. **Until it exists no server code may send

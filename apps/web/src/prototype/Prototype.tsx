@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   REVEAL_PULSE_TURNS,
@@ -10,15 +10,29 @@ import {
 } from '@x-yard/game-core';
 import type {
   MobilityOption,
+  PrototypeCommand,
   PrototypeLogEntry,
   PrototypeMoveOption,
+  PrototypeSeat,
   PrototypeState,
 } from '@x-yard/game-core';
-import type { GeneratedMap } from '@x-yard/map-generator';
+import type { GeneratedMap, NodeId } from '@x-yard/map-generator';
 
 import mapJson from '../../../../maps/prototype-96-seed-42.json';
-import { CityPlate } from './CityPlate';
-import { MOVE_STYLE, PrototypeMap } from './PrototypeMap';
+import { MapStage } from './MapStage';
+import {
+  HOLD_PAUSE_MS,
+  MOVE_STYLE,
+  REVEAL_HOLD_MS,
+  STEP_GAP_MS,
+  STEP_LEAD_MS,
+  buildAgentSteps,
+  buildFugitiveStep,
+  stepTrail,
+  type MoveStep,
+  type PhaseBanner,
+  type Trail,
+} from './motion';
 import './prototype.css';
 
 const MAP = mapJson as unknown as GeneratedMap;
@@ -36,6 +50,12 @@ function initialGame(): PrototypeState {
   return createPrototypeGame(MAP.graph, MAP.starts, MAP.seed);
 }
 
+function nodeMap(state: PrototypeState): Readonly<Record<string, NodeId>> {
+  const nodes: Record<string, NodeId> = {};
+  for (const seat of state.seats) nodes[seat.id] = seat.node;
+  return nodes;
+}
+
 function countFor(state: PrototypeState, mode: MobilityOption): number {
   const seat = state.seats[0];
   if (seat === undefined) return 0;
@@ -51,18 +71,30 @@ function logRow(entry: PrototypeLogEntry): string {
   return `T${entry.turn} · ${entry.mode.toUpperCase()}`;
 }
 
-/** The 96-station desktop prototype. */
+/** The 96-station prototype, now with sequential playback and a camera. */
 export default function Prototype(): React.JSX.Element {
   const [game, setGame] = useState<PrototypeState>(initialGame);
   const [selectedMode, setSelectedMode] = useState<MobilityOption>('taxi');
   const [pending, setPending] = useState(false);
-  const [pulseNode, setPulseNode] = useState<string | null>(null);
+  const [banner, setBanner] = useState<PhaseBanner | null>(null);
+  const [activeStep, setActiveStep] = useState<MoveStep | null>(null);
+  const [trails, setTrails] = useState<readonly Trail[]>([]);
+  const [seatNodes, setSeatNodes] = useState<Readonly<Record<string, NodeId>>>({});
+  const [pulseNode, setPulseNode] = useState<NodeId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
-  const agentTimer = useRef<number | null>(null);
-  const pulseTimer = useRef<number | null>(null);
+  const runIdRef = useRef(0);
+  const busyRef = useRef(false);
+  const timerRef = useRef<number | null>(null);
+  const finalRef = useRef<PrototypeState | null>(null);
+  const allStepsRef = useRef<readonly MoveStep[]>([]);
 
-  const legal = useMemo(() => legalMoves(MAP.graph, game, 'fugitive'), [game]);
+  // The map must not advertise the next move while a turn is being revealed.
+  const legal = useMemo(
+    () => (pending || game.phase !== 'fugitive' ? [] : legalMoves(MAP.graph, game, 'fugitive')),
+    [game, pending],
+  );
   const byMode = useMemo(() => {
     const map = new Map<MobilityOption, readonly PrototypeMoveOption[]>();
     for (const option of legal) {
@@ -72,96 +104,261 @@ export default function Prototype(): React.JSX.Element {
     return map;
   }, [legal]);
 
-  const clearTimers = (): void => {
-    if (agentTimer.current !== null) window.clearTimeout(agentTimer.current);
-    if (pulseTimer.current !== null) window.clearTimeout(pulseTimer.current);
-    agentTimer.current = null;
-    pulseTimer.current = null;
-  };
+  const displaySeats = useMemo<readonly PrototypeSeat[]>(
+    () =>
+      game.seats.map((seat) => {
+        const override = seatNodes[seat.id];
+        return override === undefined ? seat : { ...seat, node: override };
+      }),
+    [game.seats, seatNodes],
+  );
 
-  useEffect(() => clearTimers, []);
+  const clearTimer = useCallback((): void => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    if (game.result !== null || game.phase !== 'fugitive') return;
+    return () => {
+      runIdRef.current += 1;
+      clearTimer();
+    };
+  }, [clearTimer]);
+
+  useEffect(() => {
+    if (pending || game.result !== null || game.phase !== 'fugitive') return;
     if (legal.some((option) => option.mode === selectedMode)) return;
     const first = legal[0]?.mode;
     if (first !== undefined) setSelectedMode(first);
-  }, [game, legal, selectedMode]);
+  }, [game, legal, pending, selectedMode]);
 
-  const resolveAgents = (afterFugitive: PrototypeState): void => {
-    setPending(true);
-    agentTimer.current = window.setTimeout(() => {
-      const resolved = resolveAgentPhase(MAP.graph, afterFugitive);
-      if (resolved.ok) {
-        const fresh = resolved.state.log.slice(afterFugitive.log.length);
-        const reveal = fresh.find((entry) => entry.kind === 'pulse' || entry.kind === 'reveal');
-        if (reveal?.node !== null && reveal?.node !== undefined) {
-          setPulseNode(reveal.node);
-          pulseTimer.current = window.setTimeout(() => setPulseNode(null), 1500);
-        }
-        setGame(resolved.state);
-      }
-      setPending(false);
-    }, 700);
-  };
+  const alive = (runId: number): boolean => runIdRef.current === runId;
 
-  const applyCommand = (command: Parameters<typeof applyFugitiveCommand>[2]): void => {
-    if (pending || game.result !== null) return;
-    const applied = applyFugitiveCommand(MAP.graph, game, command);
-    if (!applied.ok) {
-      setError(applied.reason);
-      return;
-    }
-    setError(null);
-    setGame(applied.state);
-    resolveAgents(applied.state);
-  };
+  const sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => {
+      const id = window.setTimeout(() => {
+        // A skipped timeline and the next turn can overlap; only the timer that
+        // is still current may clear the slot.
+        if (timerRef.current === id) timerRef.current = null;
+        resolve();
+      }, ms);
+      timerRef.current = id;
+    });
 
-  const handleMove = (option: PrototypeMoveOption): void => {
-    applyCommand({ kind: 'move', mode: option.mode, to: option.to, via: option.via });
-  };
+  const commitStep = useCallback((step: MoveStep): void => {
+    setSeatNodes((previous) => ({ ...previous, [step.seatId]: step.to }));
+  }, []);
 
-  const handleHold = (): void => {
-    applyCommand({ kind: 'hold' });
-  };
+  const skipPlayback = useCallback((): void => {
+    const final = finalRef.current;
+    if (final === null) return;
 
-  const restart = (): void => {
-    clearTimers();
-    setPending(false);
+    // Let the pending reveal wake up and see a stale run id; no timer is cleared
+    // here because the suspended timeline must be able to unwind.
+    runIdRef.current += 1;
+    busyRef.current = false;
+    setActiveStep(null);
     setPulseNode(null);
+    setBanner(null);
+    setTrails(allStepsRef.current.map(stepTrail));
+    setSeatNodes(nodeMap(final));
+    setGame(final);
+    setPending(false);
+  }, []);
+
+  /**
+   * Reveal a turn: the Fugitive's real route first, then any reveal, then each
+   * Agent in the order the engine resolved them. The engine state itself is
+   * already final — this is a presentation timeline, and it is skippable.
+   */
+  const runTurn = async (
+    runId: number,
+    applied: Extract<ReturnType<typeof applyFugitiveCommand>, { ok: true }>,
+    resolved: Extract<ReturnType<typeof resolveAgentPhase>, { ok: true }>,
+    fugitiveStep: MoveStep | null,
+    agentSteps: readonly MoveStep[],
+  ): Promise<void> => {
+    if (fugitiveStep !== null) {
+      setBanner({ kind: 'fugitive', step: fugitiveStep });
+      setActiveStep(fugitiveStep);
+      await sleep(STEP_LEAD_MS + fugitiveStep.duration);
+      if (!alive(runId)) return;
+      commitStep(fugitiveStep);
+      setTrails((previous) => [...previous, stepTrail(fugitiveStep)]);
+      await sleep(STEP_GAP_MS);
+      if (!alive(runId)) return;
+    } else {
+      setBanner({ kind: 'hold' });
+      await sleep(HOLD_PAUSE_MS);
+      if (!alive(runId)) return;
+    }
+
+    // From here the tickets and the phase are committed; only positions animate.
+    setGame(applied.state);
+
+    const reveal = applied.state.log
+      .slice(game.log.length)
+      .find((entry) => entry.kind === 'reveal');
+    const fugitiveNode =
+      applied.state.seats.find((seat) => seat.role === 'fugitive')?.node ?? applied.state.lastKnown;
+
+    if (applied.state.pendingPulse) {
+      setPulseNode(fugitiveNode);
+      setBanner({ kind: 'reveal', node: fugitiveNode, scooter: false });
+      await sleep(REVEAL_HOLD_MS);
+      if (!alive(runId)) return;
+      setPulseNode(null);
+    } else if (reveal !== undefined && reveal.node !== null) {
+      setPulseNode(reveal.node);
+      setBanner({ kind: 'reveal', node: reveal.node, scooter: true });
+      await sleep(REVEAL_HOLD_MS);
+      if (!alive(runId)) return;
+      setPulseNode(null);
+    }
+
+    for (let index = 0; index < agentSteps.length; index += 1) {
+      const step = agentSteps[index];
+      if (step === undefined) continue;
+      setBanner({ kind: 'agents', step, index, total: agentSteps.length });
+      setActiveStep(step);
+      await sleep(STEP_LEAD_MS + step.duration);
+      if (!alive(runId)) return;
+      commitStep(step);
+      setTrails((previous) => [...previous, stepTrail(step)]);
+      await sleep(STEP_GAP_MS);
+      if (!alive(runId)) return;
+    }
+
+    setActiveStep(null);
+    setPulseNode(null);
+    setBanner(null);
+    setSeatNodes(nodeMap(resolved.state));
+    setGame(resolved.state);
+    setPending(false);
+    busyRef.current = false;
+  };
+
+  const applyCommand = useCallback(
+    (command: PrototypeCommand): void => {
+      if (busyRef.current || game.result !== null) return;
+      const applied = applyFugitiveCommand(MAP.graph, game, command);
+      if (!applied.ok) {
+        setError(applied.reason);
+        return;
+      }
+
+      const resolved = resolveAgentPhase(MAP.graph, applied.state);
+      if (!resolved.ok) {
+        setError(resolved.reason);
+        return;
+      }
+
+      setError(null);
+      busyRef.current = true;
+      finalRef.current = resolved.state;
+      runIdRef.current += 1;
+      const runId = runIdRef.current;
+
+      const fugitiveStep = buildFugitiveStep(MAP.graph, game, applied.state, applied.move);
+      const agentSteps = buildAgentSteps(MAP.graph, applied.state, resolved.agentMoves);
+      allStepsRef.current = fugitiveStep === null ? agentSteps : [fugitiveStep, ...agentSteps];
+
+      setSeatNodes(nodeMap(game));
+      setTrails([]);
+      setPulseNode(null);
+      setActiveStep(null);
+      setPending(true);
+
+      void runTurn(runId, applied, resolved, fugitiveStep, agentSteps);
+    },
+    [game],
+  );
+
+  const handleMove = useCallback(
+    (option: PrototypeMoveOption): void => {
+      applyCommand({ kind: 'move', mode: option.mode, to: option.to, via: option.via });
+    },
+    [applyCommand],
+  );
+
+  const handleHold = useCallback((): void => {
+    applyCommand({ kind: 'hold' });
+  }, [applyCommand]);
+
+  const restart = useCallback((): void => {
+    runIdRef.current += 1;
+    busyRef.current = false;
+    finalRef.current = null;
+    allStepsRef.current = [];
+    setPending(false);
+    setActiveStep(null);
+    setPulseNode(null);
+    setTrails([]);
+    setSeatNodes({});
+    setBanner(null);
     setError(null);
     setSelectedMode('taxi');
+    setExpanded(false);
     setGame(initialGame());
-  };
+  }, []);
+
+  const toggleExpanded = useCallback((): void => {
+    setExpanded((value) => !value);
+  }, []);
 
   useEffect(() => {
     const scope = window as unknown as {
       __XYARD_PROTOTYPE__?: {
         state: PrototypeState;
+        seats: readonly PrototypeSeat[];
         legal: readonly PrototypeMoveOption[];
+        pending: boolean;
+        activeStep: { seatId: string; from: string; to: string; mode: string } | null;
+        trails: number;
+        expanded: boolean;
         move: (option: PrototypeMoveOption) => void;
         hold: () => void;
+        skip: () => void;
         restart: () => void;
+        setExpanded: (value: boolean) => void;
       };
     };
     scope.__XYARD_PROTOTYPE__ = {
       state: game,
+      seats: displaySeats,
       legal,
+      pending,
+      activeStep:
+        activeStep === null
+          ? null
+          : {
+              seatId: activeStep.seatId,
+              from: activeStep.from,
+              to: activeStep.to,
+              mode: activeStep.mode,
+            },
+      trails: trails.length,
+      expanded,
       move: handleMove,
       hold: handleHold,
+      skip: skipPlayback,
       restart,
+      setExpanded,
     };
     return () => {
       delete scope.__XYARD_PROTOTYPE__;
     };
-  });
+  }, [activeStep, displaySeats, expanded, game, handleHold, handleMove, legal, pending, restart, skipPlayback, trails.length]);
 
-  const agents = game.seats.slice(1);
-  const logs = [...recentLog(game, 8)].reverse();
+  const agents = displaySeats.slice(1);
+  const logs = [...recentLog(game, 9)].reverse();
   const selectedOptions = byMode.get(selectedMode) ?? [];
+  const showResult = game.result !== null && !pending;
 
   return (
-    <div className="proto">
+    <div className={`proto${expanded ? ' map-expanded' : ''}`}>
       <header className="proto-header">
         <div className="proto-brand">
           <span className="proto-eyebrow">X-YARD · 96-STATION PROTOTYPE</span>
@@ -197,30 +394,22 @@ export default function Prototype(): React.JSX.Element {
       </header>
 
       <main className="proto-body">
-        <section className="proto-stage">
-          <div className="map-frame">
-            <CityPlate map={MAP} />
-            <PrototypeMap
-              map={MAP}
-              state={game}
-              selectedMode={selectedMode}
-              legal={legal}
-              onMove={handleMove}
-              pulseNode={pulseNode}
-            />
-            {pending && <div className="agent-overlay">AGENTS MOVING…</div>}
-          </div>
-
-          <div className="map-legend">
-            {MODES.map(({ mode, label }) => (
-              <span key={mode} className="legend-item">
-                <i style={{ background: MOVE_STYLE[mode].colour }} />
-                {label}
-              </span>
-            ))}
-            <span className="legend-hint">Click a ringed station to move · numbers are station ids</span>
-          </div>
-        </section>
+        <MapStage
+          map={MAP}
+          seats={displaySeats}
+          turn={game.turn}
+          selectedMode={selectedMode}
+          legal={legal}
+          onMove={handleMove}
+          pulseNode={pulseNode}
+          activeStep={activeStep}
+          trails={trails}
+          banner={banner}
+          pending={pending}
+          onSkip={skipPlayback}
+          expanded={expanded}
+          onToggleExpanded={toggleExpanded}
+        />
 
         <aside className="proto-side">
           <section className="side-section kit-section">
@@ -245,18 +434,22 @@ export default function Prototype(): React.JSX.Element {
                   >
                     <span className="mode-name">{label}</span>
                     <span className="mode-count">{count}</span>
-                    <span className="mode-legal">{options.length > 0 ? `${options.length} legal` : 'no line'}</span>
+                    <span className="mode-legal">
+                      {pending ? 'wait' : options.length > 0 ? `${options.length} legal` : 'no line'}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
             <p className="now-line">
-              {selectedOptions.length > 0
-                ? `${MODES.find((entry) => entry.mode === selectedMode)?.label} → ${selectedOptions
-                    .map((option) => option.to)
-                    .join(' · ')}`
-                : 'No legal move in this mode.'}
+              {pending
+                ? 'Resolving the turn — watch each move, or skip.'
+                : selectedOptions.length > 0
+                  ? `${MODES.find((entry) => entry.mode === selectedMode)?.label} → ${selectedOptions
+                      .map((option) => option.to)
+                      .join(' · ')}`
+                  : 'No legal move in this mode.'}
             </p>
 
             <button
@@ -265,7 +458,7 @@ export default function Prototype(): React.JSX.Element {
               onClick={handleHold}
               disabled={pending || game.result !== null}
             >
-              {pending ? 'Resolving Agents…' : 'Hold position'}
+              {pending ? 'Resolving turn…' : 'Hold position'}
             </button>
 
             {error !== null && <p className="proto-error">{error}</p>}
@@ -292,7 +485,10 @@ export default function Prototype(): React.JSX.Element {
             </div>
             <div className="agent-list">
               {agents.map((agent, index) => (
-                <div key={agent.id} className="agent-row">
+                <div
+                  key={agent.id}
+                  className={`agent-row${activeStep?.seatId === agent.id ? ' moving' : ''}`}
+                >
                   <span className="agent-dot" />
                   <span>{agent.name}</span>
                   <b>A{index + 1}</b>
@@ -314,24 +510,24 @@ export default function Prototype(): React.JSX.Element {
         </aside>
       </main>
 
-      {game.result !== null && (
+      {showResult && (
         <div className="result-overlay">
           <div className="result-card">
             <span className="result-kicker">
-              {game.result.winner === 'agents' ? 'CAPTURED' : 'SURVIVED'}
+              {game.result?.winner === 'agents' ? 'CAPTURED' : 'SURVIVED'}
             </span>
             <h1>
-              {game.result.winner === 'agents' ? 'The Agents win' : 'The Fugitive survives'}
+              {game.result?.winner === 'agents' ? 'The Agents win' : 'The Fugitive survives'}
             </h1>
             <p>
-              {game.result.reason === 'capture'
+              {game.result?.reason === 'capture'
                 ? `${agents.find((agent) => agent.id === game.result?.capturedBy)?.name ?? 'An Agent'} ended the turn on Vulture's node.`
                 : 'Sixteen turns, no Agent on your node.'}
             </p>
             <dl>
               <div>
                 <dt>Turn</dt>
-                <dd>{game.result.turn} / 16</dd>
+                <dd>{game.result?.turn} / 16</dd>
               </div>
               <div>
                 <dt>Seed</dt>

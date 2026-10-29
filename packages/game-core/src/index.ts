@@ -120,6 +120,7 @@ export { DEMO_BOARD } from './demo-board';
 
 /* Local 1-vs-N prototype loop (not the full GameState). */
 export type {
+  PrototypeAgentMove,
   PrototypeCommand,
   PrototypeCommandError,
   PrototypeCommandResult,

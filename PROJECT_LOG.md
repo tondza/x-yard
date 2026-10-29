@@ -999,3 +999,100 @@ generator yet, and the bus network is not guaranteed connected (only metro is).
 The prototype is one Fugitive and four Agents: no 4-Fugitive projection, no
 server, no persistence. The 300-node scale rehearsal — derived grid, k-nearest
 taxi graph, camera renderer — is the next architecture step.
+
+---
+
+## 2026-10-29 — Second playable: sequential reveal and a real viewport
+
+**Why this round exists.** The director played the first 96-station prototype and
+gave two pieces of feedback:
+
+1. Movement was too sudden. Tokens jumped, and all four Agents moved in one
+   frame. The player could not understand *how* the others were moving. The
+   request: smooth movement from place to place, one mover at a time, no longer
+   than 2 seconds and preferably around 1.
+2. Fitting the whole map on screen is unrealistic. The request: zoom/viewport
+   logic that works on different screen sizes, plus a separate **map view** for
+   inspecting places away from the player's own location.
+
+The engine was already deterministic and atomic. This round changes how a turn is
+*revealed*, not what a turn *does*.
+
+**What was built**
+
+1. **The engine reports the moves it applied.** `resolveAgentPhase` now returns
+   `agentMoves` — one `{ seatId, from, to, mode }` per Agent in resolution
+   order. The client animates exactly that list instead of re-running the bot or
+   guessing the edge. Two unit tests cover the contract: a Fugitive command
+   returns no Agent moves, and every reported move matches the seat's before/after
+   node and a legal move for that seat.
+2. **A one-mover-at-a-time reveal.** Each mover gets a 170 ms camera lead-in. The
+   Fugitive's route then runs ~850 ms, a pulse or scooter reveal holds 1.15 s, and
+   each Agent runs 700 ms with a 150 ms beat. Every token travels its real street/transit polyline; the active route
+   is highlighted with a direction arrow; completed moves leave a dashed trace
+   for the rest of the turn. The banner names the mover, mode and stations, and
+   `Skip` jumps to the final state. The result overlay waits for the reveal.
+3. **A play/map camera.** `Play` follows the Fugitive and frames the active
+   mover's route so an Agent that starts off-screen is brought into view. `Map`
+   is a free pan/zoom view; `Expand` fills the screen. Camera moves are eased, and
+   the map view stays put while moves play out. A wheel, drag, two-finger pinch,
+   `+`/`-`, `F` (recentre) and `M` (expand) all work.
+4. **Screen-space overlay + label LOD.** Station numbers, tokens, rings, route
+   widths and facility labels are drawn at constant screen size using the camera
+   scale; the city plate zooms normally. Street numbers drop out below a zoom
+   threshold while terminals, hubs, facilities, legal destinations and the active
+   move stay labelled.
+5. **Responsive layout.** The map frame is measured with a `ResizeObserver`; the
+   kit/side panel rearrange at 880 px and 560 px, with a landscape-phone rule.
+   Checked at 390×844, 768×1024, 844×390, 1024×768, 1280×720, 1440×900 and
+   1920×1080 with no horizontal/vertical overflow and no toolbar/banner overlap.
+6. **Committed review frames.** The current seven frames live in `maps/shots/`
+   (`prototype-96-play-1440.png`, `-agent-1440`, `-map-1440`, `-pulse-1440`,
+   `-result-1440`, `-play-390`, `-map-390`). The first-playable frames remain for
+   comparison.
+
+**Decisions and rejected alternatives**
+
+1. **Sequential reveal is presentation, not a rules change.** Recorded as
+   [0015](docs/decisions/0015-sequential-reveal-and-play-map-camera.md).
+   **Rejected:** animating all Agents at once (the director's complaint);
+   **rejected:** re-simulating Agent moves in the client (it could draw a
+   different edge than the engine charged); **rejected:** an unskippable reveal
+   (a pulse turn would lock 6–7 seconds of motion).
+2. **Two cameras, screen-space overlay.** **Rejected:** one fitted viewBox for
+   every screen (unreadable on phones and reads as a diagram); **rejected:**
+   scaling labels and tokens with the city (microscopic at overview, oversized at
+   play zoom).
+3. **Map view on portrait uses a cover crop, not a whole-city thumbnail.**
+   **Rejected:** shrinking 1200×900 into 390 px and losing every label. The whole
+   city remains reachable by zooming out and panning; a minimap or rotated
+   overview is a later addition.
+
+**Verified**
+
+- `pnpm install` — exit 0.
+- `pnpm typecheck` — exit 0 for all five projects.
+- `pnpm test` — **7 test files, 131 tests**, all passing (game-core 115,
+  map-generator 16). The prototype suite is 13 tests.
+- `pnpm build` — exit 0; the dev prototype is still a statically excluded lazy
+  chunk.
+- `pnpm check:docs` — links and counts current.
+- Browser at 1440×900: a move started the Fugitive animation, then the four
+  Agents entered `activeStep` one at a time at ~1.0 s, 1.9 s, 2.7 s and 3.6 s,
+  each with its own banner and route; trails ended at 5 (Fugitive + 4), the turn
+  advanced, and the result overlay did not appear while `pending` was true. A
+  brute-forced turn-5 run captured the Reveal Pulse, and the subsequent capture
+  showed the result overlay only after the last Agent's reveal.
+- Phone at 390×844: the play view, kit, log and Agents fit without document
+  overflow; `Expand` fills the screen and centres the map on the Fugitive. Tablet,
+  landscape phone, 1024, 1280 and 1920 widths were checked the same way.
+- Zero page errors or console errors in every checked viewport.
+
+**Known limits**
+
+The engine still resolves the Agent phase simultaneously; only the reveal is
+sequential. On a portrait phone the expanded map is a moving crop, not the whole
+city at once. SVG is comfortable at 96 stations but the 300-node scale rehearsal
+still needs a faster renderer and the same camera/LOD contract. Browser checks
+are an ad-hoc script outside the repository; there is still no committed
+`pnpm test:e2e`.

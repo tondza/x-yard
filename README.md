@@ -77,8 +77,8 @@ Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
 **map generator** that emits validated 24/60/96-station transit networks with
 street-following edge geometry, and a **local 96-station prototype**: an
 illustrated F-style city plate, 16 turns, all six movement options, pulses,
-capture, result and restart, with deterministic Agent bots. 7 test files and 129
-tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+capture, result and restart, with deterministic Agent bots, one-at-a-time move playback and a follow/map
+camera. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
 exit 0. `game-core` has zero runtime dependencies.
 
 **The full server turn machine is not implemented yet.** The prototype loop is

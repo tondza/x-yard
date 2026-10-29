@@ -1,168 +1,370 @@
-import type { GeneratedMap, GraphEdge, NodeId } from '@x-yard/map-generator';
-import type { MobilityOption, PrototypeMoveOption, PrototypeState } from '@x-yard/game-core';
+import { memo, useLayoutEffect, useMemo, useRef } from 'react';
+
+import type { GeneratedMap, MapPoint, NodeId } from '@x-yard/map-generator';
+import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard/game-core';
 
 import { pathData } from './city';
+import {
+  MOVE_STYLE,
+  STEP_LEAD_MS,
+  pointAtProgress,
+  routePoints,
+  type MoveStep,
+  type Trail,
+} from './motion';
 
-export const MOVE_STYLE: Readonly<
-  Record<MobilityOption, { readonly colour: string; readonly label: string; readonly dash?: string }>
-> = {
-  taxi: { colour: '#d99a1f', label: 'Taxi' },
-  bus: { colour: '#3b8a5a', label: 'Bus', dash: '9 5' },
-  underground: { colour: '#b8403b', label: 'Metro' },
-  special: { colour: '#6d4bb5', label: 'Special', dash: '3 5' },
-  foot: { colour: '#33475c', label: 'Foot', dash: '1.5 5' },
-  scooter: { colour: '#8a5cf0', label: 'Scooter', dash: '7 4' },
-};
+/** Overlay sizes are screen pixels; the camera scale converts them to map units. */
+const STATION_RADIUS = { street: 3.1, hub: 3.8, terminal: 4.5 } as const;
+const LABEL_FONT = 10.5;
+const FACILITY_FONT = 7.6;
+const AGENT_RADIUS = 9;
+const FUGITIVE_RADIUS = 10.5;
+const DESTINATION_RADIUS = 13.5;
+const DESTINATION_HIT = 19;
+const LABEL_ALL_SCALE = 0.78;
 
-function edgeBetween(
-  graph: GeneratedMap['graph'],
-  from: NodeId,
-  to: NodeId,
-  mode: 'taxi' | 'bus' | 'underground' | 'special',
-): GraphEdge | undefined {
-  return graph.edges.find(
-    (edge) =>
-      edge.mode === mode &&
-      ((edge.a === from && edge.b === to) || (edge.a === to && edge.b === from)),
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+/**
+ * A token that traverses its move polyline. The camera may re-render this
+ * component (on zoom), so the animated `transform` is set imperatively rather
+ * than as a React prop: React does not own the attribute after mount.
+ */
+function AnimatedToken({
+  step,
+  children,
+}: {
+  readonly step: MoveStep;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const groupRef = useRef<SVGGElement>(null);
+
+  useLayoutEffect(() => {
+    const element = groupRef.current;
+    if (element === null) return;
+
+    const first = step.points[0];
+    if (first !== undefined) {
+      element.setAttribute('transform', `translate(${first.x} ${first.y})`);
+    }
+
+    const started = performance.now() + STEP_LEAD_MS;
+    let frame = 0;
+
+    const tick = (now: number): void => {
+      const t = Math.min(1, Math.max(0, (now - started) / step.duration));
+      const point = pointAtProgress(step.points, easeInOutCubic(t));
+      element.setAttribute('transform', `translate(${point.x} ${point.y})`);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [step]);
+
+  return <g ref={groupRef}>{children}</g>;
+}
+
+function AgentToken({
+  x,
+  y,
+  scale,
+  index,
+  active,
+}: {
+  readonly x: number;
+  readonly y: number;
+  readonly scale: number;
+  readonly index: number;
+  readonly active: boolean;
+}): React.JSX.Element {
+  const radius = AGENT_RADIUS / scale;
+  return (
+    <g>
+      {active && <circle className="token-halo" cx={0} cy={0} r={radius * 1.9} fill="#2f6fed" />}
+      <circle cx={0} cy={0} r={radius} fill="#2f6fed" stroke="#fbf8f0" strokeWidth={2 / scale} />
+      <text
+        x={radius + 2.5 / scale}
+        y={3 / scale}
+        fontSize={8 / scale}
+        fontWeight={700}
+        fill="#2f6fed"
+        paintOrder="stroke"
+        stroke="#f4efe2"
+        strokeWidth={2.5 / scale}
+      >
+        A{index + 1}
+      </text>
+      {!active && (
+        <circle cx={0} cy={0} r={radius + 9 / scale} fill="transparent" opacity={0}>
+          <title>{`Agent A${index + 1} at ${x.toFixed(0)},${y.toFixed(0)}`}</title>
+        </circle>
+      )}
+    </g>
   );
 }
 
-function routeFor(
-  graph: GeneratedMap['graph'],
-  from: NodeId,
-  option: PrototypeMoveOption,
-): readonly { readonly x: number; readonly y: number }[] {
-  if (option.mode === 'scooter' && option.via !== null) {
-    const first = edgeBetween(graph, from, option.via, 'taxi');
-    const second = edgeBetween(graph, option.via, option.to, 'taxi');
-    if (first?.path && second?.path) {
-      const firstPoints = first.a === from ? [...first.path] : [...first.path].reverse();
-      const secondPoints = second.a === option.via ? [...second.path] : [...second.path].reverse();
-      return [...firstPoints, ...secondPoints.slice(1)];
-    }
-  }
-
-  const mode =
-    option.mode === 'foot' || option.mode === 'scooter' ? 'taxi' : option.mode;
-  const edge = edgeBetween(graph, from, option.to, mode);
-  if (edge?.path) return edge.path;
-
-  const fromNode = graph.nodes.find((node) => node.id === from);
-  const toNode = graph.nodes.find((node) => node.id === option.to);
-  if (fromNode && toNode) {
-    return [
-      { x: fromNode.x, y: fromNode.y },
-      { x: toNode.x, y: toNode.y },
-    ];
-  }
-  return [];
+function FugitiveToken({
+  x,
+  y,
+  scale,
+  active,
+}: {
+  readonly x: number;
+  readonly y: number;
+  readonly scale: number;
+  readonly active: boolean;
+}): React.JSX.Element {
+  const radius = FUGITIVE_RADIUS / scale;
+  return (
+    <g>
+      {active && <circle className="token-halo fugitive" cx={0} cy={0} r={radius * 1.85} fill="#a93c36" />}
+      <circle cx={0} cy={0} r={radius} fill="#a93c36" stroke="#fbf8f0" strokeWidth={2.4 / scale} />
+      <text
+        x={0}
+        y={3.6 / scale}
+        textAnchor="middle"
+        fontSize={9.5 / scale}
+        fontWeight={800}
+        fill="#fff8ef"
+      >
+        F
+      </text>
+      <circle cx={0} cy={0} r={radius + 12 / scale} fill="transparent" opacity={0}>
+        <title>{`Vulture at ${x.toFixed(0)},${y.toFixed(0)}`}</title>
+      </circle>
+    </g>
+  );
 }
 
-interface PrototypeMapProps {
+interface PrototypeMapContentProps {
   readonly map: GeneratedMap;
-  readonly state: PrototypeState;
+  readonly seats: readonly PrototypeSeat[];
   readonly selectedMode: MobilityOption;
   readonly legal: readonly PrototypeMoveOption[];
   readonly onMove: (option: PrototypeMoveOption) => void;
   readonly pulseNode: NodeId | null;
+  readonly scale: number;
+  readonly activeStep: MoveStep | null;
+  readonly trails: readonly Trail[];
 }
 
-/** The live layer over the city plate: stations, routes, tokens and input. */
-export function PrototypeMap({
+function PrototypeMapContent({
   map,
-  state,
+  seats,
   selectedMode,
   legal,
   onMove,
   pulseNode,
-}: PrototypeMapProps): React.JSX.Element {
-  const fugitive = state.seats[0];
-  const agents = state.seats.slice(1);
+  scale,
+  activeStep,
+  trails,
+}: PrototypeMapContentProps): React.JSX.Element {
+  const fugitive = seats[0];
+  const agents = seats.slice(1);
   const options = legal.filter((option) => option.mode === selectedMode);
   const style = MOVE_STYLE[selectedMode];
-  const nodeById = new Map(map.graph.nodes.map((node) => [node.id, node]));
+  const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
+  const fastNetwork = useMemo(
+    () => map.graph.edges.filter((edge) => edge.mode !== 'taxi'),
+    [map.graph.edges],
+  );
 
-  const fastNetwork = map.graph.edges.filter((edge) => edge.mode !== 'taxi');
+  const px = (value: number): number => value / scale;
+  const importantNodes = useMemo(() => {
+    const ids = new Set<NodeId>();
+    for (const seat of seats) ids.add(seat.node);
+    for (const option of legal) {
+      ids.add(option.to);
+      if (option.via !== null) ids.add(option.via);
+    }
+    if (activeStep !== null) {
+      ids.add(activeStep.from);
+      ids.add(activeStep.to);
+    }
+    if (pulseNode !== null) ids.add(pulseNode);
+    for (const node of map.graph.nodes) {
+      if (node.class !== 'street' || node.facilities.length > 0) ids.add(node.id);
+    }
+    return ids;
+  }, [activeStep, legal, map.graph.nodes, pulseNode, seats]);
+
+  const showAllLabels = scale >= LABEL_ALL_SCALE;
+  const activeRole = activeStep?.role ?? null;
 
   return (
-    <svg
-      className="map-overlay"
-      viewBox={`0 0 ${map.bounds.width} ${map.bounds.height}`}
-      preserveAspectRatio="xMidYMid meet"
-    >
+    <g>
+      <defs>
+        <marker
+          id="proto-arrow-agent"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="5"
+          markerHeight="5"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M0 0 L10 5 L0 10 z" fill="#2f6fed" />
+        </marker>
+        <marker
+          id="proto-arrow-fugitive"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="5"
+          markerHeight="5"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M0 0 L10 5 L0 10 z" fill="#a93c36" />
+        </marker>
+      </defs>
+
       {/* The fast network stays faint; the city is the board, not a graph. */}
-      <g aria-hidden="true" opacity={0.24}>
+      <g aria-hidden="true" opacity={0.22}>
         {fastNetwork.map((edge) => (
           <g key={`net-${edge.id}`}>
-            <path d={pathData(edge.path ?? [])} fill="none" stroke="#fbf8f0" strokeWidth={4} strokeLinecap="round" />
+            <path
+              d={pathData(edge.path ?? [])}
+              fill="none"
+              stroke="#fbf8f0"
+              strokeWidth={3.2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
             <path
               d={pathData(edge.path ?? [])}
               fill="none"
               stroke={MOVE_STYLE[edge.mode].colour}
-              strokeWidth={2.2}
+              strokeWidth={1.7}
               strokeLinecap="round"
               strokeDasharray={MOVE_STYLE[edge.mode].dash ?? 'none'}
+              vectorEffect="non-scaling-stroke"
             />
           </g>
+        ))}
+      </g>
+
+      {/* Completed moves from this turn stay as a thin trace until the next turn. */}
+      <g className="move-trails" aria-hidden="true">
+        {trails.map((trail) => (
+          <path
+            key={`trail-${trail.key}`}
+            d={pathData(trail.points)}
+            fill="none"
+            stroke={trail.colour}
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="7 5"
+            opacity={0.55}
+            vectorEffect="non-scaling-stroke"
+          />
         ))}
       </g>
 
       {/* Legal move paths for the selected mode. */}
       <g className="move-paths">
         {options.map((option) => {
-          const points = routeFor(map.graph, fugitive?.node ?? '', option);
-
+          const points = routeForOption(map, fugitive?.node ?? '', option);
           return (
             <g key={`${option.mode}-${option.to}-${option.via ?? ''}`}>
-              <path d={pathData(points)} fill="none" stroke="#fbf8f0" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" opacity={0.92} />
+              <path
+                d={pathData(points)}
+                fill="none"
+                stroke="#fbf8f0"
+                strokeWidth={7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={0.92}
+                vectorEffect="non-scaling-stroke"
+              />
               <path
                 d={pathData(points)}
                 fill="none"
                 stroke={style.colour}
-                strokeWidth={5.2}
+                strokeWidth={4.2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeDasharray={style.dash ?? 'none'}
+                vectorEffect="non-scaling-stroke"
               />
             </g>
           );
         })}
       </g>
 
+      {/* The move being revealed right now. */}
+      {activeStep !== null && (
+        <g className="active-move" aria-hidden="true">
+          <path
+            d={pathData(activeStep.points)}
+            fill="none"
+            stroke="#fbf8f0"
+            strokeWidth={8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.9}
+            vectorEffect="non-scaling-stroke"
+          />
+          <path
+            className="active-move-line"
+            d={pathData(activeStep.points)}
+            fill="none"
+            stroke={activeRole === 'fugitive' ? '#a93c36' : '#2f6fed'}
+            strokeWidth={4.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="10 6"
+            vectorEffect="non-scaling-stroke"
+            markerEnd={`url(#proto-arrow-${activeRole === 'fugitive' ? 'fugitive' : 'agent'})`}
+          />
+        </g>
+      )}
+
       {/* Stations, numbers and class rings. */}
       <g>
         {map.graph.nodes.map((node) => {
-          const radius = node.class === 'terminal' ? 8 : node.class === 'hub' ? 7 : 5.8;
-          const stroke = node.class === 'terminal' ? '#a93c36' : node.class === 'hub' ? '#2f7a4f' : '#5a5347';
+          const radius = STATION_RADIUS[node.class] / scale;
+          const stroke =
+            node.class === 'terminal' ? '#a93c36' : node.class === 'hub' ? '#2f7a4f' : '#5a5347';
+          const labelled = showAllLabels || importantNodes.has(node.id);
 
           return (
             <g key={node.id}>
-              <circle cx={node.x} cy={node.y} r={radius} fill="#fbf8f0" stroke={stroke} strokeWidth={1.8} />
-              {node.class !== 'street' && <circle cx={node.x} cy={node.y} r={2.2} fill={stroke} />}
-              <text
-                x={node.x + radius + 2.5}
-                y={node.y - radius + 1}
-                fontSize={9.6}
-                fontWeight={600}
-                fill="#3d382e"
-                paintOrder="stroke"
-                stroke="#f4efe2"
-                strokeWidth={3.2}
-                strokeLinejoin="round"
-              >
-                {node.id}
-              </text>
+              <circle cx={node.x} cy={node.y} r={radius} fill="#fbf8f0" stroke={stroke} strokeWidth={1.6 / scale} />
+              {node.class !== 'street' && (
+                <circle cx={node.x} cy={node.y} r={1.9 / scale} fill={stroke} />
+              )}
+              {labelled && (
+                <text
+                  x={node.x + radius + 2.5 / scale}
+                  y={node.y - radius + 1 / scale}
+                  fontSize={LABEL_FONT / scale}
+                  fontWeight={600}
+                  fill="#3d382e"
+                  paintOrder="stroke"
+                  stroke="#f4efe2"
+                  strokeWidth={3.2 / scale}
+                  strokeLinejoin="round"
+                >
+                  {node.id}
+                </text>
+              )}
               {node.facilities.length > 0 && (
                 <text
                   x={node.x}
-                  y={node.y + radius + 9}
+                  y={node.y + radius + 8 / scale}
                   textAnchor="middle"
-                  fontSize={7.5}
+                  fontSize={FACILITY_FONT / scale}
                   fontWeight={700}
                   fill={node.facilities.includes('black-market') ? '#7a4bb5' : '#2f7a4f'}
                   paintOrder="stroke"
                   stroke="#f4efe2"
-                  strokeWidth={2.5}
+                  strokeWidth={2.4 / scale}
                 >
                   {node.facilities.includes('black-market') ? 'BM' : 'SH'}
                 </text>
@@ -180,13 +382,26 @@ export function PrototypeMap({
 
           return (
             <g key={`dest-${option.mode}-${option.to}-${option.via ?? ''}`} className="destination">
-              <circle cx={destination.x} cy={destination.y} r={17} fill={style.colour} opacity={0.16} />
-              <circle cx={destination.x} cy={destination.y} r={12.5} fill="#fbf8f0" stroke={style.colour} strokeWidth={2.8} />
+              <circle
+                cx={destination.x}
+                cy={destination.y}
+                r={DESTINATION_RADIUS * 1.35 / scale}
+                fill={style.colour}
+                opacity={0.16}
+              />
+              <circle
+                cx={destination.x}
+                cy={destination.y}
+                r={DESTINATION_RADIUS / scale}
+                fill="#fbf8f0"
+                stroke={style.colour}
+                strokeWidth={2.6 / scale}
+              />
               <text
                 x={destination.x}
-                y={destination.y + 3}
+                y={destination.y + 3 / scale}
                 textAnchor="middle"
-                fontSize={8.5}
+                fontSize={8.5 / scale}
                 fontWeight={700}
                 fill="#3b372e"
                 pointerEvents="none"
@@ -196,7 +411,7 @@ export function PrototypeMap({
               <circle
                 cx={destination.x}
                 cy={destination.y}
-                r={18}
+                r={DESTINATION_HIT / scale}
                 fill="transparent"
                 className="dest-hit"
                 onClick={() => onMove(option)}
@@ -215,21 +430,25 @@ export function PrototypeMap({
         {agents.map((agent, index) => {
           const node = nodeById.get(agent.node);
           if (!node) return null;
+          const isActive = activeStep?.seatId === agent.id;
+
           return (
             <g key={agent.id}>
-              <circle cx={node.x} cy={node.y} r={9.5} fill="#2f6fed" stroke="#fbf8f0" strokeWidth={2} />
-              <text
-                x={node.x + 11}
-                y={node.y + 3}
-                fontSize={8}
-                fontWeight={700}
-                fill="#2f6fed"
-                paintOrder="stroke"
-                stroke="#f4efe2"
-                strokeWidth={2.5}
-              >
-                A{index + 1}
-              </text>
+              {isActive && activeStep !== null ? (
+                <AnimatedToken step={activeStep}>
+                  <AgentToken
+                    x={node.x}
+                    y={node.y}
+                    scale={scale}
+                    index={index}
+                    active
+                  />
+                </AnimatedToken>
+              ) : (
+                <g transform={`translate(${node.x} ${node.y})`}>
+                  <AgentToken x={node.x} y={node.y} scale={scale} index={index} active={false} />
+                </g>
+              )}
             </g>
           );
         })}
@@ -237,12 +456,15 @@ export function PrototypeMap({
         {fugitive && (() => {
           const node = nodeById.get(fugitive.node);
           if (!node) return null;
-          return (
-            <g>
-              <circle cx={node.x} cy={node.y} r={11.5} fill="#a93c36" stroke="#fbf8f0" strokeWidth={2.4} />
-              <text x={node.x} y={node.y + 3.6} textAnchor="middle" fontSize={9.5} fontWeight={800} fill="#fff8ef">
-                F
-              </text>
+          const isActive = activeStep?.seatId === fugitive.id;
+
+          return isActive && activeStep !== null ? (
+            <AnimatedToken step={activeStep}>
+              <FugitiveToken x={node.x} y={node.y} scale={scale} active />
+            </AnimatedToken>
+          ) : (
+            <g transform={`translate(${node.x} ${node.y})`}>
+              <FugitiveToken x={node.x} y={node.y} scale={scale} active={false} />
             </g>
           );
         })()}
@@ -253,11 +475,98 @@ export function PrototypeMap({
         if (!node) return null;
         return (
           <g className="pulse-ring" aria-hidden="true">
-            <circle cx={node.x} cy={node.y} r={26} fill="none" stroke="#a93c36" strokeWidth={2.6} strokeDasharray="5 5" />
-            <circle cx={node.x} cy={node.y} r={18} fill="none" stroke="#f0b4af" strokeWidth={2} />
+            <circle cx={node.x} cy={node.y} r={px(32)} fill="#a93c36" opacity={0.12} />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={px(31)}
+              fill="none"
+              stroke="#fbf8f0"
+              strokeWidth={5}
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={px(31)}
+              fill="none"
+              stroke="#a93c36"
+              strokeWidth={2.8}
+              strokeDasharray="6 5"
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={px(20)}
+              fill="none"
+              stroke="#a93c36"
+              strokeWidth={1.8}
+              opacity={0.7}
+              vectorEffect="non-scaling-stroke"
+            />
           </g>
         );
       })()}
+    </g>
+  );
+}
+
+const MemoMapContent = memo(PrototypeMapContent);
+
+function routeForOption(
+  map: GeneratedMap,
+  from: NodeId,
+  option: PrototypeMoveOption,
+): readonly MapPoint[] {
+  if (from === '') return [];
+  return routePoints(map.graph, from, option.to, option.mode, option.via);
+}
+
+interface PrototypeMapProps {
+  readonly map: GeneratedMap;
+  readonly seats: readonly PrototypeSeat[];
+  readonly selectedMode: MobilityOption;
+  readonly legal: readonly PrototypeMoveOption[];
+  readonly onMove: (option: PrototypeMoveOption) => void;
+  readonly pulseNode: NodeId | null;
+  readonly viewBox: string;
+  readonly scale: number;
+  readonly activeStep: MoveStep | null;
+  readonly trails: readonly Trail[];
+}
+
+/** The live layer over the city plate: stations, routes, tokens and input. */
+export function PrototypeMap({
+  map,
+  seats,
+  selectedMode,
+  legal,
+  onMove,
+  pulseNode,
+  viewBox,
+  scale,
+  activeStep,
+  trails,
+}: PrototypeMapProps): React.JSX.Element {
+  return (
+    <svg
+      className="map-overlay"
+      viewBox={viewBox}
+      preserveAspectRatio="xMidYMid slice"
+      aria-label="Cathedral Quarter transit map"
+    >
+      <MemoMapContent
+        map={map}
+        seats={seats}
+        selectedMode={selectedMode}
+        legal={legal}
+        onMove={onMove}
+        pulseNode={pulseNode}
+        scale={scale}
+        activeStep={activeStep}
+        trails={trails}
+      />
     </svg>
   );
 }
