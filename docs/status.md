@@ -16,7 +16,7 @@ Last updated: 2026-10-29.
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
 | `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — F-style city plate, permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
+| `apps/web`: **96-station prototype** — developer-switchable city plate (Basic default; Iron/Night 2.5D RTS skins), permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -78,6 +78,15 @@ The Agents' last-known node is shown as a semi-transparent `F<node>` ghost with 
 dashed ring; it persists until the next appearance and is hidden while the real
 Fugitive stands there.
 
+**City skins.** The city plate is now a developer-switchable skin, separate from
+the live overlay and the rules. **Basic** is still the default and fallback; the
+**Iron Quarter** and **Night Ops** skins are 2.5D RTS passes over the same map and
+can be switched in the dev header or with `?skin=iron` / `?skin=nightops`
+([decision 0018](decisions/0018-developer-switchable-city-skins.md)). The
+isometric **Command City** study remains lab-only because it needs a camera and
+overlay re-projection. The final art direction is not ratified, and the current
+RTS skins are vector approximations, not pre-rendered sprite assets.
+
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
 gadgets. The architecture guard for the real state machine is unchanged.
@@ -87,7 +96,8 @@ gadgets. The architecture guard for the real state machine is unchanged.
 1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
    movement, no viewport) and the second (hidden network, no last-appearance
    marker, “pulse” wording) are addressed; tune Agent starts/bot pathing before
-   changing any ruled number, then add the river/bridges and remaining polish.
+   changing any ruled number, then pick a city-skin direction and add the
+   river/bridges and remaining polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
    the prototype's camera/LOD contract into a faster renderer. This proves the
@@ -182,5 +192,10 @@ Tracked here so a session does not rediscover them (full detail in the log):
 - `TransportMode` has four values and does **not** include on-foot movement,
   which `VISUAL_DIRECTION.md` §1 decision 2 makes a fifth movement option. This
   affects the wire protocol and the ticket log, so it needs a deliberate decision.
-- Playwright is not installed; `pnpm test:e2e` does not exist yet. The lab was
-  verified with an ad-hoc Playwright script outside the pnpm workspace.
+- Playwright is not installed; `pnpm test:e2e` does not exist yet. The labs and
+  skin screenshots were verified with an ad-hoc Playwright script outside the
+  pnpm workspace.
+- The RTS city skins are vector approximations. A true late-90s RTS / “Red Alert 2”
+  look needs pre-rendered isometric sprites and texture atlases; the skin boundary
+  can accept that renderer later. Command City is lab-only until the camera and
+  overlay projection are budgeted.

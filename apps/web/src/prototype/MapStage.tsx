@@ -14,6 +14,9 @@ import type { GeneratedMap, MapPoint, NodeId } from '@x-yard/map-generator';
 import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard/game-core';
 
 import { CityPlate } from './CityPlate';
+import { Rts25CityFragment } from '../lab/rts/Rts25CityFragment';
+import { COMMAND, NIGHT_OPS } from '../lab/rts/rtsTheme';
+import type { SkinId } from './skins';
 import { PrototypeMap } from './PrototypeMap';
 import { cameraViewBox, type StageSize } from './camera';
 import {
@@ -26,6 +29,7 @@ import { useMapCamera, zoomLabel } from './useMapCamera';
 
 interface MapStageProps {
   readonly map: GeneratedMap;
+  readonly skin: SkinId;
   readonly seats: readonly PrototypeSeat[];
   readonly turn: number;
   readonly selectedMode: MobilityOption;
@@ -111,6 +115,7 @@ function bannerText(banner: PhaseBanner | null, turn: number): {
 
 export function MapStage({
   map,
+  skin,
   seats,
   turn,
   selectedMode,
@@ -357,13 +362,19 @@ export function MapStage({
     <section className="proto-stage">
       <div
         ref={frameRef}
-        className={`map-frame${freeCursor ? ' is-free' : ''}${dragging ? ' is-dragging' : ''}`}
+        className={`map-frame skin-${skin}${freeCursor ? ' is-free' : ''}${dragging ? ' is-dragging' : ''}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={finishPointers}
         onPointerCancel={finishPointers}
       >
-        <CityPlate map={map} viewBox={viewBox} />
+        {skin === 'iron' ? (
+          <Rts25CityFragment map={map} theme={COMMAND} viewBox={viewBox} overlay={false} />
+        ) : skin === 'nightops' ? (
+          <Rts25CityFragment map={map} theme={NIGHT_OPS} viewBox={viewBox} overlay={false} />
+        ) : (
+          <CityPlate map={map} viewBox={viewBox} />
+        )}
         <PrototypeMap
           map={map}
           seats={seats}

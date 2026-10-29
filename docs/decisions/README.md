@@ -58,3 +58,4 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0015](0015-sequential-reveal-and-play-map-camera.md) | Prototype turns reveal one mover at a time under a play/map camera with label LOD |
 | [0016](0016-appearance-terminology.md) | The player-facing term is Appearance, not Pulse |
 | [0017](0017-always-visible-network-and-last-appearance.md) | The transit network is always visible; no route planner; last-appearance ghost |
+| [0018](0018-developer-switchable-city-skins.md) | City skins are developer-switchable; Basic stays the default fallback |

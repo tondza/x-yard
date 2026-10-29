@@ -20,6 +20,7 @@ import type { GeneratedMap, NodeId } from '@x-yard/map-generator';
 
 import mapJson from '../../../../maps/prototype-96-seed-42.json';
 import { MapStage } from './MapStage';
+import { DEFAULT_SKIN, SKIN_OPTIONS, isSkinId, type SkinId } from './skins';
 import {
   HOLD_PAUSE_MS,
   MOVE_STYLE,
@@ -48,6 +49,22 @@ const MODES: readonly { readonly mode: MobilityOption; readonly label: string }[
 
 function initialGame(): PrototypeState {
   return createPrototypeGame(MAP.graph, MAP.starts, MAP.seed);
+}
+
+/**
+ * Developer skin preference: URL first (shareable), then localStorage, then the
+ * original basic city. Never read by game logic.
+ */
+function initialSkin(): SkinId {
+  const fromUrl = new URLSearchParams(window.location.search).get('skin');
+  if (isSkinId(fromUrl)) return fromUrl;
+  try {
+    const stored = window.localStorage.getItem('xyard.skin');
+    if (isSkinId(stored)) return stored;
+  } catch {
+    // A blocked storage API must not stop the prototype from starting.
+  }
+  return DEFAULT_SKIN;
 }
 
 function nodeMap(state: PrototypeState): Readonly<Record<string, NodeId>> {
@@ -84,6 +101,7 @@ export default function Prototype(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [selectedStation, setSelectedStation] = useState<NodeId | null>(null);
+  const [skin, setSkin] = useState<SkinId>(initialSkin);
 
   const runIdRef = useRef(0);
   const busyRef = useRef(false);
@@ -323,6 +341,19 @@ export default function Prototype(): React.JSX.Element {
     setSelectedStation(null);
   }, []);
 
+  const changeSkin = useCallback((next: SkinId): void => {
+    if (!isSkinId(next)) return;
+    setSkin(next);
+    try {
+      window.localStorage.setItem('xyard.skin', next);
+    } catch {
+      // The URL still carries the choice if storage is unavailable.
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('skin', next);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
   useEffect(() => {
     const scope = window as unknown as {
       __XYARD_PROTOTYPE__?: {
@@ -342,6 +373,8 @@ export default function Prototype(): React.JSX.Element {
         restart: () => void;
         setExpanded: (value: boolean) => void;
         inspectStation: (node: NodeId) => void;
+        skin: SkinId;
+        setSkin: (next: SkinId) => void;
       };
     };
     scope.__XYARD_PROTOTYPE__ = {
@@ -369,6 +402,8 @@ export default function Prototype(): React.JSX.Element {
       restart,
       setExpanded,
       inspectStation,
+      skin,
+      setSkin: changeSkin,
     };
     return () => {
       delete scope.__XYARD_PROTOTYPE__;
@@ -380,11 +415,13 @@ export default function Prototype(): React.JSX.Element {
     game,
     handleHold,
     handleMove,
+    changeSkin,
     inspectStation,
     legal,
     pending,
     restart,
     selectedStation,
+    skin,
     skipPlayback,
     trails.length,
   ]);
@@ -431,6 +468,21 @@ export default function Prototype(): React.JSX.Element {
           <span>{MAP.stats.nodeCount} stations</span>
         </div>
 
+        <label className="proto-skin" title="Developer skin — saved in this browser, not part of the game">
+          <span>SKIN</span>
+          <select
+            aria-label="City skin"
+            value={skin}
+            onChange={(event) => changeSkin(event.target.value as SkinId)}
+          >
+            {SKIN_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id} title={option.kicker}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <button className="proto-restart" type="button" onClick={restart}>
           Restart
         </button>
@@ -439,6 +491,7 @@ export default function Prototype(): React.JSX.Element {
       <main className="proto-body">
         <MapStage
           map={MAP}
+          skin={skin}
           seats={displaySeats}
           turn={game.turn}
           selectedMode={selectedMode}

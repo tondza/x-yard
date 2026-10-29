@@ -10,19 +10,32 @@ import { App } from './App';
  */
 const Prototype = import.meta.env.DEV ? lazy(() => import('./prototype/Prototype')) : null;
 const MapLab = import.meta.env.DEV ? lazy(() => import('./lab/MapLab')) : null;
+const CityVisualLab = import.meta.env.DEV ? lazy(() => import('./lab/CityVisualLab')) : null;
+const RtsVisualLab = import.meta.env.DEV ? lazy(() => import('./lab/rts/RtsVisualLab')) : null;
 
-type DevRoute = 'prototype' | 'lab' | 'board';
+type DevRoute = 'prototype' | 'lab' | 'visuals' | 'rts' | 'board';
 
 function devRoute(): DevRoute {
   if (!import.meta.env.DEV) return 'board';
   const params = new URLSearchParams(window.location.search);
   if (params.has('board')) return 'board';
   if (params.has('lab')) return 'lab';
+  if (params.has('visuals')) return 'visuals';
+  if (params.has('rts')) return 'rts';
   return 'prototype';
 }
 
 const route = devRoute();
-const View = route === 'prototype' ? Prototype : route === 'lab' ? MapLab : null;
+const View =
+  route === 'prototype'
+    ? Prototype
+    : route === 'lab'
+      ? MapLab
+      : route === 'visuals'
+        ? CityVisualLab
+        : route === 'rts'
+          ? RtsVisualLab
+          : null;
 
 const container = document.getElementById('root');
 if (container === null) {

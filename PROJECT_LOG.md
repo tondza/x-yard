@@ -1189,3 +1189,90 @@ Historical log entries and old decision records keep “pulse” as written. The
 ghost is the Agents' last-known marker, not a prediction. There is deliberately
 no route planner. The network is dense on a phone; labels drop out at low zoom.
 The 300-node renderer still needs the next scale rehearsal.
+
+---
+
+## 2026-10-29 — RTS city skins and the developer skin switch
+
+**Why this round exists.** The illustrative city pass (round 04: pastel card, night
+and rain themes) did not land. The director's verdict was that it still looked
+“pretty much like a children's drawing” and that the target is the dense,
+pre-rendered city look of late-90s RTS games — explicitly “Red Alert 2 style”.
+They also restated the operational requirement: the current basic prototype is
+fine as a fallback, and a developer should be able to switch skins very easily;
+the choice does not need to exist for end users.
+
+The previous round's mistake was treating the problem as a palette swap. This
+round changes the **city renderer**: isometric/2.5D blocks, visible façades,
+window grids, roof equipment, concrete/asphalt, industrial detail and cast
+shadows.
+
+**What was built**
+
+1. **A skin boundary.** The city plate is now a developer-switchable skin. The
+   live overlay (network, stations, labels, tokens, ghost) and the rules stay in
+   `PrototypeMap` / `game-core`; a skin renders only the city. This is the
+   mechanism the director asked for.
+2. **`basic` is still the default and fallback.** The original `CityPlate` is
+   untouched and loads by default. The `SKIN` control lists `Basic`, `Iron`, and
+   `Night`; the last two are the RTS skins. The choice is saved in
+   `localStorage['xyard.skin']` and mirrored to `?skin=iron` / `?skin=nightops`
+   for sharing. It is dev-only; there is no end-user selector.
+3. **Iron Quarter (2.5D RTS).** Taller façades and a slight oblique roof shift,
+   window grids, roof gear, billboards, smoke, awnings, cars, streetlights and
+   concrete/asphalt textures — while keeping the current board coordinates,
+   camera and overlay. This is the cheap, playable step.
+4. **Night Ops (2.5D RTS, night).** The same geometry and coordinates after dark:
+   sodium lamps, lit windows and a darker plate. Route/station contrast was kept
+   deliberately high.
+5. **Command City (true isometric).** A lab-only study that re-projects the whole
+   map into a 2:1 isometric diamond with extruded buildings and a re-projected
+   station/route overlay. It is the closest to the target and the most expensive:
+   the camera and every overlay layer would need a projection pass. It is not in
+   the game selector.
+6. **The RTS lab** is at `?rts`, with the three options and their costs. The old
+   pastel lab remains at `?visuals` as history; it is no longer in the game
+   selector. Round 05 is documented in
+   [`design/moodboard/round-05-rts/README.md`](design/moodboard/round-05-rts/README.md);
+   the skin mechanism is [decision 0018](docs/decisions/0018-developer-switchable-city-skins.md).
+
+**Rejected alternatives**
+
+1. **Keep iterating the pastel palette.** Rejected by the director: wrong family
+   of look; palette work cannot turn block footprints into an RTS city.
+2. **Replace Basic with the new skin / make the RTS skin the only renderer.**
+   Rejected: Basic is the working prototype and the agreed fallback.
+3. **End-user skin picker.** Rejected: not a player feature; the game should have
+   one authored look. The selector is developer-facing only.
+4. **Make Command City the live skin immediately.** Rejected for now: it needs a
+   camera/overlay re-projection, which is a separate, testable change.
+5. **Move straight to pre-rendered RA2-style sprites.** Rejected as the first
+   step: it needs a 3D asset pipeline. The vector RTS skins establish the
+   composition, detail budget and switch first; sprite atlases can replace the
+   city renderer later behind the same boundary.
+
+**Verified**
+
+- `pnpm install` — exit 0.
+- `pnpm typecheck` — exit 0 for all five projects.
+- `pnpm test` — **7 test files / 131 tests**, all passing (game-core 115,
+  map-generator 16). No rules changed.
+- `pnpm build` — exit 0; production bundle stays at ~223 kB and excludes the
+  dev prototype/labs.
+- `pnpm check:docs` — 52 markdown files; links and counts current.
+- Browser, 1440×900: Basic, Iron and Night all load with no page or console
+  errors; the dev selector switches live, writes `?skin=`, and a reload restores
+  the stored choice. The RTS plate renders under the unchanged overlay.
+- Browser, 390×844: Iron skin loads with no horizontal overflow; the header
+  reflows to two rows and the compact skin selector remains usable. The `?rts`
+  lab renders all three cards without overflow.
+- `?visuals` still boots as historical lab material; it is not in the selector.
+
+**Known limits**
+
+These are **vector approximations** of the RTS look, not pre-rendered sprites. A
+true Red Alert 2-level skin still needs a 3D building pipeline and texture
+atlases. Command City remains lab-only until the camera/overlay projection is
+approved. Night Ops is harder to read than daylight and needs extra contrast
+testing on small screens. The 300-node renderer and the final art direction are
+still open.

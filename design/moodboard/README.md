@@ -15,7 +15,9 @@ Game design authority remains [`/GAME_VISION.md`](../../GAME_VISION.md).
 | --- | --- | --- |
 | 01 — abstract nodes | [`round-01-abstract-nodes/`](round-01-abstract-nodes/) | **Superseded.** Four art directions that drew the *graph* rather than the *city*. Kept as history; only **A — Transit Diagram** is carried forward, as the HUD / information-design reference. |
 | 02 — the city | [`round-02-city/`](round-02-city/) | **Narrowed, not closed.** Four city-based directions comparing art style and perspective; the director kept **F** and **H** and dropped pixel-art. |
-| 03 — mobile-first MVP | [`round-03-mobile/`](round-03-mobile/) | **Current.** Six scenarios from the *ratified MVP* at a real 390 × 844 phone viewport, plus one desktop enhancement. |
+| 03 — mobile-first MVP | [`round-03-mobile/`](round-03-mobile/) | Completed for the MVP screen pass. Six scenarios from the *ratified MVP* at a real 390 × 844 phone viewport, plus one desktop enhancement. |
+| 04 — illustrative city skins | [`round-04-city-visuals/`](round-04-city-visuals/) | **Superseded by 05.** Palette/detail passes that the director judged too illustrative (“children's drawing”). Kept as history. |
+| 05 — RTS city skins | [`round-05-rts/`](round-05-rts/) | **Current.** Three original RTS-inspired directions, plus the developer skin switch that keeps Basic as the fallback. |
 
 ### Round 03 — why it looks so different
 
@@ -26,6 +28,16 @@ therefore shows the *minimum* that works, built on
 no modals, a 92 px top bar, a map, and a 176 px tray. Scenarios 2 and 5 are the
 *same screen* in the two surviving art directions, so the F-versus-H choice can be
 made on the real MVP screen instead of on a showcase.
+
+### Round 05 — the RTS pass
+
+The director rejected the round-04 illustrative direction as too childlike and
+named the target: a dense, pre-rendered late-90s RTS city (“Red Alert 2 style”).
+Round 05 therefore explores **Command City** (true isometric, lab only),
+**Iron Quarter** (2.5D, live developer skin) and **Night Ops** (2.5D night, live
+developer skin). Basic remains the default. The vector mocks are an approximation
+of the pre-rendered look; a future sprite-based skin can replace the city renderer
+behind the same switch.
 
 ### Why round 01 was superseded
 

@@ -130,6 +130,34 @@ body {
   letter-spacing: 0.06em;
 }
 
+.proto-skin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b7a98f;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.proto-skin select {
+  max-width: 150px;
+  padding: 5px 7px;
+  border: 1px solid #5a5142;
+  border-radius: 6px;
+  background: #2c2821;
+  color: #e9dfcb;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.proto-skin select:hover,
+.proto-skin select:focus-visible {
+  border-color: #e0b45a;
+  outline: none;
+}
+
 .proto-restart {
   border: 1px solid #5a5142;
   border-radius: 6px;
@@ -1034,11 +1062,23 @@ body {
 
   .proto-brand {
     min-width: 0;
-    flex: 1;
+    flex: 1 1 100%;
   }
 
   .proto-brand strong {
     font-size: 15px;
+  }
+
+  .proto-skin {
+    margin-left: auto;
+  }
+
+  .proto-skin span {
+    display: none;
+  }
+
+  .proto-skin select {
+    max-width: 92px;
   }
 
   .proto-body {
