@@ -209,6 +209,28 @@ function WindowGrid({
             opacity={lit ? 0.95 : 0.7}
           />
           <line x1={p3.x} y1={p3.y} x2={p2.x} y2={p2.y} stroke={theme.shadow} strokeWidth={0.5} opacity={0.55} />
+          {theme.etching && (
+            <g>
+              <line
+                x1={(p0.x + p1.x) / 2}
+                y1={(p0.y + p1.y) / 2}
+                x2={(p3.x + p2.x) / 2}
+                y2={(p3.y + p2.y) / 2}
+                stroke={theme.shadow}
+                strokeWidth={0.3}
+                opacity={0.55}
+              />
+              <line
+                x1={(p0.x + p3.x) / 2}
+                y1={(p0.y + p3.y) / 2}
+                x2={(p1.x + p2.x) / 2}
+                y2={(p1.y + p2.y) / 2}
+                stroke={theme.shadow}
+                strokeWidth={0.3}
+                opacity={0.45}
+              />
+            </g>
+          )}
         </g>,
       );
     }
@@ -269,13 +291,13 @@ function DrawPrism({
               points={points(face.points)}
               fill={sideColour[face.side]}
               stroke={theme.shadow}
-              strokeWidth={0.55}
+              strokeWidth={theme.etching ? 1.25 : 0.55}
               opacity={1}
             />
             <polygon
               points={points(face.points)}
-              fill="url(#iso-brick)"
-              opacity={0.26}
+              fill={theme.etching ? 'url(#vintage-hatch)' : 'url(#iso-brick)'}
+              opacity={theme.etching ? 0.34 : 0.26}
             />
             <polygon
               points={points([
@@ -284,8 +306,8 @@ function DrawPrism({
                 wallPoint(a, b, c, d, 1, 1),
                 wallPoint(a, b, c, d, 0, 1),
               ])}
-              fill={theme.shadow}
-              opacity={0.22}
+              fill={theme.etching ? 'url(#vintage-hatch-dense)' : theme.shadow}
+              opacity={theme.etching ? 0.2 : 0.22}
             />
             <polygon
               points={points([
@@ -331,8 +353,8 @@ function DrawPrism({
           </g>
         );
       })}
-      <polygon points={points(geometry.top)} fill={roofColour} stroke={roofEdge} strokeWidth={0.8} />
-      <polygon points={points(geometry.top)} fill="url(#iso-roof)" opacity={0.38} />
+      <polygon points={points(geometry.top)} fill={roofColour} stroke={roofEdge} strokeWidth={theme.etching ? 1.2 : 0.8} />
+      <polygon points={points(geometry.top)} fill={theme.etching ? 'url(#vintage-hatch)' : 'url(#iso-roof)'} opacity={theme.etching ? 0.32 : 0.38} />
       <polygon points={points(geometry.top)} fill="none" stroke={theme.sun} strokeWidth={0.5} opacity={0.28} />
     </g>
   );
@@ -435,6 +457,42 @@ function RoofVent({
   );
 }
 
+function Chimney({
+  x,
+  y,
+  z,
+  theme,
+}: {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly theme: RtsTheme;
+}): React.JSX.Element {
+  const body = prism(x, y, 2.4, 2.4, z, z + 5);
+  return (
+    <g>
+      <DrawPrism
+        prism={body}
+        theme={theme}
+        wall={{ light: theme.steel, mid: theme.steel, dark: theme.shadow }}
+        roofColour={theme.rust}
+        roofEdge={theme.shadow}
+        hash={3}
+        windows={false}
+      />
+      <rect
+        x={iso(x - 0.4, y - 0.4, z + 5).x - 2}
+        y={iso(x - 0.4, y - 0.4, z + 5).y - 1}
+        width={4}
+        height={1.5}
+        fill={theme.steel}
+        stroke={theme.shadow}
+        strokeWidth={0.4}
+      />
+    </g>
+  );
+}
+
 function RoofSkylight({
   roof,
   theme,
@@ -472,15 +530,16 @@ function BuildingObject({
   const wall = theme.walls[hash % theme.walls.length] as WallPalette;
   const roof = theme.roofs[hash % theme.roofs.length] as { top: string; edge: string };
   const height = buildingHeight(building);
+  const etching = theme.etching === true;
   const tiered = height >= 18 && hash % 3 === 0;
-  const pitched = !tiered && height <= 16 && hash % 3 === 0;
+  const pitched = !tiered && height <= (etching ? 18 : 16) && hash % (etching ? 2 : 3) === 0;
   const baseHeight = tiered ? Math.max(10, height * 0.62) : height;
   const roofArea = tiered
     ? { x: building.x + building.w * 0.16, y: building.y + building.h * 0.16, w: building.w * 0.68, h: building.h * 0.68, z: height }
     : { x: building.x, y: building.y, w: building.w, h: building.h, z: height };
   const baseGeometry = prism(building.x, building.y, building.w, building.h, 0, baseHeight);
   const upperGeometry = tiered ? prism(roofArea.x, roofArea.y, roofArea.w, roofArea.h, baseHeight, height) : null;
-  const hasAc = hash % 3 === 0;
+  const hasAc = !etching && hash % 3 === 0;
   const hasTank = hash % 5 === 0;
   const hasSkylight = hash % 4 === 1;
   const hasVent = hash % 2 === 0;
@@ -579,6 +638,15 @@ function BuildingObject({
       {!pitched && hasSkylight && <RoofSkylight roof={roofArea} theme={theme} />}
       {!pitched && hasVent && <RoofVent x={roofArea.x + roofArea.w * 0.78} y={roofArea.y + roofArea.h * 0.7} z={roofArea.z} theme={theme} />}
 
+      {etching && hash % 2 === 0 && (
+        <Chimney
+          x={roofArea.x + roofArea.w * 0.74}
+          y={roofArea.y + roofArea.h * 0.26}
+          z={roofArea.z}
+          theme={theme}
+        />
+      )}
+
       {hash % 6 === 0 && (
         <line
           x1={iso(building.x + building.w - 1, building.y + building.h, baseHeight * 0.2).x}
@@ -591,7 +659,7 @@ function BuildingObject({
         />
       )}
 
-      {hash % 7 === 0 && !pitched && (
+      {!etching && hash % 7 === 0 && !pitched && (
         <g>
           <line
             x1={iso(roofArea.x + roofArea.w * 0.5, roofArea.y + roofArea.h * 0.5, roofArea.z).x}
@@ -610,7 +678,7 @@ function BuildingObject({
         </g>
       )}
 
-      {hash % 13 === 0 && building.w > 18 && !pitched && (
+      {!etching && hash % 13 === 0 && building.w > 18 && !pitched && (
         <g>
           {(() => {
             const anchor = iso(roofArea.x + roofArea.w * 0.5, roofArea.y + roofArea.h * 0.5, roofArea.z + 2);
@@ -639,7 +707,7 @@ function BuildingObject({
         </g>
       )}
 
-      {hash % 17 === 0 && !pitched && (
+      {!etching && hash % 17 === 0 && !pitched && (
         <g opacity={0.1}>
           {[0, 1, 2].map((index) => (
             <circle
@@ -663,12 +731,22 @@ function TreeObject({ tree, theme }: { readonly tree: Tree; readonly theme: RtsT
   const radius = Math.max(4, tree.r * 0.9);
   return (
     <g>
-      <ellipse cx={base.x + 7} cy={base.y + 3} rx={radius * 1.05} ry={radius * 0.35} fill={theme.shadow} opacity={theme.shadowOpacity * 0.55} />
+      <ellipse cx={base.x + 7} cy={base.y + 3} rx={radius * 1.05} ry={radius * 0.35} fill={theme.etching ? 'url(#vintage-hatch-dense)' : theme.shadow} opacity={theme.shadowOpacity * 0.55} />
       <ellipse cx={base.x} cy={base.y} rx={2.6} ry={1.3} fill={theme.shadow} opacity={theme.shadowOpacity * 0.9} />
       <line x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke={theme.treeTrunk} strokeWidth={1.6} />
-      <circle cx={top.x} cy={top.y} r={radius} fill={theme.tree} stroke={theme.shadow} strokeWidth={0.6} />
-      <circle cx={top.x - radius * 0.4} cy={top.y - radius * 0.25} r={radius * 0.62} fill={theme.treeLight} opacity={0.9} />
-      <circle cx={top.x + radius * 0.35} cy={top.y - radius * 0.1} r={radius * 0.45} fill={theme.tree} opacity={0.9} />
+      <circle cx={top.x} cy={top.y} r={radius} fill={theme.tree} stroke={theme.shadow} strokeWidth={theme.etching ? 1.2 : 0.6} />
+      {theme.etching ? (
+        <g>
+          <circle cx={top.x} cy={top.y} r={radius} fill="url(#vintage-stipple)" opacity={0.65} />
+          <circle cx={top.x - radius * 0.3} cy={top.y - radius * 0.28} r={radius * 0.6} fill="none" stroke={theme.shadow} strokeWidth={0.45} opacity={0.55} />
+          <line x1={top.x - radius * 0.6} y1={top.y + radius * 0.2} x2={top.x + radius * 0.55} y2={top.y - radius * 0.35} stroke={theme.shadow} strokeWidth={0.35} opacity={0.45} />
+        </g>
+      ) : (
+        <>
+          <circle cx={top.x - radius * 0.4} cy={top.y - radius * 0.25} r={radius * 0.62} fill={theme.treeLight} opacity={0.9} />
+          <circle cx={top.x + radius * 0.35} cy={top.y - radius * 0.1} r={radius * 0.45} fill={theme.tree} opacity={0.9} />
+        </>
+      )}
     </g>
   );
 }
@@ -708,9 +786,12 @@ function RoadLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme:
         const width = street.rank === 0 ? 8 : street.rank === 1 ? 11 : 14;
         return (
           <g key={street.id}>
+            {theme.etching && (
+              <path d={pathOf(path)} fill="none" stroke={theme.shadow} strokeWidth={width + 9} strokeLinecap="round" strokeLinejoin="round" opacity={0.28} />
+            )}
             <path d={pathOf(path)} fill="none" stroke={theme.sidewalk} strokeWidth={width + 7} strokeLinecap="round" strokeLinejoin="round" />
             <path d={pathOf(path)} fill="none" stroke={theme.asphalt} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
-            <path d={pathOf(path)} fill="none" stroke={theme.lane} strokeWidth={0.8} strokeLinecap="round" strokeDasharray="6 11" opacity={0.35} />
+            <path d={pathOf(path)} fill="none" stroke={theme.lane} strokeWidth={theme.etching ? 0.7 : 0.8} strokeLinecap="round" strokeDasharray="6 11" opacity={theme.etching ? 0.55 : 0.35} />
           </g>
         );
       })}
@@ -740,6 +821,14 @@ function BlockLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme
 
 function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel; readonly theme: RtsTheme }): React.JSX.Element {
   const { x, y } = landmark.at;
+  const etching = theme.etching === true;
+  const stoneWall = etching ? (theme.walls[0] as WallPalette) : { light: '#a89a84', mid: '#8b7d69', dark: '#635a4c' };
+  const towerWall = etching ? (theme.walls[1] as WallPalette) : { light: '#b7a58c', mid: '#96846d', dark: '#6d5f4e' };
+  const stoneRoof = etching ? (theme.roofs[0]?.top ?? '#8d775b') : '#4b4f50';
+  const towerRoof = etching ? (theme.roofs[1]?.top ?? '#79654e') : '#54483c';
+  const stationWall = etching ? (theme.walls[2] as WallPalette) : { light: '#9e9684', mid: '#817a6b', dark: '#5d574c' };
+  const stationRoof = etching ? (theme.roofs[1]?.top ?? '#79654e') : '#4d5354';
+  const glassRoof = etching ? (theme.roofs[2]?.top ?? '#9a8566') : '#3f707b';
   if (landmark.kind === 'square') {
     const center = iso(x, y, 0);
     return (
@@ -764,10 +853,10 @@ function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel;
     const spireTop = iso(x, y, 58);
     return (
       <g>
-        <DrawPrism prism={base} theme={theme} wall={{ light: '#a89a84', mid: '#8b7d69', dark: '#635a4c' }} roofColour="#4b4f50" roofEdge={theme.shadow} hash={7} windows />
-        <DrawPrism prism={tower} theme={theme} wall={{ light: '#b7a58c', mid: '#96846d', dark: '#6d5f4e' }} roofColour="#54483c" roofEdge={theme.shadow} hash={11} windows />
-        <polygon points={points([towerTop, iso(x - 9, y + 9, 42), iso(x + 9, y + 9, 42)])} fill="#6d4d3c" stroke={theme.shadow} strokeWidth={0.6} />
-        <polygon points={points([iso(x - 9, y + 9, 42), iso(x + 9, y + 9, 42), spireTop])} fill="#7c5a45" stroke={theme.shadow} strokeWidth={0.6} />
+        <DrawPrism prism={base} theme={theme} wall={stoneWall} roofColour={stoneRoof} roofEdge={theme.shadow} hash={7} windows />
+        <DrawPrism prism={tower} theme={theme} wall={towerWall} roofColour={towerRoof} roofEdge={theme.shadow} hash={11} windows />
+        <polygon points={points([towerTop, iso(x - 9, y + 9, 42), iso(x + 9, y + 9, 42)])} fill={etching ? towerRoof : '#6d4d3c'} stroke={theme.shadow} strokeWidth={0.6} />
+        <polygon points={points([iso(x - 9, y + 9, 42), iso(x + 9, y + 9, 42), spireTop])} fill={etching ? stoneRoof : '#7c5a45'} stroke={theme.shadow} strokeWidth={0.6} />
         <line x1={spireTop.x} y1={spireTop.y} x2={spireTop.x} y2={spireTop.y - 10} stroke={theme.steel} strokeWidth={1} />
         <circle cx={spireTop.x} cy={spireTop.y - 10} r={1.2} fill={theme.rust} />
       </g>
@@ -779,8 +868,8 @@ function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel;
     const roof = prism(x - 50, y - 24, 100, 48, 16, 24);
     return (
       <g>
-        <DrawPrism prism={base} theme={theme} wall={{ light: '#9e9684', mid: '#817a6b', dark: '#5d574c' }} roofColour="#4d5354" roofEdge={theme.shadow} hash={19} windows />
-        <DrawPrism prism={roof} theme={theme} wall={{ light: '#5a7d86', mid: '#43646c', dark: '#2c454b' }} roofColour="#3f707b" roofEdge={theme.shadow} hash={23} windows={false} />
+        <DrawPrism prism={base} theme={theme} wall={stationWall} roofColour={stationRoof} roofEdge={theme.shadow} hash={19} windows />
+        <DrawPrism prism={roof} theme={theme} wall={etching ? { light: theme.window, mid: theme.steel, dark: theme.shadow } : { light: '#5a7d86', mid: '#43646c', dark: '#2c454b' }} roofColour={glassRoof} roofEdge={theme.shadow} hash={23} windows={false} />
         {[-24, -8, 8, 24].map((offset) => {
           const a = iso(x + offset, y - 16, 25);
           const b = iso(x + offset, y + 16, 25);
@@ -797,9 +886,9 @@ function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel;
   const ridgeD = iso(x - 32, y + 18, 22);
   return (
     <g>
-      <DrawPrism prism={base} theme={theme} wall={{ light: '#b08a5f', mid: '#8c6a46', dark: '#604830' }} roofColour="#5b4a3f" roofEdge={theme.shadow} hash={29} windows />
-      <polygon points={points([iso(x - 30, y - 16, 12), iso(x + 30, y - 16, 12), ridgeB, ridgeA])} fill="#6e5847" stroke={theme.shadow} strokeWidth={0.6} />
-      <polygon points={points([iso(x - 30, y + 16, 12), ridgeD, ridgeC, iso(x + 30, y + 16, 12)])} fill="#4f4035" stroke={theme.shadow} strokeWidth={0.6} />
+      <DrawPrism prism={base} theme={theme} wall={etching ? (theme.walls[3] as WallPalette) : { light: '#b08a5f', mid: '#8c6a46', dark: '#604830' }} roofColour={etching ? (theme.roofs[2]?.top ?? '#9a8566') : '#5b4a3f'} roofEdge={theme.shadow} hash={29} windows />
+      <polygon points={points([iso(x - 30, y - 16, 12), iso(x + 30, y - 16, 12), ridgeB, ridgeA])} fill={etching ? (theme.roofs[2]?.edge ?? '#65523e') : '#6e5847'} stroke={theme.shadow} strokeWidth={0.6} />
+      <polygon points={points([iso(x - 30, y + 16, 12), ridgeD, ridgeC, iso(x + 30, y + 16, 12)])} fill={etching ? (theme.roofs[3]?.top ?? '#6d5b47') : '#4f4035'} stroke={theme.shadow} strokeWidth={0.6} />
     </g>
   );
 }
@@ -929,6 +1018,68 @@ function TokenLayer({ theme }: { readonly theme: RtsTheme }): React.JSX.Element 
           </g>
         );
       })}
+    </g>
+  );
+}
+
+function EtchedRouteLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme: RtsTheme }): React.JSX.Element {
+  const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
+  const widthFor = (mode: GraphEdge['mode']): number =>
+    mode === 'underground' ? 3.4 : mode === 'bus' ? 2.8 : mode === 'special' ? 2.1 : 2;
+  return (
+    <g>
+      {map.graph.edges.map((edge) => {
+        const path = transformEdge(edge, nodeById, 2.6);
+        const width = widthFor(edge.mode);
+        return (
+          <g key={`etch-${edge.id}`}>
+            <path d={pathOf(path)} fill="none" stroke={theme.stationPad} strokeWidth={width + 2.6} strokeLinecap="round" opacity={0.8} />
+            <path
+              d={pathOf(path)}
+              fill="none"
+              stroke={theme.route[edge.mode]}
+              strokeWidth={width}
+              strokeLinecap="round"
+              strokeDasharray={edge.mode === 'special' ? '6 4' : undefined}
+              opacity={0.92}
+            />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function VintageOverlay({ theme }: { readonly theme: RtsTheme }): React.JSX.Element {
+  const x = ISO_VIEW.x;
+  const y = ISO_VIEW.y;
+  const width = ISO_VIEW.width;
+  const height = ISO_VIEW.height;
+  const compassX = x + width - 44;
+  const compassY = y + height - 44;
+  const serif = "Georgia, 'Times New Roman', serif";
+  return (
+    <g aria-hidden="true" pointerEvents="none">
+      <rect x={x + 5} y={y + 5} width={width - 10} height={height - 10} fill="none" stroke={theme.shadow} strokeWidth={2} opacity={0.7} />
+      <rect x={x + 9} y={y + 9} width={width - 18} height={height - 18} fill="none" stroke={theme.shadow} strokeWidth={0.7} opacity={0.55} />
+      <g transform={`translate(${compassX} ${compassY})`} opacity={0.75}>
+        <circle r={21} fill={theme.stationPad} fillOpacity={0.55} stroke={theme.shadow} strokeWidth={1.1} />
+        <circle r={16} fill="none" stroke={theme.shadow} strokeWidth={0.45} />
+        <path d="M0 -15 L4 -1 L0 2 L-4 -1 Z" fill={theme.etching ? theme.rust : theme.route.underground} opacity={0.9} />
+        <path d="M0 15 L3 5 L0 3 L-3 5 Z" fill={theme.shadow} opacity={0.5} />
+        <line x1={-14} y1={0} x2={14} y2={0} stroke={theme.shadow} strokeWidth={0.4} />
+        <text x={0} y={-24} textAnchor="middle" fontFamily={serif} fontSize={8} fontWeight={700} fill={theme.shadow}>N</text>
+        <text x={0} y={30} textAnchor="middle" fontFamily={serif} fontSize={7} fill={theme.shadow}>S</text>
+        <text x={-27} y={3} textAnchor="middle" fontFamily={serif} fontSize={7} fill={theme.shadow}>W</text>
+        <text x={27} y={3} textAnchor="middle" fontFamily={serif} fontSize={7} fill={theme.shadow}>E</text>
+      </g>
+      <g transform={`translate(${x + 22} ${y + height - 24})`} opacity={0.7}>
+        <line x1={0} y1={0} x2={62} y2={0} stroke={theme.shadow} strokeWidth={1} />
+        <line x1={0} y1={-3} x2={0} y2={3} stroke={theme.shadow} strokeWidth={1} />
+        <line x1={31} y1={-2} x2={31} y2={2} stroke={theme.shadow} strokeWidth={0.8} />
+        <line x1={62} y1={-3} x2={62} y2={3} stroke={theme.shadow} strokeWidth={1} />
+        <text x={31} y={12} textAnchor="middle" fontFamily={serif} fontSize={7} letterSpacing={0.6} fill={theme.shadow}>100 YARDS</text>
+      </g>
     </g>
   );
 }
@@ -1071,13 +1222,36 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
           <line x1="0" y1="3.5" x2="6" y2="3.5" stroke="#0b0d0e" strokeWidth="0.28" opacity="0.5" />
           <line x1="3" y1="0" x2="3" y2="1.8" stroke="#0b0d0e" strokeWidth="0.22" opacity="0.4" />
         </pattern>
+        {theme.etching && (
+          <>
+            <pattern id="vintage-paper" width="17" height="17" patternUnits="userSpaceOnUse">
+              <circle cx="3" cy="4" r="0.45" fill="#5c4b37" opacity="0.25" />
+              <circle cx="12" cy="9" r="0.35" fill="#5c4b37" opacity="0.2" />
+              <path d="M0 14 L17 12" stroke="#5c4b37" strokeWidth="0.2" opacity="0.18" />
+            </pattern>
+            <pattern id="vintage-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+              <line x1="0" y1="0" x2="0" y2="5" stroke="#3d3428" strokeWidth="0.45" opacity="0.55" />
+            </pattern>
+            <pattern id="vintage-hatch-dense" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+              <line x1="0" y1="0" x2="0" y2="3" stroke="#3d3428" strokeWidth="0.55" opacity="0.7" />
+            </pattern>
+            <pattern id="vintage-stipple" width="4" height="4" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.5" fill="#3d3428" opacity="0.5" />
+              <circle cx="3" cy="3" r="0.35" fill="#3d3428" opacity="0.35" />
+            </pattern>
+          </>
+        )}
         <linearGradient id="iso-sun" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#ffd08a" stopOpacity="0.13" />
           <stop offset="55%" stopColor="#ffd08a" stopOpacity="0" />
         </linearGradient>
       </defs>
       <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill={theme.ground} />
-      <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-concrete)" />
+      {theme.etching ? (
+        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#vintage-paper)" opacity={0.5} />
+      ) : (
+        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-concrete)" />
+      )}
       <RoadLayer map={map} theme={theme} />
       <BlockLayer map={map} theme={theme} />
       <g aria-hidden="true">
@@ -1086,7 +1260,7 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
             <polygon
               className="iso-shadow iso-shadow-contact"
               points={points(buildingBase(building))}
-              fill={theme.shadow}
+              fill={theme.etching ? 'url(#vintage-hatch-dense)' : theme.shadow}
               stroke={theme.shadow}
               strokeWidth={2}
               opacity={theme.shadowOpacity * 0.55}
@@ -1094,28 +1268,34 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
             <polygon
               className="iso-shadow"
               points={points(buildingShadow(building))}
-              fill={theme.shadow}
+              fill={theme.etching ? 'url(#vintage-hatch)' : theme.shadow}
               opacity={theme.shadowOpacity * 0.85}
             />
           </g>
         ))}
       </g>
-      <NetworkLayer map={map} theme={theme} />
+      {theme.etching ? null : <NetworkLayer map={map} theme={theme} />}
       {items.map((item) => item.element)}
-      {[
-        { x: 548, y: 286, angle: 8, colour: '#a33f2f' },
-        { x: 690, y: 456, angle: -12, colour: '#3f6070' },
-        { x: 760, y: 410, angle: 5, colour: '#9a8140' },
-        { x: 610, y: 330, angle: 92, colour: '#5c6b4e' },
-        { x: 700, y: 250, angle: 178, colour: '#7a3f36' },
-      ].map((car) => (
-        <CarObject key={`${car.x}-${car.y}`} x={car.x} y={car.y} angle={car.angle} colour={car.colour} theme={theme} />
-      ))}
-      {xray && <XrayLayer map={map} theme={theme} />}
+      {theme.etching && <EtchedRouteLayer map={map} theme={theme} />}
+      {!theme.etching &&
+        [
+          { x: 548, y: 286, angle: 8, colour: '#a33f2f' },
+          { x: 690, y: 456, angle: -12, colour: '#3f6070' },
+          { x: 760, y: 410, angle: 5, colour: '#9a8140' },
+          { x: 610, y: 330, angle: 92, colour: '#5c6b4e' },
+          { x: 700, y: 250, angle: 178, colour: '#7a3f36' },
+        ].map((car) => (
+          <CarObject key={`${car.x}-${car.y}`} x={car.x} y={car.y} angle={car.angle} colour={car.colour} theme={theme} />
+        ))}
+      {xray && !theme.etching && <XrayLayer map={map} theme={theme} />}
       <LampLayer map={map} theme={theme} />
       <StationLayer map={map} theme={theme} />
       <TokenLayer theme={theme} />
-      <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-sun)" pointerEvents="none" />
+      {theme.etching ? (
+        <VintageOverlay theme={theme} />
+      ) : (
+        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-sun)" pointerEvents="none" />
+      )}
     </svg>
   );
 }

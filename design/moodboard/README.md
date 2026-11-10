@@ -17,7 +17,8 @@ Game design authority remains [`/GAME_VISION.md`](../../GAME_VISION.md).
 | 02 — the city | [`round-02-city/`](round-02-city/) | **Narrowed, not closed.** Four city-based directions comparing art style and perspective; the director kept **F** and **H** and dropped pixel-art. |
 | 03 — mobile-first MVP | [`round-03-mobile/`](round-03-mobile/) | Completed for the MVP screen pass. Six scenarios from the *ratified MVP* at a real 390 × 844 phone viewport, plus one desktop enhancement. |
 | 04 — illustrative city skins | [`round-04-city-visuals/`](round-04-city-visuals/) | **Superseded by 05.** Palette/detail passes that the director judged too illustrative (“children's drawing”). Kept as history. |
-| 05 — RTS city skins | [`round-05-rts/`](round-05-rts/) | **Current.** Three original RTS-inspired directions, plus the developer skin switch that keeps Basic as the fallback. |
+| 05 — RTS city skins | [`round-05-rts/`](round-05-rts/) | RTS-inspired directions; Iron/Night remain live developer skins. |
+| 06 — Vintage Etching | [`round-06-vintage/`](round-06-vintage/) | **Current.** Early-1900s sepia/ink city study with a paper HUD and the transit network in colour. Design only, not rules. |
 
 ### Round 03 — why it looks so different
 
@@ -28,6 +29,14 @@ therefore shows the *minimum* that works, built on
 no modals, a 92 px top bar, a map, and a 176 px tray. Scenarios 2 and 5 are the
 *same screen* in the two surviving art directions, so the F-versus-H choice can be
 made on the real MVP screen instead of on a showcase.
+
+### Round 06 — the 1900s etching pass
+
+The director then suggested moving the era to the early 1900s — late enough for
+the Underground, modern enough to drop the scooter — and trying the **Vintage
+Etching** treatment: a monochrome/sepia city and paper menus, with only the
+transit routes in colour. Round 06 is that study. It is deliberately a separate
+lab route; the rules, Basic and the live RTS skins are unchanged.
 
 ### Round 05 — the RTS pass
 

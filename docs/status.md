@@ -87,6 +87,14 @@ isometric **Command City** study remains lab-only because it needs a camera and
 overlay re-projection. The final art direction is not ratified, and the current
 RTS skins are vector approximations, not pre-rendered sprite assets.
 
+**Vintage Etching study.** A separate design lab at `?vintage` tests an
+early-1900s direction: a darker sepia/ink isometric city, parchment menus, and
+the transit network as the only saturated colour. The mock omits the motor
+scooter from its kit; that is a **proposal**, not a rules change. Basic and the
+live Iron/Night skins are untouched. The next decision is whether to pursue the
+iso version (needs the projection pass) or a 2.5D live vintage skin, and whether
+the scooter is removed in the era rules pass.
+
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
 gadgets. The architecture guard for the real state machine is unchanged.
@@ -96,8 +104,8 @@ gadgets. The architecture guard for the real state machine is unchanged.
 1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
    movement, no viewport) and the second (hidden network, no last-appearance
    marker, “pulse” wording) are addressed; tune Agent starts/bot pathing before
-   changing any ruled number, then pick a city-skin direction and add the
-   river/bridges and remaining polish.
+   changing any ruled number, then choose between the RTS and Vintage Etching
+   directions (and decide whether to drop the scooter) before more city polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
    the prototype's camera/LOD contract into a faster renderer. This proves the

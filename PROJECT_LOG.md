@@ -1276,3 +1276,64 @@ atlases. Command City remains lab-only until the camera/overlay projection is
 approved. Night Ops is harder to read than daylight and needs extra contrast
 testing on small screens. The 300-node renderer and the final art direction are
 still open.
+
+---
+
+## 2026-10-29 — Vintage Etching study and the early-1900s steer
+
+**Why this round exists.** After the RTS pass, the director suggested moving the
+game to the **early 1900s** — late enough for the Underground to exist, and a good
+reason to drop the modern scooter, which was proving too complex. The visual
+reference is a **Vintage Etching** treatment: a monochrome/sepia city map and
+paper game menus, with the transit routes as the only saturated colour. The
+director then preferred the darker of the two paper/ink balances.
+
+This is a design study, not a rules change.
+
+**What was built**
+
+1. **A separate `?vintage` screen study.** It combines the isometric city with a
+   parchment HUD: serif type, double-ruled panels, a seal, a compass, a scale bar
+   and a colour route key. The city is sepia with ink outlines, cross-hatching,
+   stippled trees and hatched shadows. No production route or rules path uses it.
+2. **The network is the only colour.** Taxi gold, omnibus green, Underground red
+   and special violet are drawn above the etched city, so they remain readable
+   even when a tall building would hide them. Station labels and the city stay
+   ink/sepia; the fugitive token keeps a small oxblood accent.
+3. **Period cues, not a full period pass.** Modern AC units, billboards, antennas
+   and cars are suppressed; chimneys, pitched roofs, water tanks and a sepia
+   station roof are used instead. The kit reads **Taxi cab, Omnibus, Underground,
+   Special, On foot**; the motor-scooter is omitted from the mock.
+4. **The darker balance was restored** after review: darker roofs/walls, stronger
+   hatching and the warmer paper ground. The lighter wash was rejected.
+
+**Proposed steps to apply it**
+
+1. Choose the projection. The study is isometric (the Command City renderer); a
+   2.5D vintage skin would keep the current camera/overlay and is the cheap live
+   path. The iso version needs the camera and overlay projection pass.
+2. Skin-only implementation: city palette/textures behind the existing overlay;
+   Basic remains the fallback; no rules change.
+3. Paper HUD pass: parchment panels, serif type, route legend; keep contrast and
+   colour-blind separation.
+4. Period prop pass: gables/chimneys/dormers/gas lamps/early cabs; remove modern
+   glass, neon and cars.
+5. Era rules pass (separate): remove the scooter; rename Taxi → Cab, Bus →
+   Omnibus, Metro → Underground; decide whether to keep Foot and Special; rebalance
+   and test. This is the gameplay change, not the skin.
+
+**Verified**
+
+- `pnpm typecheck` — all projects pass.
+- `pnpm test` — **7 test files / 131 tests**, all passing. No rules changed.
+- `pnpm build` — exit 0; the `?vintage` study stays out of the production bundle.
+- `pnpm check:docs` — links and counts current.
+- Browser at 1600×1052: the vintage screen renders with no page or console errors
+  and no document overflow; map, paper HUD, route key and compass are visible.
+
+**Known limits**
+
+The study is a vector approximation of an etching, not a scanned engraving. It is
+not a selectable skin; the projection choice and scooter removal are still open.
+The current map generator has no river/bridges or period-specific landmarks; the
+period prop pass would need them.

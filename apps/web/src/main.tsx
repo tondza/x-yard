@@ -12,8 +12,9 @@ const Prototype = import.meta.env.DEV ? lazy(() => import('./prototype/Prototype
 const MapLab = import.meta.env.DEV ? lazy(() => import('./lab/MapLab')) : null;
 const CityVisualLab = import.meta.env.DEV ? lazy(() => import('./lab/CityVisualLab')) : null;
 const RtsVisualLab = import.meta.env.DEV ? lazy(() => import('./lab/rts/RtsVisualLab')) : null;
+const VintageVisualLab = import.meta.env.DEV ? lazy(() => import('./lab/rts/VintageVisualLab')) : null;
 
-type DevRoute = 'prototype' | 'lab' | 'visuals' | 'rts' | 'board';
+type DevRoute = 'prototype' | 'lab' | 'visuals' | 'rts' | 'vintage' | 'board';
 
 function devRoute(): DevRoute {
   if (!import.meta.env.DEV) return 'board';
@@ -22,6 +23,7 @@ function devRoute(): DevRoute {
   if (params.has('lab')) return 'lab';
   if (params.has('visuals')) return 'visuals';
   if (params.has('rts')) return 'rts';
+  if (params.has('vintage')) return 'vintage';
   return 'prototype';
 }
 
@@ -35,7 +37,9 @@ const View =
         ? CityVisualLab
         : route === 'rts'
           ? RtsVisualLab
-          : null;
+          : route === 'vintage'
+            ? VintageVisualLab
+            : null;
 
 const container = document.getElementById('root');
 if (container === null) {
