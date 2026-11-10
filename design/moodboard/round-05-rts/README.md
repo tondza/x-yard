@@ -35,6 +35,12 @@ look and the most expensive.
 pathfinding do not change, but every screen-space overlay (station labels, routes,
 tokens) has to be re-projected and re-tested for legibility.
 
+The lab now has an **X-RAY** toggle: the inspected taxi route is drawn above the
+buildings in pale cyan, so a route hidden behind a tall block is still readable.
+A refinement pass also attached the shadows to the building bases, replaced the
+truck-like roof boxes with AC units/vents/water tanks, and added setbacks, gable
+roofs and annexes for more varied silhouettes.
+
 ### B — Iron Quarter
 
 The same renderer language without the isometric re-projection: taller façades,

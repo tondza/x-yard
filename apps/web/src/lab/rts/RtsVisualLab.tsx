@@ -4,6 +4,8 @@
  * @module apps/web/lab/rts/RtsVisualLab
  */
 
+import { useState } from 'react';
+
 import type { GeneratedMap } from '@x-yard/map-generator';
 
 import mapJson from '../../../../../maps/prototype-96-seed-42.json';
@@ -15,6 +17,8 @@ import '../cityVisualLab.css';
 const MAP = mapJson as unknown as GeneratedMap;
 
 export default function RtsVisualLab(): React.JSX.Element {
+  const [xray, setXray] = useState(true);
+
   return (
     <main className="visual-lab rts-lab">
       <header className="visual-header">
@@ -35,11 +39,20 @@ export default function RtsVisualLab(): React.JSX.Element {
       <div className="rts-hero">
         <article className="visual-card" data-theme="command">
           <div className="visual-frame rts-frame">
-            <IsoCityFragment map={MAP} theme={COMMAND} />
+            <IsoCityFragment map={MAP} theme={COMMAND} xray={xray} />
             <div className="rts-tag">
               <span>SECTOR 04</span>
               <b>OLD SQUARE</b>
             </div>
+            <button
+              type="button"
+              className={`rts-xray${xray ? ' is-on' : ''}`}
+              aria-pressed={xray}
+              onClick={() => setXray((current) => !current)}
+            >
+              X-RAY {xray ? 'ON' : 'OFF'}
+            </button>
+            {xray && <div className="rts-xray-note">taxi route n8 → n11 shown through buildings</div>}
           </div>
           <div className="visual-caption">
             <span className="visual-letter" style={{ color: COMMAND.accent }}>

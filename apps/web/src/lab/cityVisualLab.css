@@ -301,3 +301,39 @@ body {
     padding: 0 18px;
   }
 }
+
+
+.rts-xray {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 9px;
+  border: 1px solid #6b5d45;
+  border-radius: 3px;
+  background: rgba(12, 11, 9, 0.82);
+  color: #b7a98f;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.rts-xray.is-on {
+  border-color: #d9a441;
+  color: #ffd88a;
+  background: rgba(44, 34, 22, 0.9);
+}
+
+.rts-xray-note {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 8px;
+  border: 1px solid #4b4234;
+  background: rgba(12, 11, 9, 0.78);
+  color: #cbbd9f;
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
