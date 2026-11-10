@@ -76,7 +76,7 @@ errors-vs-warnings split; ticket economy with the ticket-log semantics for
 Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
 **map generator** that emits validated 24/60/96-station transit networks with
 street-following edge geometry, and a **local 96-station prototype**: an
-isometric Vintage Etching city plate, 16 turns, all five movement options, appearances,
+isometric Vintage Etching city plate (Canvas with spatial culling and zoom LOD), 16 turns, all five movement options, appearances,
 capture, result and restart, with a permanent all-mode transit network, a
 station inspector, a last-appearance ghost, deterministic Agent bots,
 one-at-a-time move playback and a follow/map camera. The Vintage Etching skin is the default; Basic remains the fallback. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all

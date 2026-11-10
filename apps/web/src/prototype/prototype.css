@@ -1632,3 +1632,10 @@ body {
   background: #e0cda9;
   color: #332b20;
 }
+
+
+.canvas-city {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

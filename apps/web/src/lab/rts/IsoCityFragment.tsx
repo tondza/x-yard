@@ -9,7 +9,7 @@
  * @module apps/web/lab/rts/IsoCityFragment
  */
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 import type {
   BlockModel,
@@ -31,6 +31,30 @@ import type { RtsTheme, WallPalette } from './rtsTheme';
 const IX = 0.9;
 const IY = 0.5;
 export const ISO_VIEW = { x: -80, y: 220, width: 700, height: 460 } as const;
+
+interface CullBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+function parseViewBox(viewBox: string | undefined): CullBox | null {
+  if (viewBox === undefined) return null;
+  const parts = viewBox.split(/\s+/).map(Number);
+  if (parts.length !== 4 || parts.some((value) => !Number.isFinite(value))) return null;
+  return { x: parts[0] as number, y: parts[1] as number, width: parts[2] as number, height: parts[3] as number };
+}
+
+function insideCull(point: { x: number; y: number }, cull: CullBox | null, margin: number): boolean {
+  if (cull === null) return true;
+  return (
+    point.x >= cull.x - margin &&
+    point.x <= cull.x + cull.width + margin &&
+    point.y >= cull.y - margin &&
+    point.y <= cull.y + cull.height + margin
+  );
+}
 
 interface P {
   readonly x: number;
@@ -519,18 +543,21 @@ function RoofSkylight({
   );
 }
 
-function BuildingObject({
+function BuildingObjectBase({
   building,
   theme,
+  detail = 'full',
 }: {
   readonly building: Building;
   readonly theme: RtsTheme;
+  readonly detail?: 'full' | 'map';
 }): React.JSX.Element {
   const hash = hashString(building.key);
   const wall = theme.walls[hash % theme.walls.length] as WallPalette;
   const roof = theme.roofs[hash % theme.roofs.length] as { top: string; edge: string };
   const height = buildingHeight(building);
   const etching = theme.etching === true;
+  const low = detail === 'map';
   const tiered = height >= 18 && hash % 3 === 0;
   const pitched = !tiered && height <= (etching ? 18 : 16) && hash % (etching ? 2 : 3) === 0;
   const baseHeight = tiered ? Math.max(10, height * 0.62) : height;
@@ -553,7 +580,7 @@ function BuildingObject({
         roofColour={roof.top}
         roofEdge={roof.edge}
         hash={hash}
-        windows
+        windows={!low}
       />
 
       {upperGeometry !== null && (
@@ -565,7 +592,7 @@ function BuildingObject({
             roofColour={roof.top}
             roofEdge={roof.edge}
             hash={hash + 3}
-            windows
+            windows={!low}
           />
         </g>
       )}
@@ -615,7 +642,7 @@ function BuildingObject({
         />
       )}
 
-      {!pitched && hasAc && (
+      {!low && !pitched && hasAc && (
         <RoofAc
           x={roofArea.x + roofArea.w * 0.18}
           y={roofArea.y + roofArea.h * 0.18}
@@ -625,7 +652,7 @@ function BuildingObject({
           theme={theme}
         />
       )}
-      {!pitched && hasTank && (
+      {!low && !pitched && hasTank && (
         <RoofTank
           x={roofArea.x + roofArea.w * 0.62}
           y={roofArea.y + roofArea.h * 0.2}
@@ -635,10 +662,10 @@ function BuildingObject({
           theme={theme}
         />
       )}
-      {!pitched && hasSkylight && <RoofSkylight roof={roofArea} theme={theme} />}
-      {!pitched && hasVent && <RoofVent x={roofArea.x + roofArea.w * 0.78} y={roofArea.y + roofArea.h * 0.7} z={roofArea.z} theme={theme} />}
+      {!low && !pitched && hasSkylight && <RoofSkylight roof={roofArea} theme={theme} />}
+      {!low && !pitched && hasVent && <RoofVent x={roofArea.x + roofArea.w * 0.78} y={roofArea.y + roofArea.h * 0.7} z={roofArea.z} theme={theme} />}
 
-      {etching && hash % 2 === 0 && (
+      {!low && etching && hash % 2 === 0 && (
         <Chimney
           x={roofArea.x + roofArea.w * 0.74}
           y={roofArea.y + roofArea.h * 0.26}
@@ -659,7 +686,7 @@ function BuildingObject({
         />
       )}
 
-      {!etching && hash % 7 === 0 && !pitched && (
+      {!low && !etching && hash % 7 === 0 && !pitched && (
         <g>
           <line
             x1={iso(roofArea.x + roofArea.w * 0.5, roofArea.y + roofArea.h * 0.5, roofArea.z).x}
@@ -678,7 +705,7 @@ function BuildingObject({
         </g>
       )}
 
-      {!etching && hash % 13 === 0 && building.w > 18 && !pitched && (
+      {!low && !etching && hash % 13 === 0 && building.w > 18 && !pitched && (
         <g>
           {(() => {
             const anchor = iso(roofArea.x + roofArea.w * 0.5, roofArea.y + roofArea.h * 0.5, roofArea.z + 2);
@@ -707,7 +734,7 @@ function BuildingObject({
         </g>
       )}
 
-      {!etching && hash % 17 === 0 && !pitched && (
+      {!low && !etching && hash % 17 === 0 && !pitched && (
         <g opacity={0.1}>
           {[0, 1, 2].map((index) => (
             <circle
@@ -724,7 +751,50 @@ function BuildingObject({
   );
 }
 
-function TreeObject({ tree, theme }: { readonly tree: Tree; readonly theme: RtsTheme }): React.JSX.Element {
+const BuildingObject = memo(BuildingObjectBase);
+
+function MapBuildingBase({ building, theme }: { readonly building: Building; readonly theme: RtsTheme }): React.JSX.Element {
+  const hash = hashString(building.key);
+  const wall = theme.walls[hash % theme.walls.length] as WallPalette;
+  const roof = theme.roofs[hash % theme.roofs.length] as { top: string; edge: string };
+  const height = buildingHeight(building);
+  const geometry = prism(building.x, building.y, building.w, building.h, 0, height);
+  const sideColour: Record<0 | 1 | 2 | 3, string> = { 0: wall.dark, 1: wall.light, 2: wall.mid, 3: wall.dark };
+  const sides = [...geometry.sides].sort((left, right) => left.depth - right.depth);
+  return (
+    <g>
+      {sides.map((face) => (
+        <polygon
+          key={face.side}
+          points={points(face.points)}
+          fill={sideColour[face.side]}
+          stroke={theme.shadow}
+          strokeWidth={0.6}
+        />
+      ))}
+      <polygon points={points(geometry.top)} fill={roof.top} stroke={roof.edge} strokeWidth={0.8} />
+    </g>
+  );
+}
+
+const MapBuilding = memo(MapBuildingBase);
+
+function TreeLite({ tree, theme }: { readonly tree: Tree; readonly theme: RtsTheme }): React.JSX.Element {
+  const base = iso(tree.x, tree.y, 0);
+  const top = iso(tree.x, tree.y, 7 + tree.r * 0.9);
+  const radius = Math.max(3, tree.r * 0.9);
+  return (
+    <g>
+      <ellipse cx={base.x + 5} cy={base.y + 2} rx={radius} ry={radius * 0.35} fill={theme.shadow} opacity={0.35} />
+      <line x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke={theme.treeTrunk} strokeWidth={1.4} />
+      <circle cx={top.x} cy={top.y} r={radius} fill={theme.tree} stroke={theme.shadow} strokeWidth={0.6} />
+    </g>
+  );
+}
+
+const MemoTreeLite = memo(TreeLite);
+
+function TreeObjectBase({ tree, theme }: { readonly tree: Tree; readonly theme: RtsTheme }): React.JSX.Element {
   const base = iso(tree.x, tree.y, 0);
   const height = 8 + tree.r * 0.9;
   const top = iso(tree.x, tree.y, height);
@@ -750,6 +820,8 @@ function TreeObject({ tree, theme }: { readonly tree: Tree; readonly theme: RtsT
     </g>
   );
 }
+
+const TreeObject = memo(TreeObjectBase);
 
 function CarObject({ x, y, angle, colour, theme }: { readonly x: number; readonly y: number; readonly angle: number; readonly colour: string; readonly theme: RtsTheme }): React.JSX.Element {
   const radians = (angle * Math.PI) / 180;
@@ -819,7 +891,7 @@ function BlockLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme
   );
 }
 
-function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel; readonly theme: RtsTheme }): React.JSX.Element {
+function LandmarkObjectBase({ landmark, theme }: { readonly landmark: LandmarkModel; readonly theme: RtsTheme }): React.JSX.Element {
   const { x, y } = landmark.at;
   const etching = theme.etching === true;
   const stoneWall = etching ? (theme.walls[0] as WallPalette) : { light: '#a89a84', mid: '#8b7d69', dark: '#635a4c' };
@@ -892,6 +964,8 @@ function LandmarkObject({ landmark, theme }: { readonly landmark: LandmarkModel;
     </g>
   );
 }
+
+const LandmarkObject = memo(LandmarkObjectBase);
 
 function NetworkLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme: RtsTheme }): React.JSX.Element {
   const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
@@ -1206,23 +1280,35 @@ export function IsoCityFragment({
   const area = overlay
     ? ISO_VIEW
     : { x: -offsetX, y: 0, width: span * 0.9, height: span * 0.5 };
+  const cull = overlay ? ISO_VIEW : parseViewBox(viewBox);
+  const viewWidth = parseViewBox(viewBox)?.width ?? (map.bounds.width + map.bounds.height) * 0.9;
+  const lowDetail = !overlay && viewWidth > (map.bounds.width + map.bounds.height) * 0.9 * 0.48;
+  const visibleBuildings = useMemo(
+    () =>
+      buildings.filter((building) => {
+        const point = iso(building.x + building.w / 2, building.y + building.h / 2, 0);
+        return insideCull(point, cull, 170);
+      }),
+    [buildings, cull],
+  );
+  const visibleTrees = useMemo(
+    () =>
+      trees.filter((tree) => insideCull(iso(tree.x, tree.y, 0), cull, 100)),
+    [cull, trees],
+  );
   const items = useMemo(() => {
     const list: { depth: number; element: React.JSX.Element }[] = [];
-    for (const building of buildings) {
-      const point = iso(building.x + building.w / 2, building.y + building.h / 2, 0);
-      if (overlay && (point.x < ISO_VIEW.x - 120 || point.x > ISO_VIEW.x + ISO_VIEW.width + 120 || point.y < ISO_VIEW.y - 120 || point.y > ISO_VIEW.y + ISO_VIEW.height + 120)) continue;
-      list.push({ depth: building.x + building.y + building.w + building.h, element: <BuildingObject key={building.key} building={building} theme={theme} /> });
+    for (const building of visibleBuildings) {
+      list.push({ depth: building.x + building.y + building.w + building.h, element: lowDetail ? <MapBuilding key={building.key} building={building} theme={theme} /> : <BuildingObject key={building.key} building={building} theme={theme} detail="full" /> });
     }
-    for (const tree of trees) {
-      const point = iso(tree.x, tree.y, 0);
-      if (overlay && (point.x < ISO_VIEW.x - 80 || point.x > ISO_VIEW.x + ISO_VIEW.width + 80 || point.y < ISO_VIEW.y - 80 || point.y > ISO_VIEW.y + ISO_VIEW.height + 80)) continue;
-      list.push({ depth: tree.x + tree.y + 2, element: <TreeObject key={tree.key} tree={tree} theme={theme} /> });
+    for (const tree of visibleTrees) {
+      list.push({ depth: tree.x + tree.y + 2, element: lowDetail ? <MemoTreeLite key={tree.key} tree={tree} theme={theme} /> : <TreeObject key={tree.key} tree={tree} theme={theme} /> });
     }
     for (const landmark of map.city.landmarks) {
       list.push({ depth: landmark.at.x + landmark.at.y, element: <LandmarkObject key={landmark.id} landmark={landmark} theme={theme} /> });
     }
     return list.sort((left, right) => left.depth - right.depth);
-  }, [buildings, map.city.landmarks, overlay, theme, trees]);
+  }, [lowDetail, map.city.landmarks, theme, visibleBuildings, visibleTrees]);
 
   return (
     <svg
@@ -1284,7 +1370,7 @@ export function IsoCityFragment({
       <RoadLayer map={map} theme={theme} />
       <BlockLayer map={map} theme={theme} />
       <g aria-hidden="true">
-        {buildings.map((building) => (
+        {visibleBuildings.map((building) => (
           <g key={`shadow-${building.key}`}>
             <polygon
               className="iso-shadow iso-shadow-contact"

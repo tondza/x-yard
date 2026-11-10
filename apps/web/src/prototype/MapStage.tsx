@@ -15,7 +15,7 @@ import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard
 
 import { CityPlate } from './CityPlate';
 import { Rts25CityFragment } from '../lab/rts/Rts25CityFragment';
-import { IsoCityFragment } from '../lab/rts/IsoCityFragment';
+import { CanvasCity } from './CanvasCity';
 import { COMMAND, NIGHT_OPS, VINTAGE } from '../lab/rts/rtsTheme';
 import type { SkinId } from './skins';
 import { PrototypeMap } from './PrototypeMap';
@@ -385,15 +385,7 @@ export function MapStage({
         onPointerCancel={finishPointers}
       >
         {skin === 'vintage' ? (
-          <IsoCityFragment
-            map={map}
-            theme={VINTAGE}
-            viewBox={viewBox}
-            offsetX={projection.offsetX}
-            overlay={false}
-            frame={false}
-            plate
-          />
+          <CanvasCity map={map} theme={VINTAGE} viewBox={viewBox} stage={stage} />
         ) : skin === 'iron' ? (
           <Rts25CityFragment map={map} theme={COMMAND} viewBox={viewBox} overlay={false} />
         ) : skin === 'nightops' ? (

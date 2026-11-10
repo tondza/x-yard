@@ -51,6 +51,25 @@ This round is the first implementation of that combination, including the era ru
 6. **Readability test.** Desktop, map overview and 390×844 have been checked; a
    full colour-blind pass and a turn-5 appearance/ghost check are still useful.
 
+## Renderer for scale (2026-10-29)
+
+The first Vintage implementation was SVG. Profiling found **81,601 SVG elements
+and 8.7 MB of city markup**; the camera changes the SVG `viewBox` every frame, so
+the entire city repainted during pan/zoom. That cannot scale to a 10–50× city.
+
+The default city plate is now **Canvas 2D** (`apps/web/src/prototype/CanvasCity.tsx`):
+
+- a spatial grid culls buildings/trees to the camera;
+- play zoom draws façades/windows/hatching, map zoom uses simplified blocks;
+- device pixel ratio is capped at 2 for mobile;
+- the SVG overlay is viewport-culled, with label and tile-level LOD.
+
+The SVG city remains available as the round-05/`?rts` study and in the Basic/RTS
+skins, but it is not the scalable path. Measured at 1440×900, the Canvas city
+drag is ~16–17 ms/frame vs ~50 ms for the SVG city; at 390×844 DPR 2 it is
+~16.2 ms. The whole-city overlay and 10×/50× fixtures remain the next scale step.
+Recorded in [decision 0020](../../../docs/decisions/0020-canvas-city-renderer-for-scale.md).
+
 ## How to view
 
 - `http://localhost:5173/` — the Vintage skin by default.

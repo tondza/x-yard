@@ -16,7 +16,7 @@ Last updated: 2026-10-29.
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
 | `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, five movement options (taxi, bus, underground, special, foot), turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — **isometric Vintage Etching** default skin (Basic fallback; Iron/Night 2.5D RTS skins), projected city/overlay/camera, paper HUD, permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), 1440 and 390 checks; full suite |
+| `apps/web`: **96-station prototype** — **isometric Vintage Etching** default skin with a **Canvas city** (spatial culling + zoom LOD; Basic fallback; Iron/Night 2.5D RTS skins), projected and viewport-culled overlay/camera, paper HUD, permanent network with badges, station inspector, sequential reveal, ghost, play/map camera; responsive | ✅ second playable | 1440 and 390 performance checks; full suite |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -86,6 +86,14 @@ The 1907 rules remove the motor-scooter; special stays
 ([decision 0019](decisions/0019-1907-era-rules.md)). The RTS skins are vector
 approximations, not pre-rendered sprite assets.
 
+**Scale/performance.** The Vintage city plate is now Canvas 2D with a spatial
+grid and zoom LOD, and the SVG overlay is viewport-culled. On the 96-station map
+the Canvas city drag measured ~16–17 ms/frame at 1440×900 and ~16.2 ms at
+390×844 DPR 2, versus ~50 ms for the old SVG city. Basic/RTS still use SVG and
+remain detail comparisons, not the scalable path. The whole-city overlay and
+10×/50× fixture are the next scale work ([decision
+0020](decisions/0020-canvas-city-renderer-for-scale.md)).
+
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
 gadgets. The architecture guard for the real state machine is unchanged.
@@ -93,10 +101,10 @@ gadgets. The architecture guard for the real state machine is unchanged.
 ## What is next (in order)
 
 1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
-   movement, no viewport) and the second (hidden network, no last-appearance
-   marker, “pulse” wording) are addressed; tune Agent starts/bot pathing before
-   changing any ruled number, then tune the Vintage Etching skin's legibility and
-   period detail before more city polish.
+   movement, no viewport), the second (network, ghost, “pulse”), and the third
+   (isometric Vintage + 1907 rules) are addressed; tune Agent starts/bot pathing
+   before changing any ruled number, then continue the Canvas scale work
+   (whole-city overlay, 10×/50× fixtures) before more city polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
    the prototype's camera/LOD contract into a faster renderer. This proves the

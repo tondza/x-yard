@@ -64,6 +64,43 @@ function edgePoints(
   ];
 }
 
+interface OverlayBox {
+  readonly minX: number;
+  readonly minY: number;
+  readonly maxX: number;
+  readonly maxY: number;
+}
+
+function parseOverlayView(viewBox: string): OverlayBox | null {
+  const parts = viewBox.trim().split(/\s+/).map(Number);
+  if (parts.length !== 4 || parts.some((value) => !Number.isFinite(value))) return null;
+  const x = parts[0] as number;
+  const y = parts[1] as number;
+  const width = parts[2] as number;
+  const height = parts[3] as number;
+  return { minX: x, minY: y, maxX: x + width, maxY: y + height };
+}
+
+function pointInView(point: { readonly x: number; readonly y: number }, view: OverlayBox | null): boolean {
+  if (view === null) return true;
+  return point.x >= view.minX - 80 && point.x <= view.maxX + 80 && point.y >= view.minY - 80 && point.y <= view.maxY + 80;
+}
+
+function pathInView(points: readonly MapPoint[], view: OverlayBox | null): boolean {
+  if (view === null) return true;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+  return maxX >= view.minX - 80 && minX <= view.maxX + 80 && maxY >= view.minY - 80 && minY <= view.maxY + 80;
+}
+
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
 }
@@ -194,6 +231,7 @@ interface PrototypeMapContentProps {
   readonly activeStep: MoveStep | null;
   readonly trails: readonly Trail[];
   readonly selectedStation: NodeId | null;
+  readonly viewBox: string;
 }
 
 function PrototypeMapContent({
@@ -210,12 +248,15 @@ function PrototypeMapContent({
   activeStep,
   trails,
   selectedStation,
+  viewBox,
 }: PrototypeMapContentProps): React.JSX.Element {
   const fugitive = seats[0];
   const agents = seats.slice(1);
-  const options = legal.filter((option) => option.mode === selectedMode);
   const style = MOVE_STYLE[selectedMode];
   const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
+  const view = useMemo(() => parseOverlayView(viewBox), [viewBox]);
+  const visibleNodes = useMemo(() => map.graph.nodes.filter((node) => pointInView(node, view)), [map.graph.nodes, view]);
+  const options = legal.filter((option) => option.mode === selectedMode && pointInView(nodeById.get(option.to) ?? { x: 0, y: 0 }, view));
   const networkEdges = useMemo(
     () =>
       [...map.graph.edges].sort(
@@ -224,6 +265,14 @@ function PrototypeMapContent({
           left.id.localeCompare(right.id),
       ),
     [map.graph.edges],
+  );
+  const visibleEdges = useMemo(
+    () =>
+      networkEdges.filter((edge) => {
+        const path = edgePoints(edge, nodeById);
+        return pathInView(path, view);
+      }),
+    [networkEdges, nodeById, view],
   );
   const stopsByNode = useMemo(() => {
     const stops = new Map<NodeId, ('bus' | 'underground' | 'special')[]>();
@@ -259,8 +308,11 @@ function PrototypeMapContent({
     return ids;
   }, [activeStep, appearanceNode, ghostNode, legal, map.graph.nodes, seats, selectedStation]);
 
-  const showAllLabels = scale >= LABEL_ALL_SCALE;
+  const showAllLabels = scale >= LABEL_ALL_SCALE && map.graph.nodes.length <= 200;
   const showBadges = scale >= BADGE_SCALE;
+  const sparseMap = scale < 0.62 && map.graph.edges.length > 400;
+  const drawEdges = sparseMap ? visibleEdges.filter((edge) => edge.mode !== 'taxi') : visibleEdges;
+  const labelStride = !showAllLabels && map.graph.nodes.length > 400 ? 4 : 1;
   const activeRole = activeStep?.role ?? null;
 
   return (
@@ -294,7 +346,7 @@ function PrototypeMapContent({
 
       {/* The permanent transit map: taxi streets, bus, metro and special links. */}
       <g className="transit-network" aria-hidden="true">
-        {networkEdges.map((edge) => {
+        {drawEdges.map((edge) => {
           const path = edgePoints(edge, nodeById);
           const networkStyle = NETWORK_STYLE[edge.mode];
           return (
@@ -327,7 +379,7 @@ function PrototypeMapContent({
 
       {/* Completed moves from this turn stay as a thin trace until the next turn. */}
       <g className="move-trails" aria-hidden="true">
-        {trails.map((trail) => (
+        {trails.filter((trail) => pathInView(trail.points, view)).map((trail) => (
           <path
             key={`trail-${trail.key}`}
             d={pathData(trail.points)}
@@ -375,7 +427,7 @@ function PrototypeMapContent({
       </g>
 
       {/* The move being revealed right now. */}
-      {activeStep !== null && (
+      {activeStep !== null && pathInView(activeStep.points, view) && (
         <g className="active-move" aria-hidden="true">
           <path
             d={pathData(activeStep.points)}
@@ -404,11 +456,11 @@ function PrototypeMapContent({
 
       {/* Stations, numbers and class rings. */}
       <g>
-        {map.graph.nodes.map((node) => {
+        {visibleNodes.map((node) => {
           const radius = STATION_RADIUS[node.class] / scale;
           const stroke =
             node.class === 'terminal' ? '#a93c36' : node.class === 'hub' ? '#2f7a4f' : '#5a5347';
-          const labelled = showAllLabels || importantNodes.has(node.id);
+          const labelled = showAllLabels || (importantNodes.has(node.id) && (labelStride === 1 || node.class !== 'street'));
           const stops = stopsByNode.get(node.id) ?? [];
 
           return (
@@ -554,7 +606,7 @@ function PrototypeMapContent({
           next appearance replaces it. Deliberately not the true position. */}
       {ghostNode !== null && (() => {
         const node = nodeById.get(ghostNode);
-        if (node === undefined) return null;
+        if (node === undefined || !pointInView(node, view)) return null;
         const label = `F${stationNumber(ghostNode)}`;
         return (
           <g className="appearance-ghost" aria-hidden="true" pointerEvents="none">
@@ -593,7 +645,7 @@ function PrototypeMapContent({
       <g className="tokens">
         {agents.map((agent, index) => {
           const node = nodeById.get(agent.node);
-          if (!node) return null;
+          if (!node || !pointInView(node, view)) return null;
           const isActive = activeStep?.seatId === agent.id;
 
           return (
@@ -619,7 +671,7 @@ function PrototypeMapContent({
 
         {fugitive && (() => {
           const node = nodeById.get(fugitive.node);
-          if (!node) return null;
+          if (!node || !pointInView(node, view)) return null;
           const isActive = activeStep?.seatId === fugitive.id;
 
           return isActive && activeStep !== null ? (
@@ -636,7 +688,7 @@ function PrototypeMapContent({
 
       {appearanceNode !== null && (() => {
         const node = nodeById.get(appearanceNode);
-        if (!node) return null;
+        if (!node || !pointInView(node, view)) return null;
         return (
           <g className="appearance-ring" aria-hidden="true">
             <circle cx={node.x} cy={node.y} r={px(32)} fill="#a93c36" opacity={0.12} />
@@ -742,6 +794,7 @@ export function PrototypeMap({
         activeStep={activeStep}
         trails={trails}
         selectedStation={selectedStation}
+        viewBox={viewBox}
       />
     </svg>
   );

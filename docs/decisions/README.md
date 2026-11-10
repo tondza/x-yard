@@ -60,3 +60,4 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0017](0017-always-visible-network-and-last-appearance.md) | The transit network is always visible; no route planner; last-appearance ghost |
 | [0018](0018-developer-switchable-city-skins.md) | City skins are developer-switchable; Basic stays the default fallback |
 | [0019](0019-1907-era-rules.md) | The 1907 era rules remove the motor-scooter; special stays; Vintage is the default skin |
+| [0020](0020-canvas-city-renderer-for-scale.md) | The scalable Vintage city is Canvas with culling/LOD; the SVG overlay is viewport-culled |

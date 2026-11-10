@@ -1411,3 +1411,74 @@ furniture). The full 96-station map is dense in isometric view; label LOD and
 colour-blind route testing are the next polish items. The full-game/MVP documents
 that described the scooter are historical and marked superseded by decision 0019;
 the internal mode names were not renamed.
+
+---
+
+## 2026-10-29 — City rendering moved to culled Canvas for scale
+
+**Why this round exists.** The isometric Vintage skin worked but performed poorly.
+Profiling the live prototype found **81,601 SVG elements and 8.7 MB of city
+markup** for the 96-station city. The camera updates the SVG `viewBox` on every
+animation frame, so the whole city tree was reconciled and repainted during each
+pan, zoom and follow. At 1440×900 a map drag averaged ~50 ms/frame (~20 fps) and
+Map-transition frames reached 240 ms. That cannot support a city 10–50× larger,
+especially on mobile.
+
+**What was built**
+
+1. **Canvas city plate.** `CanvasCity` draws the Vintage city with Canvas 2D from
+   the same generated model and projection. It builds a spatial grid in projected
+   space and draws only buildings/trees intersecting the camera plus a margin.
+2. **Zoom LOD.** Play zoom draws façades, windows, hatching and simple gables;
+   map zoom draws simplified blocks. Device pixel ratio is capped at 2. The canvas
+   is redrawn only when the camera/stage changes; there is no city DOM.
+3. **Overlay culling.** The SVG overlay receives the camera viewBox and renders
+   only visible stations/edges/trails/tokens. Labels are limited by zoom and
+   importance; at large whole-city zooms taxi edges drop out of the overview while
+   bus/metro/special remain. Hit-testing and interaction are unchanged.
+4. **Measured result.** At 1440×900 the Canvas city drag is ~16–17 ms/frame
+   (~58–60 fps) rather than ~50 ms; Map transition is ~28–34 ms; at 390×844 with
+   DPR 2 it is ~16.2 ms/frame. The city DOM count is **0** (was 81,601).
+5. **The SVG path remains** for Basic/Iron/Night and the `?rts` comparison; those
+   skins are detail/reference paths, not the scalable one. The rules and map data
+   are unchanged.
+
+**Rejected alternatives**
+
+1. **Keep micro-optimising the SVG** (memoise, cull a few buildings, cap windows).
+   Rejected: even a lean 96 city still has thousands of nodes and a full SVG
+   repaint; it does not reach 10–50×.
+2. **WebGL / PixiJS now.** Rejected for this pass: a new runtime dependency and
+   asset pipeline. Canvas proves the culling/LOD/scene boundary first.
+3. **Rasterise the whole city once.** Rejected: a 10–50× city at play zoom needs a
+   huge texture; tiles or GPU rendering are the next step.
+4. **Move the overlay to Canvas immediately.** Deferred: viewport culling keeps
+   the visible overlay bounded for play. The whole-city overlay at 10–50× is the
+   next scale step.
+5. **Use the SVG city as the default and add Canvas only for large maps.**
+   Rejected: the default 96 prototype was already visibly lagging, and the
+   scalable path must be the one exercised every day.
+
+Recorded as [decision 0020](docs/decisions/0020-canvas-city-renderer-for-scale.md).
+
+**Verified**
+
+- `pnpm install` — exit 0.
+- `pnpm typecheck` — all projects.
+- `pnpm test` — **7 files / 131 tests**, green.
+- `pnpm build` — exit 0; Canvas/prototype code excluded from production.
+- `pnpm check:docs` — 55 markdown files; links/counts current.
+- 1440×900: Vintage loads in ~1.8 s; no page/console errors; first turn and Agent
+  playback work through the Canvas city + projected overlay; Map view works;
+  station inspector works.
+- 390×844 DPR 2: no overflow; ~16.2 ms/frame drag; five-mode kit.
+- Basic and Iron still load; overlay culling reduces their SVG overlay too, but
+  their city plates remain SVG and are not the scalable path.
+
+**Known limits**
+
+The Canvas city is visually simpler than the SVG etching (limited hatching and
+façade detail; no SVG pattern textures). The whole-city overlay is still SVG and
+will remain the hardest case at 10–50×; a Canvas/WebGL overlay or map tiles is the
+next scale step. Large generated fixtures and a 10×/50× benchmark are still
+needed. The SVG city is retained as a reference/comparison path.

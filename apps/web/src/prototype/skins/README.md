@@ -7,7 +7,7 @@ overlay. This is the narrow boundary that makes “try a much richer city” che
 
 | `SkinId` | Renderer | Default? |
 | --- | --- | --- |
-| `vintage` | `IsoCityFragment` with `VINTAGE`, projected city; the live overlay is projected too | **yes** |
+| `vintage` | `CanvasCity` with `VINTAGE`, projected city; the overlay is projected and viewport-culled | **yes** |
 | `basic` | `../CityPlate.tsx` — the original F-style plate | fallback |
 | `iron` | `Rts25CityFragment` with `COMMAND`, `overlay={false}` | no |
 | `nightops` | `Rts25CityFragment` with `NIGHT_OPS`, `overlay={false}` | no |
