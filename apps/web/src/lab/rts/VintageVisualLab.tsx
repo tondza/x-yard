@@ -87,7 +87,7 @@ export default function VintageVisualLab(): React.JSX.Element {
                   </div>
                 ))}
               </div>
-              <p className="vintage-small">The motor-scooter is omitted from this 1907 study.</p>
+              <p className="vintage-small">The 1907 rules have no motor-scooter.</p>
             </section>
 
             <section className="vintage-panel">

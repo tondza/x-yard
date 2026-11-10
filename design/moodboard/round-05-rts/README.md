@@ -21,8 +21,9 @@ buildings.
 | B | **Iron Quarter** | Oblique 2.5D (map coordinates kept) | Medium | Live developer skin (`?skin=iron`). |
 | C | **Night Ops** | Same 2.5D, night palette | Medium | Live developer skin (`?skin=nightops`). |
 
-`Basic` is always the third selector entry and the default. It is the original
-`CityPlate`, untouched.
+`Basic` remains the fallback. The default is now the isometric **Vintage
+Etching** skin; the RTS entries remain live developer skins. The motor-scooter
+was removed from the 1907 rules.
 
 ### A — Command City
 

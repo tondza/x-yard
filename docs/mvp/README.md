@@ -1,3 +1,8 @@
+> **2026-10-29 update:** the prototype's 1907 era rules remove the motor-scooter
+> and keep special ([decision 0019](../decisions/0019-1907-era-rules.md)). The
+> scooter sections below are retained as the historical MVP plan; the no-scooter
+> rule is current.
+
 # docs/mvp/ — the ratified MVP
 
 The MVP re-stated **after** validation, because the validator's verdict changed

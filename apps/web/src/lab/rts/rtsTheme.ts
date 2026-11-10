@@ -206,7 +206,7 @@ export const VINTAGE: RtsTheme = {
     'Coloured routes stay instantly legible against the ink',
     'Cathedral, station and market already fit the era',
   ],
-  watchouts: 'A full period pass still needs to replace modern roof/car props and the scooter.',
+  watchouts: 'A full period pass still needs more period street furniture and a river/bridges.',
   effort: 'Medium',
   accent: '#7a2f25',
   ground: '#eee1c6',

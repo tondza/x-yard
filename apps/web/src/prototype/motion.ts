@@ -28,20 +28,18 @@ export const MOVE_STYLE: Readonly<
   underground: { colour: '#b8403b', label: 'Metro' },
   special: { colour: '#6d4bb5', label: 'Special', dash: '3 5' },
   foot: { colour: '#33475c', label: 'Foot', dash: '1.5 5' },
-  scooter: { colour: '#8a5cf0', label: 'Scooter', dash: '7 4' },
 };
 
 /** Per-mover durations. A single move never runs longer than 1 second. */
 export const FUGITIVE_STEP_MS = 850;
 export const AGENT_STEP_MS = 700;
-export const SCOOTER_STEP_MS = 950;
 /** The camera leads the token: it pans to the mover, then the token sets off. */
 export const STEP_LEAD_MS = 170;
 /** A beat between movers so the eye registers that one move ended. */
 export const STEP_GAP_MS = 150;
 /** A held turn still needs a visible beat, but shorter than a move. */
 export const HOLD_PAUSE_MS = 420;
-/** An appearance or scooter reveal stays on screen before the Agent phase starts. */
+/** An appearance stays on screen before the Agent phase starts. */
 export const REVEAL_HOLD_MS = 1150;
 
 export type MoverRole = 'fugitive' | 'agent';
@@ -73,7 +71,7 @@ export interface Trail {
 export type PhaseBanner =
   | { readonly kind: 'fugitive'; readonly step: MoveStep }
   | { readonly kind: 'hold' }
-  | { readonly kind: 'reveal'; readonly node: NodeId; readonly scooter: boolean }
+  | { readonly kind: 'reveal'; readonly node: NodeId }
   | {
       readonly kind: 'agents';
       readonly step: MoveStep;
@@ -115,35 +113,21 @@ function nodePoint(graph: GeneratedMap['graph'], id: NodeId): MapPoint | null {
   return node === undefined ? null : { x: node.x, y: node.y };
 }
 
-function combine(first: readonly MapPoint[], second: readonly MapPoint[]): readonly MapPoint[] {
-  return second.length === 0 ? first : [...first, ...second.slice(1)];
-}
-
 /**
- * The actual street/transit polyline for a move. Foot and scooter run on the
- * taxi network; a scooter's second hop is part of the same visible route.
+ * The actual street/transit polyline for a move. Foot runs on the taxi network.
  */
 export function routePoints(
   graph: GeneratedMap['graph'],
   from: NodeId,
   to: NodeId,
   mode: MobilityOption,
-  via: NodeId | null = null,
 ): readonly MapPoint[] {
   if (from === to) {
     const single = nodePoint(graph, from);
     return single === null ? [] : [single];
   }
 
-  if (mode === 'scooter' && via !== null) {
-    const first = incidentPath(graph, from, via, 'taxi');
-    const second = incidentPath(graph, via, to, 'taxi');
-    if (first !== undefined && second !== undefined) {
-      return combine(orientedPath(first, from), orientedPath(second, via));
-    }
-  }
-
-  const edgeMode: GraphEdge['mode'] = mode === 'foot' || mode === 'scooter' ? 'taxi' : mode;
+  const edgeMode: GraphEdge['mode'] = mode === 'foot' ? 'taxi' : mode;
   const edge = incidentPath(graph, from, to, edgeMode);
   if (edge !== undefined && edge.path !== undefined && edge.path.length > 1) {
     return orientedPath(edge, from);
@@ -224,8 +208,8 @@ export function buildFugitiveStep(
     from,
     to,
     mode: move.mode,
-    points: routePoints(graph, from, to, move.mode, move.via),
-    duration: move.mode === 'scooter' ? SCOOTER_STEP_MS : FUGITIVE_STEP_MS,
+    points: routePoints(graph, from, to, move.mode),
+    duration: FUGITIVE_STEP_MS,
   };
 }
 

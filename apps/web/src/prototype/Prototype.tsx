@@ -44,7 +44,6 @@ const MODES: readonly { readonly mode: MobilityOption; readonly label: string }[
   { mode: 'underground', label: 'Metro' },
   { mode: 'special', label: 'Special' },
   { mode: 'foot', label: 'Foot' },
-  { mode: 'scooter', label: 'Scooter' },
 ];
 
 function initialGame(): PrototypeState {
@@ -77,13 +76,11 @@ function countFor(state: PrototypeState, mode: MobilityOption): number {
   const seat = state.seats[0];
   if (seat === undefined) return 0;
   if (mode === 'foot') return seat.footSteps;
-  if (mode === 'scooter') return seat.scooterCharges;
   return seat.tickets[mode];
 }
 
 function logRow(entry: PrototypeLogEntry): string {
   if (entry.kind === 'appearance') return `T${entry.turn} · APPEARANCE · ${entry.node ?? '?'}`;
-  if (entry.kind === 'reveal') return `T${entry.turn} · SCOOTER REVEAL · ${entry.node ?? '?'}`;
   if (entry.kind === 'result') return `T${entry.turn} · YARD OVER`;
   return `T${entry.turn} · ${entry.mode.toUpperCase()}`;
 }
@@ -217,21 +214,12 @@ export default function Prototype(): React.JSX.Element {
     // From here the tickets and the phase are committed; only positions animate.
     setGame(applied.state);
 
-    const reveal = applied.state.log
-      .slice(game.log.length)
-      .find((entry) => entry.kind === 'reveal');
     const fugitiveNode =
       applied.state.seats.find((seat) => seat.role === 'fugitive')?.node ?? applied.state.lastKnown;
 
     if (applied.state.pendingAppearance) {
       setAppearanceNode(fugitiveNode);
-      setBanner({ kind: 'reveal', node: fugitiveNode, scooter: false });
-      await sleep(REVEAL_HOLD_MS);
-      if (!alive(runId)) return;
-      setAppearanceNode(null);
-    } else if (reveal !== undefined && reveal.node !== null) {
-      setAppearanceNode(reveal.node);
-      setBanner({ kind: 'reveal', node: reveal.node, scooter: true });
+      setBanner({ kind: 'reveal', node: fugitiveNode });
       await sleep(REVEAL_HOLD_MS);
       if (!alive(runId)) return;
       setAppearanceNode(null);
@@ -298,7 +286,7 @@ export default function Prototype(): React.JSX.Element {
 
   const handleMove = useCallback(
     (option: PrototypeMoveOption): void => {
-      applyCommand({ kind: 'move', mode: option.mode, to: option.to, via: option.via });
+      applyCommand({ kind: 'move', mode: option.mode, to: option.to });
     },
     [applyCommand],
   );
@@ -438,7 +426,7 @@ export default function Prototype(): React.JSX.Element {
   const showResult = game.result !== null && !pending;
 
   return (
-    <div className={`proto${expanded ? ' map-expanded' : ''}`}>
+    <div className={`proto skin-${skin}${expanded ? ' map-expanded' : ''}`}>
       <header className="proto-header">
         <div className="proto-brand">
           <span className="proto-eyebrow">X-YARD · 96-STATION PROTOTYPE</span>
@@ -604,8 +592,7 @@ export default function Prototype(): React.JSX.Element {
             </div>
             <p>
               You move first. The Fugitive appears on 5, 10 and 15, showing the exact
-              node to the Agents before they move. A scooter move shows it immediately.
-              Survive to turn 16.
+              node to the Agents before they move. Survive to turn 16.
             </p>
           </section>
         </aside>

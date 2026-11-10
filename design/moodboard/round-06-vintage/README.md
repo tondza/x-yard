@@ -1,14 +1,14 @@
 # Round 06 — Vintage Etching
 
-**Status:** design study, not ratified and not in the game. Basic and the RTS
-skins are untouched.
+**Status:** applied as the **default** prototype skin on 2026-10-29. Basic is the
+fallback; Iron and Night remain developer skins.
 
 The director's new steer: move the game toward the **early 1900s**, late enough
 for the Underground to exist, and drop the modern scooter. The reference is a
 monochrome, hand-etched city map with a paper HUD; the **transit routes are the
 only saturated colour** on screen.
 
-This round is a first try at that combination, not a rules change.
+This round is the first implementation of that combination, including the era rules.
 
 ## What the mock shows
 
@@ -19,7 +19,7 @@ This round is a first try at that combination, not a rules change.
 - The permanent transit network in colour — gold taxi, green omnibus, red
   Underground, violet special — above the city so it is never hidden by a roof.
 - An era-flavoured Fugitive kit: **Taxi cab, Omnibus, Underground, Special, On
-  foot**. The motor-scooter is deliberately omitted from this 1907 study.
+  foot**. The motor-scooter is removed from the rules, not just this mock.
 - A colour route key in the side panel, so the one chromatic layer has a legend.
 - The darker paper/ink balance, restored after review; the lighter wash was rejected.
 
@@ -28,38 +28,35 @@ This round is a first try at that combination, not a rules change.
 - The rules, map, graph, station positions, appearances and turn count.
 - `Basic`, `Iron` and `Night` remain exactly as they are. The vintage screen is a
   separate lab route; it is not a skin the game can select.
-- No scooter is removed from the engine yet. That is a gameplay change and needs
-  its own decision, tests and balance pass.
+- The scooter **has** now been removed from the prototype rules, state, log,
+  tests and UI under [decision 0019](../../../docs/decisions/0019-1907-era-rules.md).
+  Special stays. The paid-mode internal names are unchanged.
 
 ## Suggested steps to apply it
 
-1. **Pick the projection.** The mock is isometric because it builds on Command
-   City. A **2.5D vintage skin** would keep the current camera and overlay and is
-   the cheap, live route; a **true isometric vintage skin** needs the camera and
-   every overlay layer re-projected. Recommendation: try the 2.5D live skin first,
-   keep this iso study as the art target.
-2. **Skin-only pass.** Add the sepia/ink city palette, hatching, paper grain and
-   period roof/street props behind the existing overlay. Keep Basic as the
-   fallback and the developer switch. No rules change.
-3. **Paper HUD pass.** Move the header, kit, log and legends to the parchment
-   system; keep only the route colours and the character tokens chromatic. Test
-   contrast and colour-blind readability.
-4. **Period prop pass.** Remove modern glass/AC/neon/cars; add gables, chimneys,
-   dormers, gas lamps, early cabs/omnibuses and a period station roof. This is the
-   biggest art-content job; it can be grown skin-by-skin.
-5. **Era rules pass (separate).** Remove the scooter, rename Taxi → Cab,
-   Bus → Omnibus, Metro → Underground, keep Foot and Special (or decide to drop
-   Special). Rebalance tickets and update tests; this is where the game actually
-   changes, so it needs a director decision first.
-6. **Readability test.** A sepia map with coloured routes must be checked for
-   route/label contrast, colour-blind separation (add line styles or patterns) and
-   small-screen legibility.
+1. **Projection (done).** The prototype now runs the true isometric projection:
+   the city, camera, station labels, routes, tokens and ghost are all projected
+   together. Basic and the RTS skins stay on the existing map projection.
+2. **Skin-only pass (done).** The sepia/ink city, hatching, paper grain and paper
+   HUD are live behind the existing game overlay. Basic remains the fallback.
+3. **Paper HUD pass (done, first version).** Header, kit, log, legends and map
+   toolbar use the parchment system; route colours and character tokens remain
+   chromatic. More contrast/colour-blind testing is still worthwhile.
+4. **Period prop pass (partial).** AC units, billboards, antennas and cars are
+   suppressed; gables, chimneys, roof tanks, gas lamps and a sepia station roof
+   are in. A full pass would add more period street furniture and a river/bridges.
+5. **Era rules pass (done for the scooter).** The scooter is gone; Special and
+   Foot stay. The internal mode names are unchanged; presentation labels can be
+   renamed separately without touching the wire.
+6. **Readability test.** Desktop, map overview and 390×844 have been checked; a
+   full colour-blind pass and a turn-5 appearance/ghost check are still useful.
 
 ## How to view
 
-- `http://localhost:5173/?vintage` — this screen study.
-- `http://localhost:5173/?skin=basic` — the original prototype.
-- `http://localhost:5173/?skin=iron` / `?skin=nightops` — the live RTS skins.
+- `http://localhost:5173/` — the Vintage skin by default.
+- `?skin=basic` — the original prototype fallback.
+- `?skin=iron` / `?skin=nightops` — the live RTS skins.
+- `?vintage` — the standalone paper screen study.
 
 ## Screenshots
 
@@ -68,10 +65,18 @@ This round is a first try at that combination, not a rules change.
 | `shots/vintage-screen.png` | The full paper screen + map |
 | `shots/vintage-map.png` | The map at a larger scale |
 | `shots/vintage-phone.png` | The study stacked at 390 × 844 |
+| `shots/prototype-vintage-1440.png` | The live prototype, Vintage skin |
+| `shots/prototype-vintage-map-1440.png` | Whole-city isometric map view |
+| `shots/prototype-vintage-moving-1440.png` | Projected overlay during an Agent reveal |
+| `shots/prototype-vintage-after-1440.png` | After the first turn |
+| `shots/prototype-vintage-appearance-1440.png` | Turn-5 appearance in the vintage overlay |
+| `shots/prototype-vintage-result-1440.png` | Vintage result overlay |
+| `shots/prototype-vintage-390.png` | The live Vintage skin at 390 × 844 |
 
 ## Honest limit
 
 This is a **vector approximation** of an etching, not a scanned engraving. The
 linework is SVG hatching + paper texture. A more authentic result can push the
 hatching, stippling and typography further, or eventually use pre-rendered
-etching-style city tiles behind the same skin boundary.
+etching-style city tiles behind the same skin boundary. The full 96-station map
+is dense in isometric view, and the period prop pass is only partial.

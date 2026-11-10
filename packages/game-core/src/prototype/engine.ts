@@ -1,9 +1,8 @@
 /**
  * Local 1-Fugitive / N-Agent prototype loop.
  *
- * The turn shape is the plan's E6 order: the Fugitive moves, a scheduled appearance
- * or a scooter reveal updates the Agents' `lastKnown`, then the Agent phase
- * resolves. Capture is end-position equality only; a clean swap is not a catch.
+ * The turn shape is the plan's E6 order: the Fugitive moves, a scheduled
+ * appearance updates the Agents' `lastKnown`, then the Agent phase resolves. Capture is end-position equality only; a clean swap is not a catch.
  *
  * Everything here is pure and deterministic. The bots use BFS over affordable
  * edges, not `Math.random`; a seed is stored only so the UI can reproduce the
@@ -39,8 +38,6 @@ import type {
  */
 const PROVISIONAL_FUGITIVE_FOOT_STEPS = 8;
 const PROVISIONAL_AGENT_FOOT_STEPS = 6;
-const PROVISIONAL_FUGITIVE_SCOOTER_CHARGES = 3;
-const PROVISIONAL_AGENT_SCOOTER_CHARGES = 0;
 
 const PROVISIONAL_FUGITIVE_TICKETS = {
   taxi: 8,
@@ -57,7 +54,7 @@ const PROVISIONAL_AGENT_TICKETS = {
 
 const AGENT_NAMES = ['Falcon', 'Harrier', 'Osprey', 'Merlin', 'Kestrel', 'Shrike'] as const;
 
-const MODE_ORDER = [...TRANSPORT_MODES, 'foot', 'scooter'] as const;
+const MODE_ORDER = [...TRANSPORT_MODES, 'foot'] as const;
 
 function modeRank(mode: PrototypeMoveOption['mode']): number {
   return MODE_ORDER.indexOf(mode);
@@ -114,38 +111,16 @@ export function legalMoves(
 
   for (const edge of edges) {
     if (seat.tickets[edge.mode] > 0) {
-      options.push({ mode: edge.mode, to: edge.other, via: null });
+      options.push({ mode: edge.mode, to: edge.other });
     }
     if (edge.mode === 'taxi' && seat.footSteps > 0) {
-      options.push({ mode: 'foot', to: edge.other, via: null });
-    }
-  }
-
-  if (seat.scooterCharges > 0) {
-    const scooterByDestination = new Map<NodeId, NodeId>();
-
-    for (const first of edges) {
-      if (first.mode !== 'taxi') continue;
-      for (const second of incidentEdges(graph, first.other)) {
-        if (second.mode !== 'taxi') continue;
-        if (second.other === seat.node) continue;
-        const existing = scooterByDestination.get(second.other);
-        if (existing === undefined || first.other < existing) {
-          scooterByDestination.set(second.other, first.other);
-        }
-      }
-    }
-
-    for (const [to, via] of [...scooterByDestination.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-      options.push({ mode: 'scooter', to, via });
+      options.push({ mode: 'foot', to: edge.other });
     }
   }
 
   return options.sort(
     (left, right) =>
-      modeRank(left.mode) - modeRank(right.mode) ||
-      left.to.localeCompare(right.to) ||
-      (left.via ?? '').localeCompare(right.via ?? ''),
+      modeRank(left.mode) - modeRank(right.mode) || left.to.localeCompare(right.to),
   );
 }
 
@@ -154,11 +129,6 @@ function applyMove(seat: PrototypeSeat, option: PrototypeMoveOption): PrototypeS
   if (option.mode === 'foot') {
     if (seat.footSteps <= 0) return null;
     return { ...seat, node: option.to, footSteps: seat.footSteps - 1 };
-  }
-
-  if (option.mode === 'scooter') {
-    if (seat.scooterCharges <= 0) return null;
-    return { ...seat, node: option.to, scooterCharges: seat.scooterCharges - 1 };
   }
 
   const paid = spend(seat.tickets, option.mode);
@@ -186,7 +156,6 @@ export function createPrototypeGame(
     node: starts.fugitive,
     tickets: { ...PROVISIONAL_FUGITIVE_TICKETS },
     footSteps: PROVISIONAL_FUGITIVE_FOOT_STEPS,
-    scooterCharges: PROVISIONAL_FUGITIVE_SCOOTER_CHARGES,
   };
 
   const agents: PrototypeSeat[] = starts.agents.map((node, index) => ({
@@ -196,7 +165,6 @@ export function createPrototypeGame(
     node,
     tickets: { ...PROVISIONAL_AGENT_TICKETS },
     footSteps: PROVISIONAL_AGENT_FOOT_STEPS,
-    scooterCharges: PROVISIONAL_AGENT_SCOOTER_CHARGES,
   }));
 
   return {
@@ -226,10 +194,7 @@ export function applyFugitiveCommand(
 
   if (command.kind === 'move') {
     const match = legalMoves(graph, state, fugitive.id).find(
-      (option) =>
-        option.mode === command.mode &&
-        option.to === command.to &&
-        (option.mode !== 'scooter' || option.via === command.via),
+      (option) => option.mode === command.mode && option.to === command.to,
     );
     if (match === undefined) return { ok: false, reason: 'illegal-move' };
     move = match;
@@ -249,21 +214,6 @@ export function applyFugitiveCommand(
       node: null,
     });
 
-    // The scooter publishes the exact ending node immediately (rules §6).
-    if (move.mode === 'scooter') {
-      next = {
-        ...next,
-        lastKnown: move.to,
-        lastAppearanceTurn: state.turn,
-      };
-      next = appendLog(next, {
-        turn: state.turn,
-        seatId: fugitive.id,
-        kind: 'reveal',
-        mode: 'scooter',
-        node: move.to,
-      });
-    }
   } else {
     next = appendLog(next, {
       turn: state.turn,
@@ -347,7 +297,7 @@ function firstHopToward(
   if (step === undefined) return null;
   const mode = movementModeFor(seat, step.mode);
   if (mode === null) return null;
-  return { mode, to: cursor, via: null };
+  return { mode, to: cursor };
 }
 
 /**

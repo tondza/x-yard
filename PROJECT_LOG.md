@@ -1337,3 +1337,77 @@ The study is a vector approximation of an etching, not a scanned engraving. It i
 not a selectable skin; the projection choice and scooter removal are still open.
 The current map generator has no river/bridges or period-specific landmarks; the
 period prop pass would need them.
+
+---
+
+## 2026-10-29 — Isometric Vintage skin applied; the 1907 rules lose the scooter
+
+**Why this round exists.** The director chose the **isometric Vintage Etching**
+direction over the 2.5D shortcut and asked for the era rules at the same time:
+no motor-scooter, special kept. The prototype therefore needed a real projection
+pass, a paper HUD and a rules change — not just another city plate.
+
+**What was built**
+
+1. **A shared isometric projection.** The 2:1 projection (`x = (x-y)*0.9`,
+   `y = (x+y)*0.5`, translated into 0-based camera bounds) is applied to the city,
+   the play/map camera, station labels, the permanent network, legal paths, tokens,
+   trails, the appearance ring and the last-appearance ghost. The overlay gets a
+   projected copy of the map; the rules continue to use map coordinates.
+2. **Vintage is the default skin.** The isometric sepia city is the live city
+   plate. **Basic** remains the fallback; Iron and Night remain developer skins.
+   The selector is still dev-only and `?skin=`/localStorage still work.
+3. **Paper HUD.** The header, kit, log, legends, map toolbar and station card use
+   the parchment/ink system with serif type and coloured route accents. The city is
+   monochrome; the transit network is the only saturated layer.
+4. **Era rules.** The motor-scooter is removed from `MobilityOption`,
+   `LoggedTransport`, `RevealReason`, the prototype seat/command/log types, the
+   engine, motion, map overlay, kit and tests. Five modes remain: taxi, bus,
+   underground, special, foot. Special stays. The internal paid-mode names are
+   unchanged; presentation-only renaming is deferred.
+5. **Camera/overlay integration.** Play follows the projected mover; Map fits the
+   whole isometric city; dragging/zoom/labels are projected and the paper frame
+   replaces the old dark stage. The Command City lab remains as a comparison.
+
+**Rejected alternatives**
+
+1. **Ship only the 2.5D Vintage skin.** Rejected by the director: the isometric
+   look was the chosen one, despite the projection cost.
+2. **Keep the scooter but hide it in the vintage HUD.** Rejected: the era rules
+   were part of the request; an invisible modern option is worse than removing it.
+3. **Remove special too.** Rejected: the director explicitly kept special.
+4. **Rename taxi/bus/underground to cab/omnibus/underground in this change.**
+   Rejected for scope: it touches wire vocabulary and historical tests; a
+   presentation-only label pass can follow.
+5. **Replace Basic with Vintage.** Rejected: Basic is the working fallback and
+   the developer switch must stay.
+
+**Verified**
+
+- `pnpm typecheck` — all projects pass.
+- `pnpm test` — **7 test files / 131 tests**, green after removing the scooter
+  assertion and scooter paths (game-core 115, map-generator 16).
+- `pnpm build` — exit 0; production bundle excludes the dev prototype and the
+  vintage/RTS labs.
+- `pnpm check:docs` — 54 markdown files; links and counts current.
+- Browser, default `/`: Vintage loads with the projected city/overlay, paper HUD
+  and five-mode kit at 1440×900; no page or console errors.
+- A full first move plays through the projected Fugitive and Agent routes; the
+  camera follows the projected mover; no errors.
+- Turn-5 appearance renders in the projected overlay (`APPEARANCE · Vulture seen
+  at n11`) and the result overlay is paper; no errors. (The playthrough captured
+  the Fugitive that turn, so the ghost was not separately reached.)
+- Map view fits the whole isometric city; station inspector, hover and touch
+  preview still work.
+- 390×844: Vintage loads with no horizontal overflow; header reflows, five-mode
+  kit and paper HUD remain usable.
+- `?skin=basic` and `?skin=iron` still load with the original projection and five
+  modes; no scooter references remain in code.
+
+**Known limits**
+
+The period prop pass is partial (no river/bridges, still some generic roof/street
+furniture). The full 96-station map is dense in isometric view; label LOD and
+colour-blind route testing are the next polish items. The full-game/MVP documents
+that described the scooter are historical and marked superseded by decision 0019;
+the internal mode names were not renamed.

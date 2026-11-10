@@ -14,9 +14,9 @@ Last updated: 2026-10-29.
 | `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 131 tests |
 | `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
-| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, six movement options, turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
+| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, five movement options (taxi, bus, underground, special, foot), turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — developer-switchable city plate (Basic default; Iron/Night 2.5D RTS skins), permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), full session + screenshots at seven viewport sizes |
+| `apps/web`: **96-station prototype** — **isometric Vintage Etching** default skin (Basic fallback; Iron/Night 2.5D RTS skins), projected city/overlay/camera, paper HUD, permanent taxi/bus/metro/special network with station badges, hover/click station inspector, sequential one-mover-at-a-time reveal, last-appearance ghost, play/map camera with pan, zoom and label LOD; responsive layout | ✅ second playable | browser at `:5173/` (dev), 1440 and 390 checks; full suite |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -40,8 +40,8 @@ the old server-backed board.
 ## Prototype — current shape
 
 The playable prototype is a **96-station Cathedral Quarter**, one human Fugitive
-against four deterministic Agent bots, 16 turns, appearances on 5/10/15, all six
-movement options, capture and a result screen. The scale and desktop-first choice
+against four deterministic Agent bots, 16 turns, appearances on 5/10/15, five
+movement options (no motor-scooter), capture and a result screen. The scale and desktop-first choice
 are [decision 0014](decisions/0014-96-station-desktop-prototype.md). The 96 fixture uses
 `startStrategy: 'encircle'`, so the Agents start 3–5 edges away and spread by
 angle rather than ten edges away. The city is drawn from the generated model:
@@ -50,8 +50,7 @@ and tokens are a live overlay.
 
 **Turn reveal.** The engine still resolves a turn atomically; the client now
 plays the resolution back one mover at a time, each with a 0.17 s camera
-lead-in — the Fugitive's route (~0.85 s), then any appearance/scooter reveal (1.15 s
-hold), then each Agent in engine order (0.7 s route + a 0.15 s beat). Every mover follows its real polyline and leaves a
+lead-in — the Fugitive's route (~0.85 s), then any appearance (1.15 s hold), then each Agent in engine order (0.7 s route + a 0.15 s beat). Every mover follows its real polyline and leaves a
 thin trace for the turn. The whole reveal is skippable, and the result overlay
 waits for it. `resolveAgentPhase` returns the exact `agentMoves` so the view never
 re-simulates a bot or guesses an edge. Recorded as [decision
@@ -78,22 +77,14 @@ The Agents' last-known node is shown as a semi-transparent `F<node>` ghost with 
 dashed ring; it persists until the next appearance and is hidden while the real
 Fugitive stands there.
 
-**City skins.** The city plate is now a developer-switchable skin, separate from
-the live overlay and the rules. **Basic** is still the default and fallback; the
-**Iron Quarter** and **Night Ops** skins are 2.5D RTS passes over the same map and
-can be switched in the dev header or with `?skin=iron` / `?skin=nightops`
-([decision 0018](decisions/0018-developer-switchable-city-skins.md)). The
-isometric **Command City** study remains lab-only because it needs a camera and
-overlay re-projection. The final art direction is not ratified, and the current
-RTS skins are vector approximations, not pre-rendered sprite assets.
-
-**Vintage Etching study.** A separate design lab at `?vintage` tests an
-early-1900s direction: a darker sepia/ink isometric city, parchment menus, and
-the transit network as the only saturated colour. The mock omits the motor
-scooter from its kit; that is a **proposal**, not a rules change. Basic and the
-live Iron/Night skins are untouched. The next decision is whether to pursue the
-iso version (needs the projection pass) or a 2.5D live vintage skin, and whether
-the scooter is removed in the era rules pass.
+**City skins.** The **isometric Vintage Etching** skin is the default: sepia/ink
+city, paper HUD, and the transit network as the only saturated colour. The true
+2:1 projection is shared by the city, camera, station labels, routes, tokens and
+ghost, so the overlay stays aligned. `Basic`, `Iron` and `Night` remain selectable
+developer skins ([decision 0018](decisions/0018-developer-switchable-city-skins.md)).
+The 1907 rules remove the motor-scooter; special stays
+([decision 0019](decisions/0019-1907-era-rules.md)). The RTS skins are vector
+approximations, not pre-rendered sprite assets.
 
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
@@ -104,8 +95,8 @@ gadgets. The architecture guard for the real state machine is unchanged.
 1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
    movement, no viewport) and the second (hidden network, no last-appearance
    marker, “pulse” wording) are addressed; tune Agent starts/bot pathing before
-   changing any ruled number, then choose between the RTS and Vintage Etching
-   directions (and decide whether to drop the scooter) before more city polish.
+   changing any ruled number, then tune the Vintage Etching skin's legibility and
+   period detail before more city polish.
 2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
    the prototype's camera/LOD contract into a faster renderer. This proves the
@@ -120,17 +111,17 @@ gadgets. The architecture guard for the real state machine is unchanged.
 
 Items marked **RULED** are recorded for context. They no longer block anything.
 
-- **Art style and perspective** — narrowed on 2026-10-16 to **F** (flat vector,
-  2.5D tilt) and **H** (painterly, pure top-down, night) in
-  [`design/moodboard/round-02-city/`](../design/moodboard/round-02-city/);
-  pixel-art is out. Not yet a single choice. Settling it is a prerequisite for
-  committing to a rendering technology (Canvas 2D will not hold ~600–900 nodes ×
-  ~100 players).
+- **Art style and perspective** — **RULED 2026-10-29:** the playable prototype
+  uses the **isometric Vintage Etching** skin by default (early 1900s, sepia/ink
+  city, paper HUD, coloured transit). `Basic` remains the fallback. The wider
+  600–900-node/100-player renderer decision is still separate.
 - **RULED 2026-10-16 — MVP scope.** Drafted and validated, then **re-scoped by the
   director** the same day. The ratified re-statement is [`docs/mvp/README.md`](mvp/README.md),
   whose top section lists the six rulings and what they invalidate. Three P0 changes
   are applied there: **16 turns with appearances 5/10/15**, the **scooter's exact-position
   reveal cut**, and **pass-and-play rejected** in favour of one device per seat.
+  **Superseded 2026-10-29:** the scooter is removed entirely in the 1907 era rules
+  ([decision 0019](decisions/0019-1907-era-rules.md)).
 - **RULED 2026-10-16 — phase order: prototype before MVP.** The director added a
   **prototype phase** (5 seats: 1 human + 4 bots, single-player, simple bots) whose
   purpose is to give a feeling of success and validate the look. The **MVP is

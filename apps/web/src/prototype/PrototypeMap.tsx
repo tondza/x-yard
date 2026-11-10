@@ -245,7 +245,6 @@ function PrototypeMapContent({
     for (const seat of seats) ids.add(seat.node);
     for (const option of legal) {
       ids.add(option.to);
-      if (option.via !== null) ids.add(option.via);
     }
     if (activeStep !== null) {
       ids.add(activeStep.from);
@@ -349,7 +348,7 @@ function PrototypeMapContent({
         {options.map((option) => {
           const points = routeForOption(map, fugitive?.node ?? '', option);
           return (
-            <g key={`${option.mode}-${option.to}-${option.via ?? ''}`}>
+            <g key={`${option.mode}-${option.to}`}>
               <path
                 d={pathData(points)}
                 fill="none"
@@ -504,7 +503,7 @@ function PrototypeMapContent({
           if (!destination) return null;
 
           return (
-            <g key={`dest-${option.mode}-${option.to}-${option.via ?? ''}`} className="destination">
+            <g key={`dest-${option.mode}-${option.to}`} className="destination">
               <circle
                 cx={destination.x}
                 cy={destination.y}
@@ -685,7 +684,7 @@ function routeForOption(
   option: PrototypeMoveOption,
 ): readonly MapPoint[] {
   if (from === '') return [];
-  return routePoints(map.graph, from, option.to, option.mode, option.via);
+  return routePoints(map.graph, from, option.to, option.mode);
 }
 
 interface PrototypeMapProps {

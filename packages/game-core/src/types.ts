@@ -81,7 +81,7 @@ export type Phase =
 export type CaptureKind = 'occupation';
 
 /** Why a Fugitive's true node became public. */
-export type RevealReason = 'schedule' | 'decoy-ping' | 'scooter';
+export type RevealReason = 'schedule' | 'decoy-ping';
 
 /** Terminal outcome of a Yard. */
 export type YardResult = 'agents-win' | 'fugitives-extracted' | 'abandoned';
@@ -89,19 +89,21 @@ export type YardResult = 'agents-win' | 'fugitives-extracted' | 'abandoned';
 /**
  * Every movement option a seat can choose.
  *
- * `foot` and `scooter` are deliberately not added to `TransportMode`: that union
- * indexes edges and ticket bags. Keeping them separate is decision E2 in
+ * `foot` is deliberately not added to `TransportMode`: that union indexes edges
+ * and ticket bags. Keeping it separate is decision E2 in
  * `docs/project-plan.md`.
+ *
+ * The early-1900s rules have no motor-scooter (decision 0019).
  */
-export type MobilityOption = TransportMode | 'foot' | 'scooter';
+export type MobilityOption = TransportMode | 'foot';
 
 /**
  * What a viewer sees in the ticket log for one movement.
  *
- * `foot`, `scooter` and `hold` join the four paid tiers; `unknown` is the
+ * `foot` and `hold` join the four paid tiers; `unknown` is the
  * Counterfeit Identity concealment.
  */
-export type LoggedTransport = TransportMode | 'foot' | 'scooter' | 'hold' | 'unknown';
+export type LoggedTransport = TransportMode | 'foot' | 'hold' | 'unknown';
 
 /* ------------------------------------------------------------------ *
  * Graph

@@ -16,6 +16,11 @@ The first playable now reveals each mover sequentially and has a play/map camera
 with label LOD. The 96-station, desktop-first scope of 0014 stands; the phone
 camera pass that 0014 deferred is now part of the prototype.
 
+**Revised 2026-10-29 (decision [0019](decisions/0019-1907-era-rules.md)).** The
+prototype uses the isometric Vintage Etching skin by default and the 1907 era
+rules: the motor-scooter is removed, special stays, and the full suite remains at
+131 tests. Older scooter passages below are historical.
+
 **Revised 2026-10-29 (decisions [0016](decisions/0016-appearance-terminology.md) and
 [0017](decisions/0017-always-visible-network-and-last-appearance.md)).** The
 player-facing term is **Appearance** (not pulse). The prototype draws the whole

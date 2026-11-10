@@ -34,7 +34,6 @@ function playOneTurn(state: PrototypeState): PrototypeState {
           kind: 'move' as const,
           mode: options[0]?.mode ?? 'taxi',
           to: options[0]?.to ?? state.seats[0]?.node ?? 's1',
-          via: options[0]?.via ?? null,
         };
 
   const applied = applyFugitiveCommand(DEMO_BOARD, state, command);
@@ -52,7 +51,6 @@ describe('prototype legal moves', () => {
     const foot = options.filter((option) => option.mode === 'foot').map((option) => option.to);
     expect(taxi).toEqual(['s2', 's3', 's7', 's8']);
     expect(foot).toEqual(['s2', 's3', 's7', 's8']);
-    expect(options.some((option) => option.mode === 'scooter')).toBe(true);
     expect(options.some((option) => option.mode === 'bus')).toBe(false);
   });
 
@@ -63,7 +61,6 @@ describe('prototype legal moves', () => {
       ...fugitive,
       tickets: { taxi: 0, bus: 0, underground: 0, special: 0 },
       footSteps: 0,
-      scooterCharges: 0,
     };
     expect(legalMoves(DEMO_BOARD, withSeats(state, [broke, ...state.seats.slice(1)]), 'fugitive')).toEqual(
       [],
@@ -75,7 +72,6 @@ describe('prototype legal moves', () => {
       kind: 'move',
       mode: 'taxi',
       to: 's6',
-      via: null,
     });
     expect(result).toEqual({ ok: false, reason: 'illegal-move' });
   });
@@ -87,7 +83,6 @@ describe('prototype turn, appearance and capture', () => {
       kind: 'move',
       mode: 'taxi',
       to: 's2',
-      via: null,
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -141,8 +136,7 @@ describe('prototype turn, appearance and capture', () => {
       expect(legalMoves(DEMO_BOARD, applied.state, move.seatId)).toContainEqual({
         mode: move.mode,
         to: move.to,
-        via: null,
-      });
+        });
     }
   });
 
@@ -199,7 +193,7 @@ describe('prototype turn, appearance and capture', () => {
         state,
         first === undefined
           ? { kind: 'hold' }
-          : { kind: 'move', mode: first.mode, to: first.to, via: first.via },
+          : { kind: 'move', mode: first.mode, to: first.to },
       );
       expect(applied.ok).toBe(true);
       if (!applied.ok) break;

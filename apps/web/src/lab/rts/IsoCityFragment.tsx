@@ -1174,35 +1174,63 @@ function LampLayer({ map, theme }: { readonly map: GeneratedMap; readonly theme:
   );
 }
 
-export function IsoCityFragment({ map, theme, xray = true }: { readonly map: GeneratedMap; readonly theme: RtsTheme; readonly xray?: boolean }): React.JSX.Element {
+export interface IsoCityFragmentProps {
+  readonly map: GeneratedMap;
+  readonly theme: RtsTheme;
+  /** Camera viewBox in projected space. Defaults to the lab crop. */
+  readonly viewBox?: string;
+  /** Translation applied to the city content; the game uses the map-height offset. */
+  readonly offsetX?: number;
+  /** Lab mode draws the overlay/frame; the game supplies its own overlay. */
+  readonly overlay?: boolean;
+  /** Draw the paper border/compass. Off when the HUD supplies the frame. */
+  readonly frame?: boolean;
+  readonly xray?: boolean;
+  /** Use the `city-plate` class instead of the lab fragment class. */
+  readonly plate?: boolean;
+}
+
+export function IsoCityFragment({
+  map,
+  theme,
+  viewBox,
+  offsetX = 0,
+  overlay = true,
+  frame = true,
+  xray = true,
+  plate = false,
+}: IsoCityFragmentProps): React.JSX.Element {
   const buildings = useMemo(() => buildingsForMap(map), [map]);
   const trees = useMemo(() => treesForMap(map), [map]);
-  const nodeById = useMemo(() => new Map(map.graph.nodes.map((node) => [node.id, node])), [map]);
+  const span = map.bounds.width + map.bounds.height;
+  const area = overlay
+    ? ISO_VIEW
+    : { x: -offsetX, y: 0, width: span * 0.9, height: span * 0.5 };
   const items = useMemo(() => {
     const list: { depth: number; element: React.JSX.Element }[] = [];
     for (const building of buildings) {
       const point = iso(building.x + building.w / 2, building.y + building.h / 2, 0);
-      if (point.x < ISO_VIEW.x - 120 || point.x > ISO_VIEW.x + ISO_VIEW.width + 120 || point.y < ISO_VIEW.y - 120 || point.y > ISO_VIEW.y + ISO_VIEW.height + 120) continue;
+      if (overlay && (point.x < ISO_VIEW.x - 120 || point.x > ISO_VIEW.x + ISO_VIEW.width + 120 || point.y < ISO_VIEW.y - 120 || point.y > ISO_VIEW.y + ISO_VIEW.height + 120)) continue;
       list.push({ depth: building.x + building.y + building.w + building.h, element: <BuildingObject key={building.key} building={building} theme={theme} /> });
     }
     for (const tree of trees) {
       const point = iso(tree.x, tree.y, 0);
-      if (point.x < ISO_VIEW.x - 80 || point.x > ISO_VIEW.x + ISO_VIEW.width + 80 || point.y < ISO_VIEW.y - 80 || point.y > ISO_VIEW.y + ISO_VIEW.height + 80) continue;
+      if (overlay && (point.x < ISO_VIEW.x - 80 || point.x > ISO_VIEW.x + ISO_VIEW.width + 80 || point.y < ISO_VIEW.y - 80 || point.y > ISO_VIEW.y + ISO_VIEW.height + 80)) continue;
       list.push({ depth: tree.x + tree.y + 2, element: <TreeObject key={tree.key} tree={tree} theme={theme} /> });
     }
     for (const landmark of map.city.landmarks) {
       list.push({ depth: landmark.at.x + landmark.at.y, element: <LandmarkObject key={landmark.id} landmark={landmark} theme={theme} /> });
     }
     return list.sort((left, right) => left.depth - right.depth);
-  }, [buildings, map.city.landmarks, theme, trees]);
+  }, [buildings, map.city.landmarks, overlay, theme, trees]);
 
   return (
     <svg
-      className="city-fragment iso-fragment"
-      viewBox={`${ISO_VIEW.x} ${ISO_VIEW.y} ${ISO_VIEW.width} ${ISO_VIEW.height}`}
+      className={plate ? 'city-plate' : 'city-fragment iso-fragment'}
+      viewBox={viewBox ?? `${ISO_VIEW.x} ${ISO_VIEW.y} ${ISO_VIEW.width} ${ISO_VIEW.height}`}
       preserveAspectRatio="xMidYMid slice"
       role="img"
-      aria-label={`${theme.title} isometric city fragment`}
+      aria-label={`${theme.title} isometric city`}
     >
       <defs>
         <radialGradient id={`${theme.id}-lamp`}>
@@ -1246,11 +1274,12 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
           <stop offset="55%" stopColor="#ffd08a" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill={theme.ground} />
+      <g transform={offsetX === 0 ? undefined : `translate(${offsetX} 0)`}>
+      <rect x={area.x} y={area.y} width={area.width} height={area.height} fill={theme.ground} />
       {theme.etching ? (
-        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#vintage-paper)" opacity={0.5} />
+        <rect x={area.x} y={area.y} width={area.width} height={area.height} fill="url(#vintage-paper)" opacity={0.5} />
       ) : (
-        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-concrete)" />
+        <rect x={area.x} y={area.y} width={area.width} height={area.height} fill="url(#iso-concrete)" />
       )}
       <RoadLayer map={map} theme={theme} />
       <BlockLayer map={map} theme={theme} />
@@ -1274,9 +1303,9 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
           </g>
         ))}
       </g>
-      {theme.etching ? null : <NetworkLayer map={map} theme={theme} />}
+      {!overlay ? null : theme.etching ? null : <NetworkLayer map={map} theme={theme} />}
       {items.map((item) => item.element)}
-      {theme.etching && <EtchedRouteLayer map={map} theme={theme} />}
+      {overlay && theme.etching && <EtchedRouteLayer map={map} theme={theme} />}
       {!theme.etching &&
         [
           { x: 548, y: 286, angle: 8, colour: '#a33f2f' },
@@ -1287,15 +1316,16 @@ export function IsoCityFragment({ map, theme, xray = true }: { readonly map: Gen
         ].map((car) => (
           <CarObject key={`${car.x}-${car.y}`} x={car.x} y={car.y} angle={car.angle} colour={car.colour} theme={theme} />
         ))}
-      {xray && !theme.etching && <XrayLayer map={map} theme={theme} />}
+      {overlay && xray && !theme.etching && <XrayLayer map={map} theme={theme} />}
       <LampLayer map={map} theme={theme} />
-      <StationLayer map={map} theme={theme} />
-      <TokenLayer theme={theme} />
+      {overlay && <StationLayer map={map} theme={theme} />}
+      {overlay && <TokenLayer theme={theme} />}
       {theme.etching ? (
-        <VintageOverlay theme={theme} />
+        frame ? <VintageOverlay theme={theme} /> : null
       ) : (
-        <rect x={ISO_VIEW.x} y={ISO_VIEW.y} width={ISO_VIEW.width} height={ISO_VIEW.height} fill="url(#iso-sun)" pointerEvents="none" />
+        <rect x={area.x} y={area.y} width={area.width} height={area.height} fill="url(#iso-sun)" pointerEvents="none" />
       )}
+      </g>
     </svg>
   );
 }

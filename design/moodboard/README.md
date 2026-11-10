@@ -18,7 +18,7 @@ Game design authority remains [`/GAME_VISION.md`](../../GAME_VISION.md).
 | 03 — mobile-first MVP | [`round-03-mobile/`](round-03-mobile/) | Completed for the MVP screen pass. Six scenarios from the *ratified MVP* at a real 390 × 844 phone viewport, plus one desktop enhancement. |
 | 04 — illustrative city skins | [`round-04-city-visuals/`](round-04-city-visuals/) | **Superseded by 05.** Palette/detail passes that the director judged too illustrative (“children's drawing”). Kept as history. |
 | 05 — RTS city skins | [`round-05-rts/`](round-05-rts/) | RTS-inspired directions; Iron/Night remain live developer skins. |
-| 06 — Vintage Etching | [`round-06-vintage/`](round-06-vintage/) | **Current.** Early-1900s sepia/ink city study with a paper HUD and the transit network in colour. Design only, not rules. |
+| 06 — Vintage Etching | [`round-06-vintage/`](round-06-vintage/) | **Current and applied.** Early-1900s sepia/ink isometric skin, paper HUD, coloured network; the default prototype skin. |
 
 ### Round 03 — why it looks so different
 

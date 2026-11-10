@@ -2,6 +2,10 @@
 
 **Status:** accepted — 2026-10-29 (mechanism; the final art direction is still open)
 
+> **Partially superseded by [0019](0019-1907-era-rules.md):** the default skin is
+> now the isometric Vintage Etching skin, and the 1907 rules remove the motor-scooter.
+> The skin registry/selector mechanism and Basic fallback remain in force.
+
 ## Context
 
 The prototype's city plate is deliberately schematic: flat footprints, simple

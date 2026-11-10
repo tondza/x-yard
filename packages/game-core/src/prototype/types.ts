@@ -30,14 +30,12 @@ export interface PrototypeSeat {
   readonly node: NodeId;
   readonly tickets: TicketBag;
   readonly footSteps: number;
-  readonly scooterCharges: number;
 }
 
-/** A legal move for a seat. `via` is the scooter's intermediate node. */
+/** A legal move for a seat. */
 export interface PrototypeMoveOption {
   readonly mode: MobilityOption;
   readonly to: NodeId;
-  readonly via: NodeId | null;
 }
 
 /**
@@ -61,7 +59,6 @@ export type PrototypeCommand =
       readonly kind: 'move';
       readonly mode: MobilityOption;
       readonly to: NodeId;
-      readonly via: NodeId | null;
     }
   | { readonly kind: 'hold' };
 
@@ -88,9 +85,9 @@ export type PrototypeCommandResult =
 export interface PrototypeLogEntry {
   readonly turn: number;
   readonly seatId: PlayerId | null;
-  readonly kind: 'move' | 'appearance' | 'reveal' | 'result';
+  readonly kind: 'move' | 'appearance' | 'result';
   readonly mode: LoggedTransport;
-  /** Set for an appearance or a scooter reveal; `null` for an ordinary move row. */
+  /** Set for an appearance; `null` for an ordinary move row. */
   readonly node: NodeId | null;
 }
 

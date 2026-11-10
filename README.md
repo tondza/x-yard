@@ -76,10 +76,10 @@ errors-vs-warnings split; ticket economy with the ticket-log semantics for
 Counterfeit Identity and Alleyway Sprint; a scaffold board; and a seeded
 **map generator** that emits validated 24/60/96-station transit networks with
 street-following edge geometry, and a **local 96-station prototype**: an
-illustrated F-style city plate, 16 turns, all six movement options, appearances,
+isometric Vintage Etching city plate, 16 turns, all five movement options, appearances,
 capture, result and restart, with a permanent all-mode transit network, a
 station inspector, a last-appearance ghost, deterministic Agent bots,
-one-at-a-time move playback and a follow/map camera. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+one-at-a-time move playback and a follow/map camera. The Vintage Etching skin is the default; Basic remains the fallback. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
 exit 0. `game-core` has zero runtime dependencies.
 
 **The full server turn machine is not implemented yet.** The prototype loop is

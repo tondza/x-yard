@@ -15,9 +15,11 @@ import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard
 
 import { CityPlate } from './CityPlate';
 import { Rts25CityFragment } from '../lab/rts/Rts25CityFragment';
-import { COMMAND, NIGHT_OPS } from '../lab/rts/rtsTheme';
+import { IsoCityFragment } from '../lab/rts/IsoCityFragment';
+import { COMMAND, NIGHT_OPS, VINTAGE } from '../lab/rts/rtsTheme';
 import type { SkinId } from './skins';
 import { PrototypeMap } from './PrototypeMap';
+import { isoProjection, mapProjection, projectMap, projectStep, projectTrail } from './projection';
 import { cameraViewBox, type StageSize } from './camera';
 import {
   MOVE_STYLE,
@@ -100,7 +102,7 @@ function bannerText(banner: PhaseBanner | null, turn: number): {
 
   if (banner.kind === 'reveal') {
     return {
-      kicker: banner.scooter ? 'SCOOTER REVEAL' : 'APPEARANCE',
+      kicker: 'APPEARANCE',
       main: `Vulture seen at ${banner.node}`,
       detail: 'The Agents now know this station',
     };
@@ -163,8 +165,22 @@ export function MapStage({
     };
   }, []);
 
+  const projection = useMemo(
+    () => (skin === 'vintage' ? isoProjection(map.bounds) : mapProjection(map.bounds)),
+    [map.bounds, skin],
+  );
+  const displayMap = useMemo(() => projectMap(map, projection), [map, projection]);
+  const displayStep = useMemo(
+    () => (activeStep === null ? null : projectStep(activeStep, projection)),
+    [activeStep, projection],
+  );
+  const displayTrails = useMemo(
+    () => trails.map((trail) => projectTrail(trail, projection)),
+    [projection, trails],
+  );
+
   const focusPoints = useMemo<readonly MapPoint[]>(() => {
-    const nodeById = new Map(map.graph.nodes.map((node) => [node.id, node]));
+    const nodeById = new Map(displayMap.graph.nodes.map((node) => [node.id, node]));
     const points: MapPoint[] = [];
 
     // Play view stays on the Fugitive and, while a move is being revealed, the
@@ -173,10 +189,10 @@ export function MapStage({
     const fugitive = seats[0];
     const fugitiveNode = fugitive === undefined ? undefined : nodeById.get(fugitive.node);
     if (fugitiveNode !== undefined) points.push({ x: fugitiveNode.x, y: fugitiveNode.y });
-    if (activeStep !== null) points.push(...activeStep.points);
+    if (displayStep !== null) points.push(...displayStep.points);
 
     return points;
-  }, [activeStep, map.graph.nodes, seats]);
+  }, [displayMap.graph.nodes, displayStep, seats]);
 
   // Hovering a legal destination previews its onward lines without moving there.
   const cardStation = selectedStation ?? hoveredStation;
@@ -196,7 +212,7 @@ export function MapStage({
     if (pending) setHoveredStation(null);
   }, [pending]);
 
-  const camera = useMapCamera({ bounds: map.bounds, stage, focusPoints });
+  const camera = useMapCamera({ bounds: projection.bounds, stage, focusPoints });
   const viewBox = cameraViewBox(camera.camera, stage);
   const bannerInfo = bannerText(banner, turn);
   const { openMap, setPlay, recentre, zoomIn, zoomOut, zoomAt } = camera;
@@ -368,7 +384,17 @@ export function MapStage({
         onPointerUp={finishPointers}
         onPointerCancel={finishPointers}
       >
-        {skin === 'iron' ? (
+        {skin === 'vintage' ? (
+          <IsoCityFragment
+            map={map}
+            theme={VINTAGE}
+            viewBox={viewBox}
+            offsetX={projection.offsetX}
+            overlay={false}
+            frame={false}
+            plate
+          />
+        ) : skin === 'iron' ? (
           <Rts25CityFragment map={map} theme={COMMAND} viewBox={viewBox} overlay={false} />
         ) : skin === 'nightops' ? (
           <Rts25CityFragment map={map} theme={NIGHT_OPS} viewBox={viewBox} overlay={false} />
@@ -376,7 +402,7 @@ export function MapStage({
           <CityPlate map={map} viewBox={viewBox} />
         )}
         <PrototypeMap
-          map={map}
+          map={displayMap}
           seats={seats}
           selectedMode={selectedMode}
           legal={legal}
@@ -387,8 +413,8 @@ export function MapStage({
           ghostNode={ghostNode}
           viewBox={viewBox}
           scale={camera.camera.scale}
-          activeStep={activeStep}
-          trails={trails}
+          activeStep={displayStep}
+          trails={displayTrails}
           selectedStation={selectedStation ?? hoveredStation}
         />
 
@@ -419,7 +445,7 @@ export function MapStage({
               −
             </button>
             <span className="zoom-readout" title="Zoom relative to the whole-city view">
-              {zoomLabel(camera.camera, map.bounds, stage)}
+              {zoomLabel(camera.camera, projection.bounds, stage)}
             </span>
             <button type="button" className="tool-button" onClick={camera.zoomIn} aria-label="Zoom in">
               +
@@ -525,7 +551,7 @@ export function MapStage({
               )}
 
               <p className="station-hint">
-                Foot and scooter use the taxi network. Ticket counts are in the kit.
+                Foot uses the taxi network. Ticket counts are in the kit.
               </p>
             </div>
           )}
