@@ -233,6 +233,7 @@ interface PrototypeMapContentProps {
   readonly selectedStation: NodeId | null;
   readonly viewBox: string;
   readonly showFugitive: boolean;
+  readonly moveSource: NodeId;
 }
 
 function PrototypeMapContent({
@@ -251,6 +252,7 @@ function PrototypeMapContent({
   selectedStation,
   viewBox,
   showFugitive,
+  moveSource,
 }: PrototypeMapContentProps): React.JSX.Element {
   const fugitive = seats[0];
   const agents = seats.slice(1);
@@ -402,7 +404,7 @@ function PrototypeMapContent({
       {/* Legal move paths for the selected mode. */}
       <g className="move-paths">
         {options.map((option) => {
-          const points = routeForOption(map, fugitive?.node ?? '', option);
+          const points = routeForOption(map, moveSource, option);
           return (
             <g key={`${option.mode}-${option.to}`}>
               <path
@@ -759,6 +761,7 @@ interface PrototypeMapProps {
   readonly trails: readonly Trail[];
   readonly selectedStation: NodeId | null;
   readonly showFugitive: boolean;
+  readonly moveSource: NodeId;
 }
 
 /** The live layer over the city plate: stations, routes, tokens and input. */
@@ -778,6 +781,7 @@ export function PrototypeMap({
   trails,
   selectedStation,
   showFugitive,
+  moveSource,
 }: PrototypeMapProps): React.JSX.Element {
   return (
     <svg
@@ -802,6 +806,7 @@ export function PrototypeMap({
         selectedStation={selectedStation}
         viewBox={viewBox}
         showFugitive={showFugitive}
+        moveSource={moveSource}
       />
     </svg>
   );

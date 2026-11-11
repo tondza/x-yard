@@ -1857,3 +1857,35 @@ body {
 .proto-meta {
   gap: 10px;
 }
+
+.log-row,
+.agent-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+
+.log-row {
+  border-bottom: 1px dashed #e4dccb;
+}
+
+.log-row:hover,
+.log-row:focus-visible,
+.agent-row:hover,
+.agent-row:focus-visible {
+  background: #eee3cc;
+  outline: none;
+}
+
+.log-row.kind-start {
+  color: #8a5a3c;
+  font-weight: 700;
+}
+
+.agent-row {
+  grid-template-columns: 8px 1fr 24px 48px;
+}

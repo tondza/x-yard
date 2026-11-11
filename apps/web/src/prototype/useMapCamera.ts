@@ -54,6 +54,7 @@ export interface MapCamera {
   readonly zoomOut: () => void;
   readonly recentre: () => void;
   readonly panBy: (dxPixels: number, dyPixels: number) => void;
+  readonly centerOn: (point: MapPoint) => void;
   readonly zoomAt: (factor: number, anchorX: number, anchorY: number, smooth?: boolean) => void;
 }
 
@@ -209,6 +210,14 @@ export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): 
     [bounds, commit, enterFree, stage],
   );
 
+  /** One-shot inspection centre; does not change play/free mode. */
+  const centerOn = useCallback(
+    (point: MapPoint): void => {
+      animateTo({ x: point.x, y: point.y, scale: cameraRef.current.scale });
+    },
+    [animateTo],
+  );
+
   const zoomAt = useCallback(
     (factor: number, anchorX: number, anchorY: number, smooth = true): void => {
       enterFree();
@@ -231,6 +240,7 @@ export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): 
     zoomOut,
     recentre,
     panBy,
+    centerOn,
     zoomAt,
   };
 }

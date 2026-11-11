@@ -87,9 +87,9 @@ function countFor(seat: PrototypeSeat | undefined, mode: MobilityOption): number
 }
 
 function logRow(entry: PrototypeLogEntry): string {
-  if (entry.kind === 'appearance') return `T${entry.turn} · APPEARANCE · ${entry.node ?? '?'}`;
+  if (entry.kind === 'appearance') return `T${entry.turn} · VULTURE APPEARANCE · ${entry.node ?? '?'}`;
   if (entry.kind === 'result') return `T${entry.turn} · YARD OVER`;
-  return `T${entry.turn} · ${entry.mode.toUpperCase()}`;
+  return `T${entry.turn} · VULTURE · ${entry.mode.toUpperCase()}`;
 }
 
 function RoleChoice({ onChoose, skin }: { readonly onChoose: (side: PlaySide) => void; readonly skin: SkinId }): React.JSX.Element {
@@ -149,6 +149,7 @@ export default function Prototype(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [selectedStation, setSelectedStation] = useState<NodeId | null>(null);
+  const [focusRequest, setFocusRequest] = useState<{ readonly node: NodeId; readonly nonce: number } | null>(null);
   const [skin, setSkin] = useState<SkinId>(initialSkin);
 
   const runIdRef = useRef(0);
@@ -159,6 +160,7 @@ export default function Prototype(): React.JSX.Element {
 
   const humanSeatId = side === 'agent' ? HUMAN_AGENT_ID : 'fugitive';
   const humanSeat = game.seats.find((seat) => seat.id === humanSeatId);
+  const moveSource = humanSeat?.node ?? game.lastKnown;
   const canAct =
     side === 'fugitive'
       ? game.phase === 'fugitive'
@@ -526,6 +528,7 @@ export default function Prototype(): React.JSX.Element {
     setSelectedMode('taxi');
     setExpanded(false);
     setSelectedStation(null);
+    setFocusRequest(null);
     setGame(initialGame());
   }, []);
 
@@ -561,6 +564,27 @@ export default function Prototype(): React.JSX.Element {
   const closeStation = useCallback((): void => {
     setSelectedStation(null);
   }, []);
+
+  const focusMapNode = useCallback((node: NodeId): void => {
+    setSelectedStation(node);
+    setFocusRequest((previous) => ({ node, nonce: (previous?.nonce ?? 0) + 1 }));
+  }, []);
+
+  const focusLog = useCallback(
+    (entry: PrototypeLogEntry): void => {
+      if (entry.node !== null) {
+        focusMapNode(entry.node);
+        return;
+      }
+      if (entry.seatId === null) return;
+      // A move row deliberately has no destination. In Agent Practice, centre
+      // the last public position; in the Fugitive run the player knows their own.
+      const seat = game.seats.find((candidate) => candidate.id === entry.seatId);
+      const target = side === 'agent' ? game.lastKnown : seat?.node;
+      if (target !== undefined) focusMapNode(target);
+    },
+    [focusMapNode, game.lastKnown, game.seats, side],
+  );
 
   const changeSkin = useCallback((next: SkinId): void => {
     if (!isSkinId(next)) return;
@@ -668,9 +692,7 @@ export default function Prototype(): React.JSX.Element {
   // real Fugitive is standing. Before the first appearance there is nothing to show.
   const ghostNode =
     side === 'agent'
-      ? game.lastAppearanceTurn === null
-        ? null
-        : game.lastKnown
+      ? game.lastKnown
       : game.lastAppearanceTurn !== null && game.lastKnown !== displaySeats[0]?.node
         ? game.lastKnown
         : null;
@@ -741,6 +763,9 @@ export default function Prototype(): React.JSX.Element {
           playSide={side}
           focusSeatId={humanSeatId}
           showFugitive={side === 'fugitive'}
+          moveSource={moveSource}
+          focusRequest={focusRequest}
+          ghostLabel={side === 'agent' && game.lastAppearanceTurn === null ? 'Vulture start' : 'Last appearance'}
           seats={displaySeats}
           turn={game.turn}
           selectedMode={selectedMode}
@@ -822,13 +847,29 @@ export default function Prototype(): React.JSX.Element {
           <section className="side-section">
             <div className="side-heading">
               <span>Public log</span>
-              <span className="side-note">MODE ONLY · DESTINATION HIDDEN</span>
+              <span className="side-note">MODE PUBLIC · ROUTE HIDDEN</span>
             </div>
             <div className="log-list">
+              {side === 'agent' && (
+                <button
+                  type="button"
+                  className="log-row kind-start"
+                  onClick={() => focusMapNode(MAP.starts.fugitive)}
+                  title="Reveal the Vulture's starting station"
+                >
+                  T1 · VULTURE START · {MAP.starts.fugitive}
+                </button>
+              )}
               {logs.map((entry, index) => (
-                <div key={`${entry.turn}-${entry.kind}-${index}`} className={`log-row kind-${entry.kind}`}>
+                <button
+                  key={`${entry.turn}-${entry.kind}-${index}`}
+                  type="button"
+                  className={`log-row kind-${entry.kind}`}
+                  onClick={() => focusLog(entry)}
+                  title="Centre this public event on the map"
+                >
                   {logRow(entry)}
-                </div>
+                </button>
               ))}
             </div>
           </section>
@@ -840,15 +881,18 @@ export default function Prototype(): React.JSX.Element {
             </div>
             <div className="agent-list">
               {agents.map((agent, index) => (
-                <div
+                <button
                   key={agent.id}
+                  type="button"
                   className={`agent-row${activeStep?.seatId === agent.id ? ' moving' : ''}${agent.id === humanSeatId ? ' human' : ''}`}
+                  onClick={() => focusMapNode(agent.node)}
+                  title={`Centre ${agent.name} at ${agent.node}`}
                 >
                   <span className="agent-dot" />
                   <span>{agent.name}</span>
                   <b>{agent.id === humanSeatId ? 'YOU' : `A${index + 1}`}</b>
                   <span className="agent-node">{agent.node}</span>
-                </div>
+                </button>
               ))}
             </div>
           </section>

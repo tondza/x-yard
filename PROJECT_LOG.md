@@ -1586,3 +1586,41 @@ The hidden projection is client-side for this local table; the true Fugitive liv
 in state and the dev debug object. The bot Fugitive is a simple distance policy,
 not a designed opponent. The real server projection, Agent skills and multi-Agent
 coordination remain future work. The side chooser is set per session, not persisted.
+
+---
+
+## 2026-10-29 — Fix the Agent Practice legal path source and add public focus
+
+**Symptom.** In Agent Practice the bright yellow legal-move lines radiated from a
+single node, did not correspond to the taxi edges the player could actually use,
+and looked like direct chords rather than street-following paths.
+
+**Cause.** `PrototypeMap` drew every legal-move path from `seats[0]`, which is the
+true hidden Fugitive seat. In Agent Practice the legal options belong to Falcon
+(`agent-1`), so the overlay connected the hidden Fugitive's node to Falcon's legal
+destinations. The permanent network was correct; the legal highlight was not. This
+also leaked the hidden Fugitive's location through the line pattern.
+
+**Fix.** The overlay now takes an explicit `moveSource` from the acting seat:
+the human Agent in Agent Practice and the Fugitive in the Fugitive run. Legal
+paths therefore use that seat's graph edges and their street-following `path`
+polylines. Taxi/bus stay on streets; only the metro/special geometry may cross
+blocks. No rules or edge data changed.
+
+**Public information follow-ups**
+
+- Agent Practice now reveals the **starting station** publicly (a `Vulture start`
+  ghost and a `T1 · VULTURE START · nX` log row). Appearances replace it.
+- Move rows now read `T1 · VULTURE · TAXI`; the transport mode is public, the
+  destination is not.
+- Public-log rows are clickable and centre the station; Agent rows are clickable
+  too. A move row centres the current **last-known** position, never the true
+  destination. An appearance row centres the announced node.
+- The log header now says `MODE PUBLIC · ROUTE HIDDEN` rather than implying only
+  the mode is public.
+
+**Verified.** `pnpm typecheck`; `pnpm test` **7 files / 136 tests**; `pnpm build`;
+`pnpm check:docs`. Browser: Agent Practice start ghost/log; legal paths begin at
+Falcon `n7` and contain street vertices; clicking the move row centres `n8` and
+opens the `Vulture start` card; clicking Harrier centres `n38` and opens the
+station card; no true Fugitive token; no console errors.

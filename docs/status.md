@@ -16,7 +16,7 @@ Last updated: 2026-11-11.
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
 | `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, five movement options (taxi, bus, underground, special, foot), turn/appearance/capture/result, deterministic bots, explicit human-Agent orders, each Agent move returned in resolution order | ✅ first playable | 18 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — side chooser (Fugitive or Agent Practice), **isometric Vintage Etching** default with Canvas city (spatial culling + zoom LOD; Basic fallback; Iron/Night RTS skins), projected and viewport-culled overlay/camera, paper HUD, network badges, station inspector, sequential reveal, ghost, play/map camera; Agent Practice hides the true Fugitive | ✅ second playable | 1440 and 390 role/Agent checks; full suite |
+| `apps/web`: **96-station prototype** — side chooser (Fugitive or Agent Practice), **isometric Vintage Etching** default with Canvas city (spatial culling + zoom LOD; Basic fallback; Iron/Night RTS skins), projected and viewport-culled overlay/camera, paper HUD, network badges, clickable public log/Agent focus, station inspector, sequential reveal, ghost, play/map camera; Agent Practice hides the true Fugitive and reveals its start | ✅ second playable | 1440 and 390 role/Agent checks; full suite |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -99,7 +99,10 @@ Agent Practice puts the human on Falcon (`agent-1`), with a hidden bot Fugitive 
 three bot Agents. The Fugitive moves first in secret; only the ticket mode, the
 public log and appearances (5/10/15) are visible. The Agent phase pauses for the
 human Agent's move and then resolves the remaining bots. The true Fugitive token
-is not rendered ([decision
+is not rendered. The starting station is public in Agent Practice and appears as
+`Vulture start` with a ghost; the public-log rows and Agent rows are clickable and
+centre the station card. Move rows name the transport mode only; destinations stay
+hidden ([decision
 0022](decisions/0022-agent-practice-local-mode.md)). The Fugitive run is unchanged.
 
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**

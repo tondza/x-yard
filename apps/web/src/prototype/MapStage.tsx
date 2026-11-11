@@ -35,6 +35,9 @@ interface MapStageProps {
   readonly playSide: 'fugitive' | 'agent';
   readonly focusSeatId: string;
   readonly showFugitive: boolean;
+  readonly moveSource: NodeId;
+  readonly focusRequest: { readonly node: NodeId; readonly nonce: number } | null;
+  readonly ghostLabel: string;
   readonly seats: readonly PrototypeSeat[];
   readonly turn: number;
   readonly selectedMode: MobilityOption;
@@ -138,6 +141,9 @@ export function MapStage({
   playSide,
   focusSeatId,
   showFugitive,
+  moveSource,
+  focusRequest,
+  ghostLabel,
   seats,
   turn,
   selectedMode,
@@ -246,7 +252,16 @@ export function MapStage({
   }, [pending]);
 
   const camera = useMapCamera({ bounds: projection.bounds, stage, focusPoints });
+  const centerOn = camera.centerOn;
   const viewBox = cameraViewBox(camera.camera, stage);
+
+  // A public-log/agent click asks for a one-shot inspection centre without
+  // changing the play/free mode.
+  useEffect(() => {
+    if (focusRequest === null) return;
+    const node = displayMap.graph.nodes.find((candidate) => candidate.id === focusRequest.node);
+    if (node !== undefined) centerOn({ x: node.x, y: node.y });
+  }, [centerOn, displayMap.graph.nodes, focusRequest]);
   const bannerInfo = bannerText(banner, turn, playSide);
   const { openMap, setPlay, recentre, zoomIn, zoomOut, zoomAt } = camera;
   const overviewOpen = useRef(false);
@@ -437,6 +452,7 @@ export function MapStage({
           appearanceNode={appearanceNode}
           ghostNode={ghostNode}
           showFugitive={showFugitive}
+          moveSource={moveSource}
           viewBox={viewBox}
           scale={camera.camera.scale}
           activeStep={displayStep}
@@ -550,7 +566,7 @@ export function MapStage({
 
               {ghostNode === cardStation && (
                 <div className="station-appearance">
-                  Last appearance · F{cardStation.replace(/^[^0-9]*/, '')}
+                  {ghostLabel} · F{cardStation.replace(/^[^0-9]*/, '')}
                 </div>
               )}
 
@@ -599,7 +615,7 @@ export function MapStage({
         ))}
         <span className="legend-badges">Stops: B bus · M metro · S special</span>
         <span className="legend-ghost">
-          <i className="ghost-swatch" /> Last appearance
+          <i className="ghost-swatch" /> {ghostLabel}
         </span>
         <span className="legend-hint">
           Ringed station moves · any station opens its lines
