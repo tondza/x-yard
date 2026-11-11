@@ -61,8 +61,9 @@ pnpm --filter @x-yard/web dev        # Vite on :5173; dev default is the 96-stat
 ```
 
 In development, `http://localhost:5173/` opens the **96-station playable
-prototype** — the Vintage Etching Cathedral Quarter, one human Fugitive against
-four Agent bots. `?lab` opens the seeded map lab (schematic generator, validation,
+prototype** — the Vintage Etching Cathedral Quarter. Choose **Fugitive** to run
+against four Agent bots, or **Agent Practice** to command Falcon against a hidden
+bot Fugitive; the other three Agents follow. `?lab` opens the seeded map lab (schematic generator, validation,
 JSON export); `?board` opens the original server-backed board scaffold. Both are
 dev-only and are not part of the production client.
 
@@ -91,7 +92,7 @@ street-following edge geometry, and a **local 96-station prototype**: an
 isometric Vintage Etching city plate (Canvas with spatial culling and zoom LOD), 16 turns, all five movement options, appearances,
 capture, result and restart, with a permanent all-mode transit network, a
 station inspector, a last-appearance ghost, deterministic Agent bots,
-one-at-a-time move playback and a follow/map camera. The Vintage Etching skin is the default; Basic remains the fallback. 7 test files and 131 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+one-at-a-time move playback, a side chooser (Fugitive or Agent Practice) and a follow/map camera. The Vintage Etching skin is the default; Basic remains the fallback. 7 test files and 136 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
 exit 0. `game-core` has zero runtime dependencies.
 
 **The full server turn machine is not implemented yet.** The prototype loop is

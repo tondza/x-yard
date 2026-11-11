@@ -1482,3 +1482,107 @@ façade detail; no SVG pattern textures). The whole-city overlay is still SVG an
 will remain the hardest case at 10–50×; a Canvas/WebGL overlay or map tiles is the
 next scale step. Large generated fixtures and a 10×/50× benchmark are still
 needed. The SVG city is retained as a reference/comparison path.
+
+---
+
+## 2026-11-11 — Visual upgrade round opened: house & landmark variety, Vintage polish
+
+**Context.** The director asked to step up the graphical side: the city should look
+appealing, houses should be *varied* (pitched roofs the norm, not uniform "brick
+boxes"), and landmarks should include stadium, city hall, parks, churches and more —
+with the Vintage Etching skin as the priority. This round is planning only: the work is
+persisted as a self-contained brief so a fresh session (e.g. a different model) can
+continue it.
+
+**What was decided**
+
+1. **Sequenced by bang-for-buck, not ambition.** The highest-ROI items are pure renderer
+   changes (`drawBuilding` / `drawLandmark` in `CanvasCity`, the `VINTAGE` palette):
+   sloping roofs, wall-material variety, paper grain/ink, richer existing landmarks.
+   These ship with **no generator, fixture or test churn**. The model change (new
+   landmark kinds) and deeper geometry (row terraces, river/bridges) follow; the
+   pre-rendered sprite / AI-texture pipeline is a later, director-gated phase.
+2. **The data/renderer boundary is the whole plan.** Landmark *kinds* are map data
+   (`LandmarkModel['kind']` in `map-generator`); house *types* are seeded presentation
+   decoration in the client. Recorded as
+   [decision 0021](docs/decisions/0021-building-and-landmark-variety.md).
+3. **Era confirmed, not reopened.** The director questioned whether 1907 had metro; it
+   did (London 1863 / 1890 / 1900, Paris 1900, Berlin 1902, New York 1904), so 1907
+   remains correct and [decision 0019](docs/decisions/0019-1907-era-rules.md) stands.
+4. **External assets approved as a later phase only.** AI image models and Blender/Voxel
+   sprite pipelines are allowed in principle, but gated on director sign-off for anything
+   paid, and they never enter `game-core` or `map-generator`.
+
+**Persisted**
+
+- [`docs/briefs/round-07-city-visuals.md`](docs/briefs/round-07-city-visuals.md) — the
+  self-contained hand-off brief (fixed inputs, bang-for-buck-ordered delta, constraints,
+  verification).
+- [decision 0021](docs/decisions/0021-building-and-landmark-variety.md) — the boundary
+  decision with its rejected alternatives.
+- `docs/status.md` — "what is next" now leads with the round-07 visual upgrade.
+
+**Not yet implemented.** No code changed in this round; it is a planning/documentation
+round only. The numbered items in the brief are the work, in order.
+
+---
+
+## 2026-10-29 — Agent Practice and the side chooser
+
+**Why this round exists.** The director wants to give feedback on the Agent side,
+and asked to choose the side before the game starts. The prototype was a
+single-player Fugitive table; an Agent view cannot be faked by handing the player
+the Fugitive token and calling it Agent play.
+
+**What was built**
+
+1. **Side chooser.** The prototype now opens on **Fugitive** / **Agent Practice**
+   cards. `Restart` keeps the chosen side; `Change side` returns to the chooser.
+2. **Agent Practice.** The human commands Falcon (`agent-1`); the Fugitive is a
+   deterministic bot, hidden from the UI, and the other three Agents remain bots.
+   The Agent phase pauses for the human move and then resolves the rest.
+3. **Public information only.** The true Fugitive token, route and trails are not
+   rendered in Agent Practice. The player sees the ticket-mode log, appearances on
+   5/10/15, the last-known ghost and the Agents' positions. An appearance is
+   revealed before the human Agent moves.
+4. **Engine support.** `resolveAgentPhase` accepts explicit human Agent `moves` or
+   `holds`, validates them, and still resolves the bots/capture/turn. A separate
+   `revealAppearance` transition makes a scheduled appearance public without
+   resolving the Agent phase. `chooseFugitiveMove` is the deterministic
+   distance-from-nearest-Agent bot. Five new prototype tests cover these.
+5. **Camera/playback tuning.** Wheel zoom eases over 180 ms; general camera moves
+   use 460 ms. Agent reveal steps are 900 ms with 220 ms lead-in and 200 ms gaps. A
+   distant Agent no longer pulls the play camera away from its focus seat.
+
+**Rejected alternatives**
+
+1. **Agent spectator only.** No control, so it cannot test Agent choices.
+2. **Full-info hotseat.** It would show the true Fugitive while pretending to be
+   Agent play; rejected.
+3. **Control all four Agents.** Rejected for this pass; one human seat + three bots
+   exercises the view and phase without a second turn structure.
+4. **New practice rules/numbers.** Rejected; the same table and numbers make the
+   feedback transferable.
+5. **Full server projection now.** Deferred; this is a local training table, and
+   the real `projectState` remains required before any multiplayer.
+
+**Verified**
+
+- `pnpm test` — **7 files / 136 tests**, green (game-core 120, map-generator 16).
+  New tests: human Agent orders, invalid/contradictory orders, holds, public
+  appearance reveal, bot Fugitive policy.
+- `pnpm typecheck` — all projects.
+- `pnpm build` — exit 0; prototype excluded from production.
+- `pnpm check:docs` — 58 markdown files; links/counts current.
+- Browser: side chooser at 1440×900 and 390×844; Agent Practice first move,
+  turn-5 appearance, ghost, no Fugitive token; Fugitive run still moves and shows
+  the F token; no page/console errors.
+- Camera: wheel zoom produces an intermediate eased view; far Agent steps no longer
+  force a camera pull.
+
+**Known limits**
+
+The hidden projection is client-side for this local table; the true Fugitive lives
+in state and the dev debug object. The bot Fugitive is a simple distance policy,
+not a designed opponent. The real server projection, Agent skills and multi-Agent
+coordination remain future work. The side chooser is set per session, not persisted.

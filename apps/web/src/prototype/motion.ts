@@ -71,6 +71,7 @@ export interface Trail {
 export type PhaseBanner =
   | { readonly kind: 'fugitive'; readonly step: MoveStep }
   | { readonly kind: 'hold' }
+  | { readonly kind: 'hidden' }
   | { readonly kind: 'reveal'; readonly node: NodeId }
   | {
       readonly kind: 'agents';

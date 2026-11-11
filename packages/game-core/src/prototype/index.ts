@@ -6,6 +6,7 @@
 
 export type {
   PrototypeAgentMove,
+  PrototypeAgentOrders,
   PrototypeCommand,
   PrototypeCommandError,
   PrototypeCommandResult,
@@ -20,8 +21,10 @@ export type {
 export {
   applyFugitiveCommand,
   chooseAgentMove,
+  chooseFugitiveMove,
   createPrototypeGame,
   legalMoves,
   recentLog,
   resolveAgentPhase,
+  revealAppearance,
 } from './engine';

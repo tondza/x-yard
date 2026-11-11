@@ -428,34 +428,6 @@ function drawTreesAndBuildings(
   void scene;
 }
 
-function drawLandmarkLabels(
-  ctx: CanvasRenderingContext2D,
-  offsetX: number,
-  landmarks: readonly LandmarkRec[],
-  theme: RtsTheme,
-  scale: number,
-  view: { readonly x: number; readonly y: number },
-  dpr: number,
-  stage: { readonly width: number; readonly height: number },
-): void {
-  if (landmarks.length === 0) return;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.font = '700 11px Georgia, serif';
-  ctx.textAlign = 'center';
-  for (const rec of landmarks) {
-    const at = project(offsetX, rec.landmark.at.x, rec.landmark.at.y, 44);
-    const x = (at.x - view.x) * scale;
-    const y = (at.y - view.y) * scale;
-    if (x < -80 || x > stage.width + 80 || y < -30 || y > stage.height + 30) continue;
-    const text = rec.landmark.label.toUpperCase();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = theme.stationPad;
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = theme.shadow;
-    ctx.fillText(text, x, y);
-  }
-}
-
 export function CanvasCity({ map, theme, viewBox, stage }: CanvasCityProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offsetX = map.bounds.height * ISO_X;
@@ -580,7 +552,6 @@ export function CanvasCity({ map, theme, viewBox, stage }: CanvasCityProps): Rea
     }
 
     drawTreesAndBuildings(ctx, offsetX, hatch, scene, visibleBuildings, visibleTrees, visibleLandmarks, theme, detail, lineWidth);
-    if (!detail) drawLandmarkLabels(ctx, offsetX, visibleLandmarks, theme, scale, view, dpr, stage);
   }, [offsetX, scene, stage.height, stage.width, theme, viewBox]);
 
   return <canvas ref={canvasRef} className="city-plate canvas-city" aria-label={`${theme.title} city`} />;

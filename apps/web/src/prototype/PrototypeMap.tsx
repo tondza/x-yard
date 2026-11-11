@@ -232,6 +232,7 @@ interface PrototypeMapContentProps {
   readonly trails: readonly Trail[];
   readonly selectedStation: NodeId | null;
   readonly viewBox: string;
+  readonly showFugitive: boolean;
 }
 
 function PrototypeMapContent({
@@ -249,6 +250,7 @@ function PrototypeMapContent({
   trails,
   selectedStation,
   viewBox,
+  showFugitive,
 }: PrototypeMapContentProps): React.JSX.Element {
   const fugitive = seats[0];
   const agents = seats.slice(1);
@@ -291,7 +293,9 @@ function PrototypeMapContent({
   const px = (value: number): number => value / scale;
   const importantNodes = useMemo(() => {
     const ids = new Set<NodeId>();
-    for (const seat of seats) ids.add(seat.node);
+    for (const seat of showFugitive ? seats : seats.filter((candidate) => candidate.role !== 'fugitive')) {
+      ids.add(seat.node);
+    }
     for (const option of legal) {
       ids.add(option.to);
     }
@@ -306,7 +310,7 @@ function PrototypeMapContent({
       if (node.class !== 'street' || node.facilities.length > 0) ids.add(node.id);
     }
     return ids;
-  }, [activeStep, appearanceNode, ghostNode, legal, map.graph.nodes, seats, selectedStation]);
+  }, [activeStep, appearanceNode, ghostNode, legal, map.graph.nodes, seats, selectedStation, showFugitive]);
 
   const showAllLabels = scale >= LABEL_ALL_SCALE && map.graph.nodes.length <= 200;
   const showBadges = scale >= BADGE_SCALE;
@@ -669,7 +673,7 @@ function PrototypeMapContent({
           );
         })}
 
-        {fugitive && (() => {
+        {showFugitive && fugitive && (() => {
           const node = nodeById.get(fugitive.node);
           if (!node || !pointInView(node, view)) return null;
           const isActive = activeStep?.seatId === fugitive.id;
@@ -754,6 +758,7 @@ interface PrototypeMapProps {
   readonly activeStep: MoveStep | null;
   readonly trails: readonly Trail[];
   readonly selectedStation: NodeId | null;
+  readonly showFugitive: boolean;
 }
 
 /** The live layer over the city plate: stations, routes, tokens and input. */
@@ -772,6 +777,7 @@ export function PrototypeMap({
   activeStep,
   trails,
   selectedStation,
+  showFugitive,
 }: PrototypeMapProps): React.JSX.Element {
   return (
     <svg
@@ -795,6 +801,7 @@ export function PrototypeMap({
         trails={trails}
         selectedStation={selectedStation}
         viewBox={viewBox}
+        showFugitive={showFugitive}
       />
     </svg>
   );

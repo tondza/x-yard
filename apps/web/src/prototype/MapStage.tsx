@@ -32,6 +32,9 @@ import { useMapCamera, zoomLabel } from './useMapCamera';
 interface MapStageProps {
   readonly map: GeneratedMap;
   readonly skin: SkinId;
+  readonly playSide: 'fugitive' | 'agent';
+  readonly focusSeatId: string;
+  readonly showFugitive: boolean;
   readonly seats: readonly PrototypeSeat[];
   readonly turn: number;
   readonly selectedMode: MobilityOption;
@@ -81,13 +84,17 @@ function stationClassLabel(className: 'street' | 'hub' | 'terminal'): string {
   return 'Street';
 }
 
-function bannerText(banner: PhaseBanner | null, turn: number): {
+function bannerText(banner: PhaseBanner | null, turn: number, playSide: 'fugitive' | 'agent'): {
   readonly kicker: string;
   readonly main: string;
   readonly detail: string;
 } {
   if (banner === null) {
-    return { kicker: 'YOUR MOVE', main: `Turn ${turn}`, detail: 'Pick a mode, then a ringed station' };
+    return {
+      kicker: playSide === 'agent' ? 'YOUR AGENT MOVE' : 'YOUR MOVE',
+      main: `Turn ${turn}`,
+      detail: playSide === 'agent' ? 'Move A1, then the other Agents follow' : 'Pick a mode, then a ringed station',
+    };
   }
 
   if (banner.kind === 'fugitive') {
@@ -100,6 +107,14 @@ function bannerText(banner: PhaseBanner | null, turn: number): {
 
   if (banner.kind === 'hold') {
     return { kicker: 'YOUR MOVE', main: 'Vulture holds', detail: 'The Agents move next' };
+  }
+
+  if (banner.kind === 'hidden') {
+    return {
+      kicker: 'FUGITIVE PHASE',
+      main: 'Vulture moves',
+      detail: 'The route is hidden from the Agents',
+    };
   }
 
   if (banner.kind === 'reveal') {
@@ -120,6 +135,9 @@ function bannerText(banner: PhaseBanner | null, turn: number): {
 export function MapStage({
   map,
   skin,
+  playSide,
+  focusSeatId,
+  showFugitive,
   seats,
   turn,
   selectedMode,
@@ -188,16 +206,16 @@ export function MapStage({
     // Play view stays on the Fugitive and, while a move is being revealed, the
     // mover's actual route. Framing every seat at once would zoom back out to
     // the whole-city view the camera exists to avoid.
-    const fugitive = seats[0];
-    const fugitiveNode = fugitive === undefined ? undefined : nodeById.get(fugitive.node);
-    if (fugitiveNode !== undefined) points.push({ x: fugitiveNode.x, y: fugitiveNode.y });
+    const focusSeat = seats.find((seat) => seat.id === focusSeatId) ?? seats[0];
+    const focusNode = focusSeat === undefined ? undefined : nodeById.get(focusSeat.node);
+    if (focusNode !== undefined) points.push({ x: focusNode.x, y: focusNode.y });
 
     if (displayStep !== null) {
       const destination = displayStep.points[displayStep.points.length - 1];
       const distance =
-        fugitiveNode === undefined || destination === undefined
+        focusNode === undefined || destination === undefined
           ? 0
-          : Math.hypot(destination.x - fugitiveNode.x, destination.y - fugitiveNode.y);
+          : Math.hypot(destination.x - focusNode.x, destination.y - focusNode.y);
       // The Fugitive's own move is always followed. An Agent is only followed
       // while the move is near enough to matter; a distant Agent should not make
       // the camera zoom out just to show an off-screen token.
@@ -207,7 +225,7 @@ export function MapStage({
     }
 
     return points;
-  }, [displayMap.graph.nodes, displayStep, seats]);
+  }, [displayMap.graph.nodes, displayStep, focusSeatId, seats]);
 
   // Hovering a legal destination previews its onward lines without moving there.
   const cardStation = selectedStation ?? hoveredStation;
@@ -229,7 +247,7 @@ export function MapStage({
 
   const camera = useMapCamera({ bounds: projection.bounds, stage, focusPoints });
   const viewBox = cameraViewBox(camera.camera, stage);
-  const bannerInfo = bannerText(banner, turn);
+  const bannerInfo = bannerText(banner, turn, playSide);
   const { openMap, setPlay, recentre, zoomIn, zoomOut, zoomAt } = camera;
   const overviewOpen = useRef(false);
 
@@ -418,6 +436,7 @@ export function MapStage({
           onHoverStation={setHoveredStation}
           appearanceNode={appearanceNode}
           ghostNode={ghostNode}
+          showFugitive={showFugitive}
           viewBox={viewBox}
           scale={camera.camera.scale}
           activeStep={displayStep}

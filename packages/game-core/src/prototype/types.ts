@@ -70,6 +70,14 @@ export type PrototypeCommandError =
   | 'no-such-seat'
   | 'illegal-move';
 
+/** Optional human Agent orders for one Agent-phase resolution. */
+export interface PrototypeAgentOrders {
+  /** Agent moves chosen by the human; Agents not listed use their bot move. */
+  readonly moves?: Readonly<Record<PlayerId, PrototypeMoveOption>>;
+  /** Agents told to hold; they spend nothing and do not move. */
+  readonly holds?: readonly PlayerId[];
+}
+
 /** Result of a Fugitive command or an Agent phase. */
 export type PrototypeCommandResult =
   | {

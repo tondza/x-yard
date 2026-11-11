@@ -4,9 +4,11 @@ import { DEMO_BOARD } from '../demo-board';
 import {
   applyFugitiveCommand,
   chooseAgentMove,
+  chooseFugitiveMove,
   createPrototypeGame,
   legalMoves,
   resolveAgentPhase,
+  revealAppearance,
 } from './engine';
 import type { PrototypeSeat, PrototypeState } from './types';
 
@@ -224,6 +226,104 @@ describe('prototype turn, appearance and capture', () => {
     for (const row of moveRows) byTurn.set(row.turn, (byTurn.get(row.turn) ?? 0) + 1);
     for (const [turn, count] of byTurn) {
       expect(count, `turn ${turn}`).toBe(1);
+    }
+  });
+});
+
+describe('Agent Practice orders', () => {
+  it('applies the human Agent move and still resolves the other Agents', () => {
+    const applied = applyFugitiveCommand(DEMO_BOARD, game(), { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+
+    const option = legalMoves(DEMO_BOARD, applied.state, 'agent-1')[0];
+    expect(option).toBeDefined();
+    if (option === undefined) return;
+
+    const resolved = resolveAgentPhase(DEMO_BOARD, applied.state, {
+      moves: { 'agent-1': option },
+    });
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+
+    const human = resolved.state.seats.find((seat) => seat.id === 'agent-1');
+    expect(human?.node).toBe(option.to);
+    expect(resolved.agentMoves[0]).toMatchObject({ seatId: 'agent-1', to: option.to });
+    expect(resolved.agentMoves.length).toBe(4);
+  });
+
+  it('rejects an illegal or contradictory human Agent order without applying the phase', () => {
+    const applied = applyFugitiveCommand(DEMO_BOARD, game(), { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+
+    expect(
+      resolveAgentPhase(DEMO_BOARD, applied.state, {
+        moves: { 'agent-1': { mode: 'taxi', to: 's6' } },
+      }),
+    ).toEqual({ ok: false, reason: 'illegal-move' });
+
+    expect(
+      resolveAgentPhase(DEMO_BOARD, applied.state, {
+        moves: { 'agent-1': { mode: 'taxi', to: legalMoves(DEMO_BOARD, applied.state, 'agent-1')[0]?.to ?? 's2' } },
+        holds: ['agent-1'],
+      }),
+    ).toEqual({ ok: false, reason: 'illegal-move' });
+
+    expect(
+      resolveAgentPhase(DEMO_BOARD, applied.state, {
+        moves: { fugitive: { mode: 'taxi', to: 's2' } },
+      }),
+    ).toEqual({ ok: false, reason: 'no-such-seat' });
+  });
+
+  it('lets a human Agent hold while the bots still move', () => {
+    const applied = applyFugitiveCommand(DEMO_BOARD, game(), { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const start = applied.state.seats.find((seat) => seat.id === 'agent-1')?.node;
+
+    const resolved = resolveAgentPhase(DEMO_BOARD, applied.state, { holds: ['agent-1'] });
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.state.seats.find((seat) => seat.id === 'agent-1')?.node).toBe(start);
+    expect(resolved.agentMoves.some((move) => move.seatId === 'agent-1')).toBe(false);
+    expect(resolved.agentMoves.length).toBeGreaterThan(0);
+  });
+
+  it('reveals a scheduled appearance publicly before the Agent phase resolves', () => {
+    const base: PrototypeState = { ...game(), turn: 5, pendingAppearance: false };
+    const applied = applyFugitiveCommand(DEMO_BOARD, base, { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.state.pendingAppearance).toBe(true);
+
+    const revealed = revealAppearance(applied.state);
+    expect(revealed.ok).toBe(true);
+    if (!revealed.ok) return;
+    expect(revealed.state.pendingAppearance).toBe(false);
+    expect(revealed.state.phase).toBe('agents');
+    expect(revealed.state.lastAppearanceTurn).toBe(5);
+    expect(revealed.state.lastKnown).toBe(
+      revealed.state.seats.find((seat) => seat.role === 'fugitive')?.node,
+    );
+    expect(revealed.state.log.at(-1)?.kind).toBe('appearance');
+
+    const resolved = resolveAgentPhase(DEMO_BOARD, revealed.state);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.state.log.filter((entry) => entry.kind === 'appearance')).toHaveLength(1);
+  });
+});
+
+describe('bot Fugitive policy', () => {
+  it('only returns a legal move or a hold, deterministically', () => {
+    const state = game();
+    const first = chooseFugitiveMove(DEMO_BOARD, state);
+    const second = chooseFugitiveMove(DEMO_BOARD, state);
+    expect(second).toEqual(first);
+    if (first !== null) {
+      expect(legalMoves(DEMO_BOARD, state, 'fugitive')).toContainEqual(first);
     }
   });
 });

@@ -61,3 +61,5 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0018](0018-developer-switchable-city-skins.md) | City skins are developer-switchable; Basic stays the default fallback |
 | [0019](0019-1907-era-rules.md) | The 1907 era rules remove the motor-scooter; special stays; Vintage is the default skin |
 | [0020](0020-canvas-city-renderer-for-scale.md) | The scalable Vintage city is Canvas with culling/LOD; the SVG overlay is viewport-culled |
+| [0021](0021-building-and-landmark-variety.md) | Landmark variety is map data; house/roof variety is seeded client decoration; visual work is sequenced by bang-for-buck |
+| [0022](0022-agent-practice-local-mode.md) | Agent Practice is a local human-Agent role with a hidden bot Fugitive, public information and a paused Agent phase |

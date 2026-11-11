@@ -23,6 +23,7 @@ import {
 } from '../types';
 import type {
   PrototypeAgentMove,
+  PrototypeAgentOrders,
   PrototypeCommand,
   PrototypeCommandResult,
   PrototypeLogEntry,
@@ -322,13 +323,116 @@ export function chooseAgentMove(
   return firstHopToward(graph, agent, target);
 }
 
+/** Make a scheduled appearance public without resolving the Agent phase yet. */
+export function revealAppearance(state: PrototypeState): PrototypeCommandResult {
+  if (state.result !== null) return { ok: false, reason: 'game-over' };
+  if (state.phase !== 'agents') return { ok: false, reason: 'not-agent-phase' };
+  if (!state.pendingAppearance) return { ok: true, state, move: null, agentMoves: [] };
+
+  const fugitive = fugitiveOf(state);
+  const next: PrototypeState = {
+    ...state,
+    lastKnown: fugitive.node,
+    lastAppearanceTurn: state.turn,
+    pendingAppearance: false,
+  };
+  return {
+    ok: true,
+    move: null,
+    agentMoves: [],
+    state: appendLog(next, {
+      turn: state.turn,
+      seatId: fugitive.id,
+      kind: 'appearance',
+      mode: 'unknown',
+      node: fugitive.node,
+    }),
+  };
+}
+
+/** Shortest-path distance from every node to the nearest Agent, all edges. */
+function distanceToAgents(graph: TransitGraph, agents: readonly PrototypeSeat[]): ReadonlyMap<NodeId, number> {
+  const distance = new Map<NodeId, number>();
+  const queue: NodeId[] = [];
+  for (const agent of agents) {
+    if (!distance.has(agent.node)) {
+      distance.set(agent.node, 0);
+      queue.push(agent.node);
+    }
+  }
+  while (queue.length > 0) {
+    const current = queue.shift() as NodeId;
+    const nextDistance = (distance.get(current) ?? 0) + 1;
+    for (const neighbour of neighboursOf(graph, current)) {
+      if (distance.has(neighbour)) continue;
+      distance.set(neighbour, nextDistance);
+      queue.push(neighbour);
+    }
+  }
+  return distance;
+}
+
+/**
+ * Bot Fugitive policy for Agent Practice: move to the node with the greatest
+ * graph distance from the nearest Agent, or hold if no move improves it.
+ * Deterministic; it never sees hidden Agent intentions beyond the board.
+ */
+export function chooseFugitiveMove(
+  graph: TransitGraph,
+  state: PrototypeState,
+): PrototypeMoveOption | null {
+  if (state.result !== null || state.phase !== 'fugitive') return null;
+  const fugitive = fugitiveOf(state);
+  const options = legalMoves(graph, state, fugitive.id);
+  if (options.length === 0) return null;
+
+  const distance = distanceToAgents(graph, agentsOf(state));
+  const current = distance.get(fugitive.node) ?? 0;
+  let best: PrototypeMoveOption | null = null;
+  let bestDistance = current;
+
+  for (const option of options) {
+    const score = distance.get(option.to) ?? 0;
+    if (
+      score > bestDistance ||
+      (score === bestDistance &&
+        best !== null &&
+        (modeRank(option.mode) < modeRank(best.mode) ||
+          (option.mode === best.mode && option.to.localeCompare(best.to) < 0)))
+    ) {
+      best = option;
+      bestDistance = score;
+    }
+  }
+
+  // Never move closer merely to spend a ticket; holding is a legal turn.
+  return bestDistance > current ? best : null;
+}
+
 /** Resolve the Agent phase, apply capture, and advance or end the Yard. */
 export function resolveAgentPhase(
   graph: TransitGraph,
   state: PrototypeState,
+  orders: PrototypeAgentOrders = {},
 ): PrototypeCommandResult {
   if (state.result !== null) return { ok: false, reason: 'game-over' };
   if (state.phase !== 'agents') return { ok: false, reason: 'not-agent-phase' };
+
+  const agents = agentsOf(state);
+  const moves = orders.moves ?? {};
+  const holds = new Set(orders.holds ?? []);
+  for (const id of [...Object.keys(moves), ...holds]) {
+    const agent = agents.find((candidate) => candidate.id === id);
+    if (agent === undefined) return { ok: false, reason: 'no-such-seat' };
+    if (holds.has(id) && moves[id] !== undefined) return { ok: false, reason: 'illegal-move' };
+    const option = moves[id];
+    if (option !== undefined) {
+      const legal = legalMoves(graph, state, id).some(
+        (candidate) => candidate.mode === option.mode && candidate.to === option.to,
+      );
+      if (!legal) return { ok: false, reason: 'illegal-move' };
+    }
+  }
 
   const fugitive = fugitiveOf(state);
   let next: PrototypeState = state;
@@ -352,7 +456,8 @@ export function resolveAgentPhase(
 
   for (const agent of agentsOf(next)) {
     const from = agent.node;
-    const option = chooseAgentMove(graph, { ...next, seats: next.seats }, agent.id);
+    if (holds.has(agent.id)) continue;
+    const option = moves[agent.id] ?? chooseAgentMove(graph, { ...next, seats: next.seats }, agent.id);
     if (option === null) continue;
     const moved = applyMove(agent, option);
     if (moved === null) continue;

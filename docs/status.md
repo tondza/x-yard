@@ -4,19 +4,19 @@ Edited **in place**. This is the answer to "where are things right now?"; it is
 not a history. History lives in [`PROJECT_LOG.md`](../PROJECT_LOG.md), and unlike
 that file this one is expected to be rewritten as reality changes.
 
-Last updated: 2026-10-29.
+Last updated: 2026-11-11.
 
 ## What works today
 
 | Thing | State | Verified by |
 | --- | --- | --- |
 | Monorepo + tooling (pnpm workspaces, TS strict, Vitest) | ✅ done | `pnpm install` / `pnpm typecheck` |
-| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 131 tests |
+| `game-core`: domain vocabulary, graph + validator, ticket economy, xorshift128+ RNG | ✅ done | 7 test files, 136 tests |
 | `game-core`: street geometry on edges (`path`, `edgePath`) and the R5 street-coverage check (`validateStreetGeometry`) | ✅ done | `graph.test.ts` |
 | `game-core`: zero runtime dependencies | ✅ enforced | `dependencies: {}` and `architecture.test.ts` |
-| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, five movement options (taxi, bus, underground, special, foot), turn/appearance/capture/result, deterministic bots, each Agent move returned in resolution order | ✅ first playable | 13 prototype tests |
+| `game-core`: **local prototype loop** — 1 Fugitive vs N Agents, five movement options (taxi, bus, underground, special, foot), turn/appearance/capture/result, deterministic bots, explicit human-Agent orders, each Agent move returned in resolution order | ✅ first playable | 18 prototype tests |
 | `map-generator`: seeded 24 / 60 / 96-station transit networks, class mix, facilities, close or farthest starts, street-following paths, committed fixtures | ✅ first version | 16 generator tests; `maps/*.json` |
-| `apps/web`: **96-station prototype** — **isometric Vintage Etching** default skin with a **Canvas city** (spatial culling + zoom LOD; Basic fallback; Iron/Night 2.5D RTS skins), projected and viewport-culled overlay/camera, paper HUD, permanent network with badges, station inspector, sequential reveal, ghost, play/map camera; responsive | ✅ second playable | 1440 and 390 performance checks; full suite |
+| `apps/web`: **96-station prototype** — side chooser (Fugitive or Agent Practice), **isometric Vintage Etching** default with Canvas city (spatial culling + zoom LOD; Basic fallback; Iron/Night RTS skins), projected and viewport-culled overlay/camera, paper HUD, network badges, station inspector, sequential reveal, ghost, play/map camera; Agent Practice hides the true Fugitive | ✅ second playable | 1440 and 390 role/Agent checks; full suite |
 | `apps/web`: **dev map lab** — seed/regenerate, schematic map, inspector, validation, JSON export | ✅ internal tool | `?lab` in dev, screenshots + interaction run |
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
@@ -50,7 +50,7 @@ and tokens are a live overlay.
 
 **Turn reveal.** The engine still resolves a turn atomically; the client now
 plays the resolution back one mover at a time, each with a 0.17 s camera
-lead-in — the Fugitive's route (~0.85 s), then any appearance (1.15 s hold), then each Agent in engine order (0.7 s route + a 0.15 s beat). Every mover follows its real polyline and leaves a
+lead-in — the Fugitive's route (~0.85 s), then any appearance (1.15 s hold), then each Agent in engine order (0.9 s route + a 0.2 s beat). Every mover follows its real polyline and leaves a
 thin trace for the turn. The whole reveal is skippable, and the result overlay
 waits for it. `resolveAgentPhase` returns the exact `agentMoves` so the view never
 re-simulates a bot or guesses an edge. Recorded as [decision
@@ -94,26 +94,44 @@ remain detail comparisons, not the scalable path. The whole-city overlay and
 10×/50× fixture are the next scale work ([decision
 0020](decisions/0020-canvas-city-renderer-for-scale.md)).
 
+**Agent Practice.** The start screen asks **Fugitive** or **Agent Practice**.
+Agent Practice puts the human on Falcon (`agent-1`), with a hidden bot Fugitive and
+three bot Agents. The Fugitive moves first in secret; only the ticket mode, the
+public log and appearances (5/10/15) are visible. The Agent phase pauses for the
+human Agent's move and then resolves the remaining bots. The true Fugitive token
+is not rendered ([decision
+0022](decisions/0022-agent-practice-local-mode.md)). The Fugitive run is unchanged.
+
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
 the full `GameState`: no server projection, no 4-Fugitive model, no missions or
 gadgets. The architecture guard for the real state machine is unchanged.
 
 ## What is next (in order)
 
-1. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
+1. **Agent Practice feedback** — play Falcon, then tune the hidden bot Fugitive,
+   Agent information density and the Agent phase before changing numbers.
+2. **City visuals upgrade (round 07)** — the director wants the game to look
+   appealing: varied houses with **pitched roofs as the norm**, distinct landmarks
+   (sports ground, town hall, church, gardens, …), and a richer Vintage Etching
+   treatment. Work is sequenced by bang-for-buck in
+   [`docs/briefs/round-07-city-visuals.md`](briefs/round-07-city-visuals.md): pure-renderer
+   quick wins (roof shapes, wall tints, paper grain, richer landmarks) first, then the
+   landmark model change + fixtures, then row terraces, furniture and river/bridges.
+   Recorded as [decision 0021](decisions/0021-building-and-landmark-variety.md).
+4. **Playtest the 96 prototype** — the first feedback (sudden/simultaneous
    movement, no viewport), the second (network, ghost, “pulse”), and the third
    (isometric Vintage + 1907 rules) are addressed; tune Agent starts/bot pathing
    before changing any ruled number, then continue the Canvas scale work
    (whole-city overlay, 10×/50× fixtures) before more city polish.
-2. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
+5. **Scale rehearsal at 300 nodes** — derive the grid from `targetNodes`,
    replace the all-pairs taxi routing with a k-nearest candidate graph, and carry
    the prototype's camera/LOD contract into a faster renderer. This proves the
    20-player MVP scale before committing.
-3. **Four-Fugitive / sixteen-Agent starts** and the separation rule for them.
-4. `hashState` / `replay` — the replay oracle for the full state.
-5. `projectState` — secret projection. **Until it exists no server code may send
+6. **Four-Fugitive / sixteen-Agent starts** and the separation rule for them.
+7. `hashState` / `replay` — the replay oracle for the full state.
+8. `projectState` — secret projection. **Until it exists no server code may send
    state to a client.**
-6. Server integration tests, then persistence, reconnect/resume, multi-Yard.
+9. Server integration tests, then persistence, reconnect/resume, multi-Yard.
 
 ## Blocked on the director (and what is now ruled)
 

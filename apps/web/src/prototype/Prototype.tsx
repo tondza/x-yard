@@ -3,13 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   APPEARANCE_TURNS,
   applyFugitiveCommand,
+  chooseFugitiveMove,
   createPrototypeGame,
   legalMoves,
   recentLog,
   resolveAgentPhase,
+  revealAppearance,
 } from '@x-yard/game-core';
 import type {
   MobilityOption,
+  PrototypeAgentOrders,
   PrototypeCommand,
   PrototypeLogEntry,
   PrototypeMoveOption,
@@ -37,6 +40,11 @@ import {
 import './prototype.css';
 
 const MAP = mapJson as unknown as GeneratedMap;
+
+/** Which side the director chose for this local table. */
+type PlaySide = 'fugitive' | 'agent';
+const HUMAN_AGENT_ID = 'agent-1';
+const BOT_MOVE_PAUSE_MS = 650;
 
 const MODES: readonly { readonly mode: MobilityOption; readonly label: string }[] = [
   { mode: 'taxi', label: 'Taxi' },
@@ -72,8 +80,7 @@ function nodeMap(state: PrototypeState): Readonly<Record<string, NodeId>> {
   return nodes;
 }
 
-function countFor(state: PrototypeState, mode: MobilityOption): number {
-  const seat = state.seats[0];
+function countFor(seat: PrototypeSeat | undefined, mode: MobilityOption): number {
   if (seat === undefined) return 0;
   if (mode === 'foot') return seat.footSteps;
   return seat.tickets[mode];
@@ -85,8 +92,52 @@ function logRow(entry: PrototypeLogEntry): string {
   return `T${entry.turn} · ${entry.mode.toUpperCase()}`;
 }
 
+function RoleChoice({ onChoose, skin }: { readonly onChoose: (side: PlaySide) => void; readonly skin: SkinId }): React.JSX.Element {
+  return (
+    <div className={`proto skin-${skin} role-chooser`}>
+      <div className="role-shell">
+        <span className="proto-eyebrow">X-YARD · 96-STATION PROTOTYPE</span>
+        <h1>Choose your side</h1>
+        <p className="role-lede">
+          The Vulture is loose in the Cathedral Quarter. Run with it, or take a badge and
+          hunt it down.
+        </p>
+
+        <div className="role-grid">
+          <button className="role-card" type="button" onClick={() => onChoose('fugitive')}>
+            <span className="role-kicker">FUGITIVE</span>
+            <strong>Run the quarter</strong>
+            <p>
+              You move first, follow your own route and survive to turn 16. Appearances
+              show the Agents exactly where you are.
+            </p>
+            <span className="role-cta">Play as Fugitive →</span>
+          </button>
+
+          <button className="role-card agent" type="button" onClick={() => onChoose('agent')}>
+            <span className="role-kicker">AGENTS</span>
+            <strong>Hunt the Vulture</strong>
+            <p>
+              Command Falcon. The Fugitive is bot-controlled and hidden; you get only
+              appearances, ticket modes and the public log. The other three Agents follow.
+            </p>
+            <span className="role-cta">Start Agent Practice →</span>
+          </button>
+        </div>
+
+        <p className="role-note">
+          Agent Practice is a local training table. It uses the same map, tickets, appearances
+          and capture rule as the Fugitive run.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /** The 96-station prototype, now with sequential playback and a camera. */
 export default function Prototype(): React.JSX.Element {
+  const [side, setSide] = useState<PlaySide | null>(null);
+  const [awaitingAgent, setAwaitingAgent] = useState(false);
   const [game, setGame] = useState<PrototypeState>(initialGame);
   const [selectedMode, setSelectedMode] = useState<MobilityOption>('taxi');
   const [pending, setPending] = useState(false);
@@ -106,10 +157,17 @@ export default function Prototype(): React.JSX.Element {
   const finalRef = useRef<PrototypeState | null>(null);
   const allStepsRef = useRef<readonly MoveStep[]>([]);
 
+  const humanSeatId = side === 'agent' ? HUMAN_AGENT_ID : 'fugitive';
+  const humanSeat = game.seats.find((seat) => seat.id === humanSeatId);
+  const canAct =
+    side === 'fugitive'
+      ? game.phase === 'fugitive'
+      : side === 'agent' && game.phase === 'agents' && awaitingAgent;
+
   // The map must not advertise the next move while a turn is being revealed.
   const legal = useMemo(
-    () => (pending || game.phase !== 'fugitive' ? [] : legalMoves(MAP.graph, game, 'fugitive')),
-    [game, pending],
+    () => (pending || game.result !== null || !canAct ? [] : legalMoves(MAP.graph, game, humanSeatId)),
+    [canAct, game, humanSeatId, pending],
   );
   const byMode = useMemo(() => {
     const map = new Map<MobilityOption, readonly PrototypeMoveOption[]>();
@@ -144,11 +202,11 @@ export default function Prototype(): React.JSX.Element {
   }, [clearTimer]);
 
   useEffect(() => {
-    if (pending || game.result !== null || game.phase !== 'fugitive') return;
+    if (pending || game.result !== null || legal.length === 0) return;
     if (legal.some((option) => option.mode === selectedMode)) return;
     const first = legal[0]?.mode;
     if (first !== undefined) setSelectedMode(first);
-  }, [game, legal, pending, selectedMode]);
+  }, [game.result, legal, pending, selectedMode]);
 
   const alive = (runId: number): boolean => runIdRef.current === runId;
 
@@ -169,7 +227,15 @@ export default function Prototype(): React.JSX.Element {
 
   const skipPlayback = useCallback((): void => {
     const final = finalRef.current;
-    if (final === null) return;
+    if (final === null) {
+      // The bot Fugitive's hidden move is still unfolding. Let the effect start
+      // it again rather than leaving the UI stuck in a pending frame.
+      runIdRef.current += 1;
+      busyRef.current = false;
+      setPending(false);
+      setBanner(null);
+      return;
+    }
 
     // Let the pending reveal wake up and see a stale run id; no timer is cleared
     // here because the suspended timeline must be able to unwind.
@@ -181,8 +247,9 @@ export default function Prototype(): React.JSX.Element {
     setTrails(allStepsRef.current.map(stepTrail));
     setSeatNodes(nodeMap(final));
     setGame(final);
+    setAwaitingAgent(side === 'agent' && final.phase === 'agents');
     setPending(false);
-  }, []);
+  }, [side]);
 
   /**
    * Reveal a turn: the Fugitive's real route first, then any reveal, then each
@@ -247,9 +314,149 @@ export default function Prototype(): React.JSX.Element {
     busyRef.current = false;
   };
 
+  /** Reveal the Agent phase chosen by the engine, one Agent at a time. */
+  const runAgentResolution = async (
+    runId: number,
+    resolved: Extract<ReturnType<typeof resolveAgentPhase>, { ok: true }>,
+    agentSteps: readonly MoveStep[],
+  ): Promise<void> => {
+    for (let index = 0; index < agentSteps.length; index += 1) {
+      const step = agentSteps[index];
+      if (step === undefined) continue;
+      setBanner({ kind: 'agents', step, index, total: agentSteps.length });
+      setActiveStep(step);
+      await sleep(STEP_LEAD_MS + step.duration);
+      if (!alive(runId)) return;
+      commitStep(step);
+      setTrails((previous) => [...previous, stepTrail(step)]);
+      await sleep(STEP_GAP_MS);
+      if (!alive(runId)) return;
+    }
+
+    setActiveStep(null);
+    setAppearanceNode(null);
+    setBanner(null);
+    setSeatNodes(nodeMap(resolved.state));
+    setGame(resolved.state);
+    setAwaitingAgent(false);
+    setPending(false);
+    busyRef.current = false;
+  };
+
+  /**
+   * Agent Practice: the bot Fugitive moves first, hidden. Only an appearance
+   * becomes public. The human Agent then gets the Agent phase and is allowed to
+   * choose A1's move; the other Agents still resolve as bots.
+   */
+  const runBotFugitive = useCallback(async (): Promise<void> => {
+    if (side !== 'agent' || busyRef.current || game.phase !== 'fugitive' || game.result !== null) return;
+    busyRef.current = true;
+    finalRef.current = null;
+    allStepsRef.current = [];
+    runIdRef.current += 1;
+    const runId = runIdRef.current;
+
+    setError(null);
+    setPending(true);
+    setAwaitingAgent(false);
+    setActiveStep(null);
+    setAppearanceNode(null);
+    setBanner({ kind: 'hidden' });
+    setTrails([]);
+    setSeatNodes(nodeMap(game));
+    setSelectedStation(null);
+
+    await sleep(BOT_MOVE_PAUSE_MS);
+    if (!alive(runId)) return;
+
+    const option = chooseFugitiveMove(MAP.graph, game);
+    const command: PrototypeCommand =
+      option === null ? { kind: 'hold' } : { kind: 'move', mode: option.mode, to: option.to };
+    const applied = applyFugitiveCommand(MAP.graph, game, command);
+    if (!applied.ok) {
+      setError(applied.reason);
+      setBanner(null);
+      setPending(false);
+      busyRef.current = false;
+      return;
+    }
+
+    const fugitiveNode = applied.state.seats.find((seat) => seat.role === 'fugitive')?.node;
+    let publicState = applied.state;
+
+    if (applied.state.pendingAppearance && fugitiveNode !== undefined) {
+      const revealed = revealAppearance(applied.state);
+      if (!revealed.ok) {
+        setError(revealed.reason);
+        setBanner(null);
+        setPending(false);
+        busyRef.current = false;
+        return;
+      }
+      publicState = revealed.state;
+      finalRef.current = publicState;
+      setGame(publicState);
+      setAppearanceNode(fugitiveNode);
+      setBanner({ kind: 'reveal', node: fugitiveNode });
+      await sleep(REVEAL_HOLD_MS);
+      if (!alive(runId)) return;
+      setAppearanceNode(null);
+    } else {
+      finalRef.current = publicState;
+      setGame(publicState);
+    }
+
+    setActiveStep(null);
+    setAppearanceNode(null);
+    setBanner(null);
+    setSeatNodes(nodeMap(publicState));
+    setAwaitingAgent(true);
+    setPending(false);
+    busyRef.current = false;
+  }, [game, side]);
+
+  const applyAgentOrders = useCallback(
+    (orders: PrototypeAgentOrders): void => {
+      if (side !== 'agent' || !awaitingAgent || busyRef.current || game.result !== null) return;
+      const resolved = resolveAgentPhase(MAP.graph, game, orders);
+      if (!resolved.ok) {
+        setError(resolved.reason);
+        return;
+      }
+
+      setError(null);
+      busyRef.current = true;
+      finalRef.current = resolved.state;
+      runIdRef.current += 1;
+      const runId = runIdRef.current;
+      const agentSteps = buildAgentSteps(MAP.graph, game, resolved.agentMoves);
+      allStepsRef.current = agentSteps;
+
+      setSeatNodes(nodeMap(game));
+      setTrails([]);
+      setAppearanceNode(null);
+      setActiveStep(null);
+      setSelectedStation(null);
+      setAwaitingAgent(false);
+      setPending(true);
+      void runAgentResolution(runId, resolved, agentSteps);
+    },
+    [awaitingAgent, game, runAgentResolution, side],
+  );
+
+  useEffect(() => {
+    if (side !== 'agent' || pending || busyRef.current || game.result !== null || game.phase !== 'fugitive') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void runBotFugitive();
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [game.phase, game.turn, pending, runBotFugitive, side]);
+
   const applyCommand = useCallback(
     (command: PrototypeCommand): void => {
-      if (busyRef.current || game.result !== null) return;
+      if (side !== 'fugitive' || busyRef.current || game.result !== null) return;
       const applied = applyFugitiveCommand(MAP.graph, game, command);
       if (!applied.ok) {
         setError(applied.reason);
@@ -281,25 +488,34 @@ export default function Prototype(): React.JSX.Element {
 
       void runTurn(runId, applied, resolved, fugitiveStep, agentSteps);
     },
-    [game],
+    [game, side],
   );
 
   const handleMove = useCallback(
     (option: PrototypeMoveOption): void => {
+      if (side === 'agent') {
+        applyAgentOrders({ moves: { [HUMAN_AGENT_ID]: option } });
+        return;
+      }
       applyCommand({ kind: 'move', mode: option.mode, to: option.to });
     },
-    [applyCommand],
+    [applyAgentOrders, applyCommand, side],
   );
 
   const handleHold = useCallback((): void => {
+    if (side === 'agent') {
+      applyAgentOrders({ holds: [HUMAN_AGENT_ID] });
+      return;
+    }
     applyCommand({ kind: 'hold' });
-  }, [applyCommand]);
+  }, [applyAgentOrders, applyCommand, side]);
 
-  const restart = useCallback((): void => {
+  const resetTable = useCallback((): void => {
     runIdRef.current += 1;
     busyRef.current = false;
     finalRef.current = null;
     allStepsRef.current = [];
+    setAwaitingAgent(false);
     setPending(false);
     setActiveStep(null);
     setAppearanceNode(null);
@@ -312,6 +528,23 @@ export default function Prototype(): React.JSX.Element {
     setSelectedStation(null);
     setGame(initialGame());
   }, []);
+
+  const startSide = useCallback(
+    (next: PlaySide): void => {
+      resetTable();
+      setSide(next);
+    },
+    [resetTable],
+  );
+
+  const changeSide = useCallback((): void => {
+    resetTable();
+    setSide(null);
+  }, [resetTable]);
+
+  const restart = useCallback((): void => {
+    resetTable();
+  }, [resetTable]);
 
   const toggleExpanded = useCallback((): void => {
     setExpanded((value) => !value);
@@ -346,6 +579,10 @@ export default function Prototype(): React.JSX.Element {
     const scope = window as unknown as {
       __XYARD_PROTOTYPE__?: {
         state: PrototypeState;
+        side: PlaySide | null;
+        awaitingAgent: boolean;
+        humanSeatId: string;
+        chooseSide: (next: PlaySide) => void;
         seats: readonly PrototypeSeat[];
         legal: readonly PrototypeMoveOption[];
         pending: boolean;
@@ -367,6 +604,10 @@ export default function Prototype(): React.JSX.Element {
     };
     scope.__XYARD_PROTOTYPE__ = {
       state: game,
+      side,
+      awaitingAgent,
+      humanSeatId,
+      chooseSide: startSide,
       seats: displaySeats,
       legal,
       pending,
@@ -409,18 +650,30 @@ export default function Prototype(): React.JSX.Element {
     pending,
     restart,
     selectedStation,
+    side,
+    awaitingAgent,
+    humanSeatId,
+    startSide,
     skin,
     skipPlayback,
     trails.length,
   ]);
 
+  if (side === null) {
+    return <RoleChoice skin={skin} onChoose={startSide} />;
+  }
+
   const agents = displaySeats.slice(1);
   // The Agents' last-known node, shown as a ghost once it is no longer where the
   // real Fugitive is standing. Before the first appearance there is nothing to show.
   const ghostNode =
-    game.lastAppearanceTurn !== null && game.lastKnown !== displaySeats[0]?.node
-      ? game.lastKnown
-      : null;
+    side === 'agent'
+      ? game.lastAppearanceTurn === null
+        ? null
+        : game.lastKnown
+      : game.lastAppearanceTurn !== null && game.lastKnown !== displaySeats[0]?.node
+        ? game.lastKnown
+        : null;
   const logs = [...recentLog(game, 9)].reverse();
   const selectedOptions = byMode.get(selectedMode) ?? [];
   const showResult = game.result !== null && !pending;
@@ -452,6 +705,7 @@ export default function Prototype(): React.JSX.Element {
         </div>
 
         <div className="proto-meta">
+          <span className="proto-side">{side === 'agent' ? 'AGENT PRACTICE' : 'FUGITIVE RUN'}</span>
           <span>seed {game.seed}</span>
           <span>{MAP.stats.nodeCount} stations</span>
         </div>
@@ -471,6 +725,10 @@ export default function Prototype(): React.JSX.Element {
           </select>
         </label>
 
+        <button className="proto-change-side" type="button" onClick={changeSide}>
+          Change side
+        </button>
+
         <button className="proto-restart" type="button" onClick={restart}>
           Restart
         </button>
@@ -480,6 +738,9 @@ export default function Prototype(): React.JSX.Element {
         <MapStage
           map={MAP}
           skin={skin}
+          playSide={side}
+          focusSeatId={humanSeatId}
+          showFugitive={side === 'fugitive'}
           seats={displaySeats}
           turn={game.turn}
           selectedMode={selectedMode}
@@ -502,13 +763,15 @@ export default function Prototype(): React.JSX.Element {
         <aside className="proto-side">
           <section className="side-section kit-section">
             <div className="side-heading">
-              <span>Fugitive kit</span>
-              <span className="side-note">VULTURE · YOU</span>
+              <span>{side === 'agent' ? 'Agent kit' : 'Fugitive kit'}</span>
+              <span className="side-note">
+                {humanSeat === undefined ? 'YOU' : `${humanSeat.name.toUpperCase()} · YOU`}
+              </span>
             </div>
 
             <div className="mode-grid">
               {MODES.map(({ mode, label }) => {
-                const count = countFor(game, mode);
+                const count = countFor(humanSeat, mode);
                 const options = byMode.get(mode) ?? [];
                 const disabled = pending || game.result !== null || count <= 0 || options.length === 0;
                 return (
@@ -532,12 +795,16 @@ export default function Prototype(): React.JSX.Element {
 
             <p className="now-line">
               {pending
-                ? 'Resolving the turn — watch each move, or skip.'
-                : selectedOptions.length > 0
-                  ? `${MODES.find((entry) => entry.mode === selectedMode)?.label} → ${selectedOptions
-                      .map((option) => option.to)
-                      .join(' · ')}`
-                  : 'No legal move in this mode.'}
+                ? side === 'agent' && !awaitingAgent
+                  ? 'The Fugitive is moving in secret…'
+                  : 'Resolving the turn — watch each move, or skip.'
+                : side === 'agent' && !awaitingAgent
+                  ? 'The Fugitive is hidden. Public information only: appearance, ticket mode and log.'
+                  : selectedOptions.length > 0
+                    ? `${MODES.find((entry) => entry.mode === selectedMode)?.label} → ${selectedOptions
+                        .map((option) => option.to)
+                        .join(' · ')}`
+                    : 'No legal move in this mode.'}
             </p>
 
             <button
@@ -546,7 +813,7 @@ export default function Prototype(): React.JSX.Element {
               onClick={handleHold}
               disabled={pending || game.result !== null}
             >
-              {pending ? 'Resolving turn…' : 'Hold position'}
+              {pending ? 'Resolving turn…' : side === 'agent' ? 'Hold A1' : 'Hold position'}
             </button>
 
             {error !== null && <p className="proto-error">{error}</p>}
@@ -575,11 +842,11 @@ export default function Prototype(): React.JSX.Element {
               {agents.map((agent, index) => (
                 <div
                   key={agent.id}
-                  className={`agent-row${activeStep?.seatId === agent.id ? ' moving' : ''}`}
+                  className={`agent-row${activeStep?.seatId === agent.id ? ' moving' : ''}${agent.id === humanSeatId ? ' human' : ''}`}
                 >
                   <span className="agent-dot" />
                   <span>{agent.name}</span>
-                  <b>A{index + 1}</b>
+                  <b>{agent.id === humanSeatId ? 'YOU' : `A${index + 1}`}</b>
                   <span className="agent-node">{agent.node}</span>
                 </div>
               ))}
@@ -591,8 +858,18 @@ export default function Prototype(): React.JSX.Element {
               <span>Rules reminder</span>
             </div>
             <p>
-              You move first. The Fugitive appears on 5, 10 and 15, showing the exact
-              node to the Agents before they move. Survive to turn 16.
+              {side === 'agent' ? (
+                <>
+                  The Fugitive moves first and stays hidden. You command Falcon; the other
+                  three Agents follow. Appearances on 5, 10 and 15 reveal the exact node.
+                  Capture by ending the Agent phase on it.
+                </>
+              ) : (
+                <>
+                  You move first. The Fugitive appears on 5, 10 and 15, showing the exact
+                  node to the Agents before they move. Survive to turn 16.
+                </>
+              )}
             </p>
           </section>
         </aside>
@@ -610,7 +887,9 @@ export default function Prototype(): React.JSX.Element {
             <p>
               {game.result?.reason === 'capture'
                 ? `${agents.find((agent) => agent.id === game.result?.capturedBy)?.name ?? 'An Agent'} ended the turn on Vulture's node.`
-                : 'Sixteen turns, no Agent on your node.'}
+                : side === 'agent'
+                  ? 'Sixteen turns, and the Vulture stayed ahead of the badge.'
+                  : 'Sixteen turns, no Agent on your node.'}
             </p>
             <dl>
               <div>
@@ -624,6 +903,9 @@ export default function Prototype(): React.JSX.Element {
             </dl>
             <button type="button" onClick={restart}>
               Play again
+            </button>
+            <button type="button" className="result-change-side" onClick={changeSide}>
+              Change side
             </button>
           </div>
         </div>

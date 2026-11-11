@@ -26,8 +26,8 @@ This round is the first implementation of that combination, including the era ru
 ## What is deliberately *not* changed
 
 - The rules, map, graph, station positions, appearances and turn count.
-- `Basic`, `Iron` and `Night` remain exactly as they are. The vintage screen is a
-  separate lab route; it is not a skin the game can select.
+- `Basic`, `Iron` and `Night` remain selectable. Vintage is the default skin; the
+  standalone paper study remains a lab route.
 - The scooter **has** now been removed from the prototype rules, state, log,
   tests and UI under [decision 0019](../../../docs/decisions/0019-1907-era-rules.md).
   Special stays. The paid-mode internal names are unchanged.
@@ -51,6 +51,19 @@ This round is the first implementation of that combination, including the era ru
 6. **Readability test.** Desktop, map overview and 390×844 have been checked; a
    full colour-blind pass and a turn-5 appearance/ghost check are still useful.
 
+## Agent Practice (2026-10-29)
+
+The game now opens with a **side chooser**:
+
+- **Fugitive** — the existing run: you move first and see your own route.
+- **Agent Practice** — you command **Falcon (A1)** against a bot-controlled hidden
+  Fugitive and three bot Agents. The true Fugitive token is not rendered; you see
+  its ticket modes, appearances, last-known ghost and the public log. The Agent
+  phase pauses for your move, then the other Agents resolve.
+
+This is a local training mode, not the full server projection; recorded in
+[decision 0022](../../../docs/decisions/0022-agent-practice-local-mode.md).
+
 ## Renderer for scale (2026-10-29)
 
 The first Vintage implementation was SVG. Profiling found **81,601 SVG elements
@@ -72,7 +85,7 @@ Recorded in [decision 0020](../../../docs/decisions/0020-canvas-city-renderer-fo
 
 ## How to view
 
-- `http://localhost:5173/` — the Vintage skin by default.
+- `http://localhost:5173/` — choose Fugitive or Agent Practice; Vintage default.
 - `?skin=basic` — the original prototype fallback.
 - `?skin=iron` / `?skin=nightops` — the live RTS skins.
 - `?vintage` — the standalone paper screen study.
@@ -91,11 +104,17 @@ Recorded in [decision 0020](../../../docs/decisions/0020-canvas-city-renderer-fo
 | `shots/prototype-vintage-appearance-1440.png` | Turn-5 appearance in the vintage overlay |
 | `shots/prototype-vintage-result-1440.png` | Vintage result overlay |
 | `shots/prototype-vintage-390.png` | The live Vintage skin at 390 × 844 |
+| `shots/role-choice-1440.png` | The side chooser on desktop |
+| `shots/role-choice-390.png` | The side chooser on a phone |
+| `shots/agent-practice-1440.png` | Agent Practice: Falcon to move, hidden Fugitive |
+| `shots/agent-appearance-1440.png` | Agent Practice at the turn-5 appearance and ghost |
+| `shots/agent-practice-390.png` | Agent Practice on a phone |
 
 ## Honest limit
 
-This is a **vector approximation** of an etching, not a scanned engraving. The
-linework is SVG hatching + paper texture. A more authentic result can push the
+This is a **stylised Canvas approximation** of an etching, not a scanned engraving.
+The city uses solid facets, limited hatching and a paper HUD; the SVG pattern
+study was retired for the scalable Canvas path. A more authentic result can push the
 hatching, stippling and typography further, or eventually use pre-rendered
 etching-style city tiles behind the same skin boundary. The full 96-station map
 is dense in isometric view, and the period prop pass is only partial.
