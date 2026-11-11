@@ -52,6 +52,8 @@ interface MapStageProps {
 }
 
 const STATION_MODES = ['taxi', 'bus', 'underground', 'special'] as const;
+/** Keep a far-away Agent from pulling the play camera off the Fugitive. */
+const AGENT_FOCUS_RADIUS = 430;
 
 interface StationLine {
   readonly mode: (typeof STATION_MODES)[number];
@@ -189,7 +191,20 @@ export function MapStage({
     const fugitive = seats[0];
     const fugitiveNode = fugitive === undefined ? undefined : nodeById.get(fugitive.node);
     if (fugitiveNode !== undefined) points.push({ x: fugitiveNode.x, y: fugitiveNode.y });
-    if (displayStep !== null) points.push(...displayStep.points);
+
+    if (displayStep !== null) {
+      const destination = displayStep.points[displayStep.points.length - 1];
+      const distance =
+        fugitiveNode === undefined || destination === undefined
+          ? 0
+          : Math.hypot(destination.x - fugitiveNode.x, destination.y - fugitiveNode.y);
+      // The Fugitive's own move is always followed. An Agent is only followed
+      // while the move is near enough to matter; a distant Agent should not make
+      // the camera zoom out just to show an off-screen token.
+      if (displayStep.role === 'fugitive' || distance <= AGENT_FOCUS_RADIUS) {
+        points.push(...displayStep.points);
+      }
+    }
 
     return points;
   }, [displayMap.graph.nodes, displayStep, seats]);
@@ -245,7 +260,7 @@ export function MapStage({
       event.preventDefault();
       const rect = element.getBoundingClientRect();
       const factor = Math.exp(-event.deltaY * 0.0016);
-      zoomAt(factor, event.clientX - rect.left, event.clientY - rect.top);
+      zoomAt(factor, event.clientX - rect.left, event.clientY - rect.top, true);
     };
 
     element.addEventListener('wheel', onWheel, { passive: false });
@@ -328,7 +343,7 @@ export function MapStage({
       const x = (first.x + second.x) / 2 - rect.left;
       const y = (first.y + second.y) / 2 - rect.top;
       if (previous.distance > 0) {
-        camera.zoomAt(distance / previous.distance, x, y);
+        camera.zoomAt(distance / previous.distance, x, y, false);
         camera.panBy(x - (previous.x - rect.left), y - (previous.y - rect.top));
       }
       pinchRef.current = { distance, x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };

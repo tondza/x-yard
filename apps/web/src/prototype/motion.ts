@@ -32,11 +32,11 @@ export const MOVE_STYLE: Readonly<
 
 /** Per-mover durations. A single move never runs longer than 1 second. */
 export const FUGITIVE_STEP_MS = 850;
-export const AGENT_STEP_MS = 700;
+export const AGENT_STEP_MS = 900;
 /** The camera leads the token: it pans to the mover, then the token sets off. */
-export const STEP_LEAD_MS = 170;
+export const STEP_LEAD_MS = 220;
 /** A beat between movers so the eye registers that one move ended. */
-export const STEP_GAP_MS = 150;
+export const STEP_GAP_MS = 200;
 /** A held turn still needs a visible beat, but shorter than a move. */
 export const HOLD_PAUSE_MS = 420;
 /** An appearance stays on screen before the Agent phase starts. */

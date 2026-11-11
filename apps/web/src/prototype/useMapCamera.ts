@@ -18,6 +18,7 @@ import type { MapPoint } from '@x-yard/map-generator';
 
 import {
   CAMERA_ANIMATION_MS,
+  ZOOM_ANIMATION_MS,
   clamp,
   clampCamera,
   easeOutCubic,
@@ -53,7 +54,7 @@ export interface MapCamera {
   readonly zoomOut: () => void;
   readonly recentre: () => void;
   readonly panBy: (dxPixels: number, dyPixels: number) => void;
-  readonly zoomAt: (factor: number, anchorX: number, anchorY: number) => void;
+  readonly zoomAt: (factor: number, anchorX: number, anchorY: number, smooth?: boolean) => void;
 }
 
 function focusSignature(points: readonly MapPoint[]): string {
@@ -209,11 +210,13 @@ export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): 
   );
 
   const zoomAt = useCallback(
-    (factor: number, anchorX: number, anchorY: number): void => {
+    (factor: number, anchorX: number, anchorY: number, smooth = true): void => {
       enterFree();
-      commit(zoomCameraAt(cameraRef.current, factor, anchorX, anchorY, bounds, stage));
+      const next = zoomCameraAt(cameraRef.current, factor, anchorX, anchorY, bounds, stage);
+      if (smooth) animateTo(next, ZOOM_ANIMATION_MS);
+      else commit(next);
     },
-    [bounds, commit, enterFree, stage],
+    [animateTo, bounds, commit, enterFree, stage],
   );
 
   return {

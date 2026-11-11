@@ -39,7 +39,8 @@ export const CAMERA_MAX_SCALE = 3.4;
 export const PLAY_MIN_SCALE = 0.85;
 /** World units across the short side of a comfortable play view. */
 export const PLAY_WORLD_SPAN = 540;
-export const CAMERA_ANIMATION_MS = 320;
+export const CAMERA_ANIMATION_MS = 460;
+export const ZOOM_ANIMATION_MS = 180;
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
