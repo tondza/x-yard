@@ -61,10 +61,22 @@ pnpm --filter @x-yard/web dev        # Vite on :5173; dev default is the 96-stat
 ```
 
 In development, `http://localhost:5173/` opens the **96-station playable
-prototype** — the illustrated Cathedral Quarter, one human Fugitive against four
-Agent bots. `?lab` opens the seeded map lab (schematic generator, validation, JSON
-export); `?board` opens the original server-backed board scaffold. Both are
+prototype** — the Vintage Etching Cathedral Quarter, one human Fugitive against
+four Agent bots. `?lab` opens the seeded map lab (schematic generator, validation,
+JSON export); `?board` opens the original server-backed board scaffold. Both are
 dev-only and are not part of the production client.
+
+**GitHub Codespaces:** use the forwarded port URL rather than `localhost`:
+
+```text
+https://<codespace-name>-5173.app.github.dev/
+```
+
+For this Codespace that is
+`https://obscure-capybara-v64gpjj99v52vj4-5173.app.github.dev/`. The
+`CODESPACE_NAME` environment variable gives the name; forward port **5173** from
+the Ports panel if it is not listed. Vite must bind `0.0.0.0` (the repo's script
+does when run with `--host 0.0.0.0`).
 
 ## Status
 

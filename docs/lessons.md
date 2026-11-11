@@ -219,3 +219,32 @@ minimalism.
 **Enforced by.** Nothing mechanical. The revision brief
 ([`briefs/round-03-mobile-art-revision.md`](briefs/round-03-mobile-art-revision.md)) now
 carries the reference paths and the squint test; every future visual brief should.
+
+---
+
+## L13 — `localhost` URLs are not reachable from the director's browser in Codespaces
+
+**Symptom.** A dev server responds on `http://localhost:5173/` inside the
+container, but the director cannot open the link from their own browser.
+
+**Cause.** The workspace is a GitHub Codespace; its services are exposed through
+Codespaces port forwarding, not through the user's localhost.
+
+**Fix.** Use the forwarded URL:
+
+```text
+https://<CODESPACE_NAME>-<port>.app.github.dev/
+```
+
+For the current Codespace (`CODESPACE_NAME=obscure-capybara-v64gpjj99v52vj4`),
+the game is:
+
+<https://obscure-capybara-v64gpjj99v52vj4-5173.app.github.dev/>
+
+The codespace name changes if the environment is rebuilt; read `CODESPACE_NAME`
+rather than hard-coding it into automation. The server must bind `0.0.0.0` and the
+port must be forwarded. Port **5173** is the Vite prototype; **3080** is the DSH
+Web GUI; **3001** is the Fastify server.
+
+**Enforced by.** [README.md](../README.md) development section. This entry is an
+environment fact, not a product URL.
