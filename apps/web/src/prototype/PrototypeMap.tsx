@@ -32,11 +32,72 @@ const NETWORK_STYLE: Readonly<
     { readonly width: number; readonly opacity: number; readonly casing: number; readonly dash?: string }
   >
 > = {
-  taxi: { width: 1.15, opacity: 0.5, casing: 3.2 },
+  taxi: { width: 1.7, opacity: 0.82, casing: 4.0 },
   bus: { width: 2.1, opacity: 0.82, casing: 4.6 },
   underground: { width: 2.8, opacity: 0.9, casing: 5.4 },
   special: { width: 1.8, opacity: 0.85, casing: 4.2, dash: '5 4' },
 };
+
+/** Parallel modes sit beside each other instead of painting over one another. */
+const NETWORK_OFFSET_PX: Readonly<Record<'taxi' | 'bus' | 'underground' | 'special', number>> = {
+  taxi: -2.4,
+  bus: 2.4,
+  underground: -4.9,
+  special: 4.9,
+};
+
+function modeOffset(mode: MobilityOption): number {
+  if (mode === 'foot') return NETWORK_OFFSET_PX.taxi;
+  return NETWORK_OFFSET_PX[mode];
+}
+
+function normalAt(from: MapPoint, to: MapPoint): MapPoint {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return { x: 0, y: 0 };
+  return { x: -dy / length, y: dx / length };
+}
+
+/**
+ * Offset a polyline by a screen-pixel amount. The path is oriented by its
+ * endpoints first, so the same street gets the same side even when the network
+ * edge and a legal move are stored in opposite directions.
+ */
+function offsetPolyline(points: readonly MapPoint[], offsetPx: number, scale: number): readonly MapPoint[] {
+  if (points.length < 2 || offsetPx === 0) return points;
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (first === undefined || last === undefined) return points;
+  const reverse = first.x > last.x || (first.x === last.x && first.y > last.y);
+  const ordered = reverse ? [...points].reverse() : [...points];
+  const distance = offsetPx / Math.max(scale, 0.001);
+  const result: MapPoint[] = [];
+
+  for (let index = 0; index < ordered.length; index += 1) {
+    const point = ordered[index];
+    if (point === undefined) continue;
+    const previous = ordered[index - 1];
+    const next = ordered[index + 1];
+    let normal =
+      previous === undefined
+        ? normalAt(point, next ?? point)
+        : next === undefined
+          ? normalAt(previous, point)
+          : (() => {
+              const a = normalAt(previous, point);
+              const b = normalAt(point, next);
+              const x = a.x + b.x;
+              const y = a.y + b.y;
+              const length = Math.hypot(x, y);
+              return length === 0 ? a : { x: x / length, y: y / length };
+            })();
+    if (normal.x === 0 && normal.y === 0) normal = { x: 0, y: 1 };
+    result.push({ x: point.x + normal.x * distance, y: point.y + normal.y * distance });
+  }
+
+  return reverse ? result.reverse() : result;
+}
 
 const STOP_BADGE: Readonly<
   Record<'bus' | 'underground' | 'special', { readonly label: string; readonly colour: string }>
@@ -353,7 +414,7 @@ function PrototypeMapContent({
       {/* The permanent transit map: taxi streets, bus, metro and special links. */}
       <g className="transit-network" aria-hidden="true">
         {drawEdges.map((edge) => {
-          const path = edgePoints(edge, nodeById);
+          const path = offsetPolyline(edgePoints(edge, nodeById), modeOffset(edge.mode), scale);
           const networkStyle = NETWORK_STYLE[edge.mode];
           return (
             <g key={`net-${edge.id}`}>
@@ -404,7 +465,7 @@ function PrototypeMapContent({
       {/* Legal move paths for the selected mode. */}
       <g className="move-paths">
         {options.map((option) => {
-          const points = routeForOption(map, moveSource, option);
+          const points = offsetPolyline(routeForOption(map, moveSource, option), modeOffset(option.mode), scale);
           return (
             <g key={`${option.mode}-${option.to}`}>
               <path
@@ -436,7 +497,7 @@ function PrototypeMapContent({
       {activeStep !== null && pathInView(activeStep.points, view) && (
         <g className="active-move" aria-hidden="true">
           <path
-            d={pathData(activeStep.points)}
+            d={pathData(offsetPolyline(activeStep.points, modeOffset(activeStep.mode), scale))}
             fill="none"
             stroke="#fbf8f0"
             strokeWidth={8}
@@ -447,7 +508,7 @@ function PrototypeMapContent({
           />
           <path
             className="active-move-line"
-            d={pathData(activeStep.points)}
+            d={pathData(offsetPolyline(activeStep.points, modeOffset(activeStep.mode), scale))}
             fill="none"
             stroke={activeRole === 'fugitive' ? '#a93c36' : '#2f6fed'}
             strokeWidth={4.5}

@@ -1624,3 +1624,24 @@ blocks. No rules or edge data changed.
 Falcon `n7` and contain street vertices; clicking the move row centres `n8` and
 opens the `Vulture start` card; clicking Harrier centres `n38` and opens the
 station card; no true Fugitive token; no console errors.
+
+---
+
+## 2026-10-29 — Taxi legibility and parallel route lanes
+
+**Symptom.** Even after the legal-path source fix, taxi links were still hard to
+see: the permanent taxi stroke was 1.15 px at 50% opacity against the beige city.
+Where taxi and bus shared a street they were painted on the same centreline, so
+one covered the other.
+
+**Fix.** Taxi now has a 1.7 px stroke at 82% opacity. Every transport mode is offset
+by a fixed screen-pixel normal (taxi −2.4, bus +2.4, metro −4.9, special +4.9), and
+the legal-move highlight uses the same mode offset, so it sits on the correct
+parallel lane. Paths are canonicalised by endpoints before offsetting, which keeps
+the two sides stable when the network edge and the legal path are stored in
+opposite directions. Taxi/bus paths still follow their street polylines; the
+offset is only a lane shift.
+
+**Verified.** `pnpm typecheck`; `pnpm test` **7 files / 136 tests**; `pnpm build`;
+`pnpm check:docs`. Browser: n8 shows its four taxi links on the start-station
+focus; taxi is visible against the city; no console errors.

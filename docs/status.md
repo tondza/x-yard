@@ -102,7 +102,8 @@ human Agent's move and then resolves the remaining bots. The true Fugitive token
 is not rendered. The starting station is public in Agent Practice and appears as
 `Vulture start` with a ghost; the public-log rows and Agent rows are clickable and
 centre the station card. Move rows name the transport mode only; destinations stay
-hidden ([decision
+hidden. Taxi links are stronger and parallel modes are offset into adjacent lanes
+so a bus and taxi on the same street are both readable ([decision
 0022](decisions/0022-agent-practice-local-mode.md)). The Fugitive run is unchanged.
 
 The loop lives in `game-core/src/prototype/` as `PrototypeState`. It is **not**
