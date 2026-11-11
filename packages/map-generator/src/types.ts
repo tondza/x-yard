@@ -83,7 +83,20 @@ export interface BlockModel {
 /** A named place, used to anchor terminals and give a seed an identity. */
 export interface LandmarkModel {
   readonly id: string;
-  readonly kind: 'cathedral' | 'station' | 'market' | 'square';
+  readonly kind:
+    | 'cathedral'
+    | 'station'
+    | 'market'
+    | 'square'
+    | 'sportsGround'
+    | 'townHall'
+    | 'church'
+    | 'gardens'
+    | 'hospital'
+    | 'museum'
+    | 'university'
+    | 'theatre'
+    | 'gasworks';
   readonly label: string;
   readonly blockId: string;
   readonly at: MapPoint;
