@@ -1,0 +1,13 @@
+{
+  "name": "X-Yard",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "postCreateCommand": "corepack enable && pnpm install",
+  "forwardPorts": [5173, 3001],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  }
+}
