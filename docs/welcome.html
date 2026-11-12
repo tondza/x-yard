@@ -211,7 +211,33 @@
       <figcaption>The chase, reduced: one hidden mover, visible ticket trails.</figcaption>
     </figure>
 
-    <h2>2 · How we work together</h2>
+    <h2>2 · Quick start — run the demo locally</h2>
+    <p>Just want to try the game? You do not need a Codespace or any contribution
+    knowledge. Install <strong>Node 20+</strong> and <strong>pnpm</strong> once, then:</p>
+
+    <div class="cmd"><button onclick="copy('c_local')">copy</button><pre id="c_local">git clone https://github.com/tondza/x-yard
+cd x-yard
+pnpm install
+pnpm --filter @x-yard/web dev</pre></div>
+
+    <p>Open <code>http://localhost:5173</code>. (In a Codespace, the same command works —
+    open the forwarded port 5173 instead.) The screen that opens is a
+    <strong>setup board</strong> — "pick a board, tune the chase":</p>
+    <table>
+      <tr><th>Control</th><th>What it sets</th></tr>
+      <tr><td>Map</td><td>an existing board (24 / 60 / 96 / 576 stations) or a generated one (24–576 stations, route density, seed)</td></tr>
+      <tr><td>Starts</td><td>where the Agents begin (encircle / far)</td></tr>
+      <tr><td>Agents</td><td>how many opponents (1–6)</td></tr>
+      <tr><td>Turns</td><td>session length; appearances fire on turns 5 / 10 / 15</td></tr>
+      <tr><td>Tickets</td><td>taxi / bus / metro / special budgets, plus on-foot steps, for each side</td></tr>
+      <tr><td>Side</td><td>play the hidden Fugitive, or command one Agent while a hidden bot Fugitive ("Vulture") runs</td></tr>
+    </table>
+
+    <p>Click start and play — move, watch the appearances, chase or be chased, and reach a
+    capture or a result screen. This is the local single-player prototype (you + bots); the
+    multiplayer game is the next milestone, not this demo.</p>
+
+    <h2>3 · How we work together</h2>
     <div class="grid">
       <div class="card">
         <h3>Maintainer</h3>
@@ -238,7 +264,7 @@
     <div class="step"><div class="n">4</div><div class="body">Open a PR — CI runs the gate and the scope check automatically.</div></div>
     <div class="step"><div class="n">5</div><div class="body">The maintainer reviews and merges, and writes the log entry.</div></div>
 
-    <h2>3 · Start: create your Codespace</h2>
+    <h2>4 · Start: create your Codespace</h2>
     <div class="step"><div class="n">1</div><div class="body">Accept the collaborator invite from the maintainer.</div></div>
     <div class="step"><div class="n">2</div><div class="body">Open <a href="https://github.com/tondza/x-yard">github.com/tondza/x-yard</a>.</div></div>
     <div class="step"><div class="n">3</div><div class="body">Click <strong>Code ▾</strong> → <strong>Codespaces</strong> → <strong>Create codespace on main</strong>.</div></div>
@@ -247,27 +273,6 @@
 
     <pre>node --version   <span class="cmt"># ≥ 20.19</span>
 pnpm --version  <span class="cmt"># 12.3.4</span></pre>
-
-    <h2>4 · Just want to play? The configurable demo</h2>
-    <p>The fastest taste of the game needs no branching or contribution — the same
-    Codespace, one command, then a setup screen:</p>
-
-    <div class="cmd"><button onclick="copy('c_play')">copy</button><pre id="c_play">pnpm --filter @x-yard/web dev   <span class="cmt"># then open forwarded port 5173</span></pre></div>
-
-    <p>The screen that opens is a <strong>setup board</strong> — "pick a board, tune the chase":</p>
-    <table>
-      <tr><th>Control</th><th>What it sets</th></tr>
-      <tr><td>Map</td><td>an existing board (24 / 60 / 96 / 576 stations) or a generated one (24–576 stations, route density, seed)</td></tr>
-      <tr><td>Starts</td><td>where the Agents begin (encircle / far)</td></tr>
-      <tr><td>Agents</td><td>how many opponents (1–6)</td></tr>
-      <tr><td>Turns</td><td>session length; appearances fire on turns 5 / 10 / 15</td></tr>
-      <tr><td>Tickets</td><td>taxi / bus / metro / special budgets, plus on-foot steps, for each side</td></tr>
-      <tr><td>Side</td><td>play the hidden Fugitive, or command one Agent while a hidden bot Fugitive ("Vulture") runs</td></tr>
-    </table>
-
-    <p>Click start and play — move, watch the appearances, chase or be chased, and reach a
-    capture or a result screen. This is the local single-player prototype (you + bots); the
-    multiplayer game is the next milestone, not this demo.</p>
 
     <h2>5 · The commands you'll use</h2>
     <div class="cmd"><button onclick="copy('c1')">copy</button><pre id="c1">pnpm install                       <span class="cmt"># first install (runs automatically in Codespaces)</span>
