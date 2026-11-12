@@ -2289,3 +2289,43 @@ After the entry above, one more engine test was added for the bot's path toward 
 reachable pickup. The current suite is **7 test files / 149 tests**, and
 `pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build` and
 `pnpm check:docs` all pass. No further code changes followed that run.
+
+---
+
+## 2026-11-12 — Repository hygiene: renders are work artifacts
+
+**The request.** Before inviting a second contributor, make the repository
+contain what should be shared and nothing local.
+
+**What changed.** The 69 tracked PNGs (57 MB across `design/moodboard/**/shots/`
+and `maps/shots/`) are untracked with `git rm --cached`; the working copies stay
+on disk, and `.gitignore` now ignores renders under `design/` and `maps/shots/`,
+contact sheets that only wrap renders (`compare*.html`), the Codespace helper
+scripts and scratch snapshots. Mockup sources (html/js/data/README) stay
+committed, so a clone can open a mockup and regenerate any render. The three
+documents that linked images were rewritten to name them as local renders: the
+round-08 README, `maps/README.md`, and the moodboard README, which now carries
+the policy. The in-flight round-07/08 work was committed first in five logical
+commits, so the cleanup commit contains only the untracking and the reference
+fixes.
+
+**Why.** A render is output, not source: it is large, binary, conflicts on every
+touch and cannot be reviewed as a diff. Git carries the thing that draws the
+mockup; visual evidence for a change belongs in the pull request, not the tree.
+
+**Rejected alternatives.**
+
+1. **Keep renders committed.** 57 MB is already in history and ~79 MB more sat
+   untracked; every future visual round would add tens of megabytes and binary
+   conflicts.
+2. **Git LFS for renders.** Adds infrastructure and a clone-time dependency for
+   assets that are reproducible in seconds.
+3. **Rewrite history to drop the old renders now.** `.git` stays at 222 MB and
+   the old blobs remain, but a rewrite would force every clone to be re-made for
+   a saving that does not affect correctness. Revisit if `.git` passes ~500 MB
+   or before the repository is made public.
+
+**Verified.** `git status` clean; 177 tracked files and zero tracked PNGs;
+`pnpm typecheck`; `pnpm test` **7 files / 149 tests**; `pnpm build`;
+`pnpm check:docs` (69 markdown files, all links resolve). Baseline tagged
+`v0.4-clean-baseline`.
