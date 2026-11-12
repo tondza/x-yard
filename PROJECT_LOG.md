@@ -1645,3 +1645,647 @@ offset is only a lane shift.
 **Verified.** `pnpm typecheck`; `pnpm test` **7 files / 136 tests**; `pnpm build`;
 `pnpm check:docs`. Browser: n8 shows its four taxi links on the start-station
 focus; taxi is visible against the city; no console errors.
+
+---
+
+## 2026-11-11 — Round 07 city visuals: varied houses, civic landmarks, 1925 era
+
+**Why.** The director's visual review asked for a Vintage Etching city that reads as
+a city, not a field of brick boxes: pitched roofs as the norm, distinct landmarks,
+and paper-and-ink polish. The round was planned in
+[`docs/briefs/round-07-city-visuals.md`](docs/briefs/round-07-city-visuals.md) and
+sequenced by bang-for-buck ([decision 0021](docs/decisions/0021-building-and-landmark-variety.md)).
+
+**What was built (brief items)**
+
+1. **House/roof variety.** `Building` now carries a seeded type, roof shape, ridge
+   axis, pitch, dormers and chimney pots; pitched types are the majority.
+   `CanvasCity` draws gable, hipped, mansard, flat + parapet and sawtooth roofs with
+   ridges, dormers and pots, behind the existing `detail` LOD flag.
+2. **Wall/roof materials.** Eight desaturated wall palettes and eight roof tones,
+   picked per building from `hash(blockId + row + col) ^ map.seed`.
+3. **Paper and ink.** A deterministic paper-grain `createPattern` on ground and
+   blocks, denser hatching on shadow faces, stronger ink outlines, hatched cast
+   shadows at play zoom, and a faint curb instead of a black street outline.
+4. **Richer anchors.** Cathedral (nave/tower/spire/rose window/buttresses), station
+   (train shed/barrel roof/clock tower), market (gabled hall/lantern/stalls) and
+   square (fountain/obelisk).
+5. **New landmark kinds.** `LandmarkModel['kind']` widened to thirteen; `grid.ts`
+   adds a seeded civic subset (max six) beside the four anchors; `CanvasCity` draws
+   each kind. Fixtures were regenerated; graph, starts, facilities and stats stayed
+   byte-identical.
+6. **Terraces and footprints.** Rows keep a shared roofline but now have alleys;
+   after review, footprints mix one wide house, a pair, or three narrow/deep houses,
+   with per-house width and depth jitter. The old fixed 2x2 split produced 28x9
+   houses — wide and shallow.
+7. **Furniture.** Sparse gas lamps, cabs, railings and bollards, filtered against
+   every station (the ambient-actor rule).
+8. **Not done:** river + bridges. **9 (deferred by the brief):** pre-rendered sprites.
+
+**Era moved to 1925.** The director ruled 1907 anachronistic for a prominent taxi
+mode; [decision 0023](docs/decisions/0023-era-1925.md) moves the presentation era to
+1925 (interwar). The no-scooter and keep-special rules stand; mode names are
+unchanged.
+
+**Rejected alternatives**
+
+1. **Keep 2x2 cells / long terraces with no gaps.** Rejected after the visual
+   review: the result read as stacked boxes. Gaps and mixed footprints won.
+2. **Keep solid black cast shadows and a thick street outline.** Rejected: they
+   filled the alleys and made streets read as drawn borders. Hatched shadows and a
+   faint curb keep the paper visible.
+3. **Invent landmark geometry in the renderer.** Rejected: landmark kinds stay map
+   data (decision 0021); only drawing is client-side.
+4. **Change rules numbers with the era.** Rejected: 1925 is presentation; tickets,
+   modes and the graph are untouched.
+
+**Verified.** `pnpm install` (exit 0); `pnpm typecheck` (all workspaces); `pnpm test`
+**7 files / 136 tests**; `pnpm build`; `pnpm check:docs` (59 markdown files; 7 test
+files / 136 tests). Browser at 1440x900 and 390x844, `?skin=vintage` and
+`?skin=basic`, fugitive and Agent Practice: a first taxi move advances turn 1 to 2
+through the projected overlay; no console/page errors; no document overflow.
+Fixtures were regenerated with `WRITE_MAPS=1`; graph and station positions were
+unchanged.
+
+**Known limits.** River/bridges and the sprite/texture phase remain open. The Canvas
+detail pass is heavier than the culling-only plate; the play-view drag was not
+re-benchmarked in this round. Basic uses a generic civic hall for the new kinds;
+Iron/Night keep their generic market fallback.
+
+---
+
+## 2026-11-12 — Yard Board is the default city skin (round 08)
+
+**The request.** The director put the live Vintage plate beside a photograph of
+the original *Scotland Yard* board and asked for a closer match, then approved the
+round-08 study's direction and asked for the implementation. The study's two
+visible defects — ink edges running down the middle of streets ("pipes") and
+floating gable-end triangles between houses — were study-renderer artifacts; the
+live implementation deliberately does not copy the study's street or roof drawing.
+
+**What was built.**
+
+1. **A `board` skin and `BOARD` theme, now the default.** It renders through the
+   existing `CanvasCity` and the true 2:1 projection. `vintage` stays selectable
+   and `basic` stays the fallback; `MapStage` includes both Canvas skins in the
+   iso projection and passes the active theme to the overlay.
+2. **One station grammar for every skin.** The numbered disc is uniform with the
+   number inside and an ink ring; bus/metro/special are a keylined colour arc on
+   the rim in a fixed slot; node-class colour, the external `n11` label and the
+   `B`/`M`/`S` letters are gone. Class and the mode list stay in the station card
+   and `<title>`. Legal destinations are hollow rings, so they never cover the
+   disc or its collar.
+3. **Printed route ribbons.** Every permanent link uses the theme's route colour,
+   a thicker core and an ink keyline instead of the cream halo; legal moves and
+   the route key use the same colour table.
+4. **Landmark plaques.** The overlay draws the real `LandmarkModel.label` names
+   as plaques at a constant screen size, clamped to the viewport and reduced to
+   the four anchors at whole-city zoom. Landmark anchors are projected by
+   `projectMap` so they share the station projection. The Basic plate's own
+   labels were removed; the overlay is the only source of names.
+5. **Roof-first houses.** `city.ts` splits wide/deep footprints into 2–3 house
+   terraces (`splitTerrace`), varying wall and roof per unit: 225 → 418 houses
+   for the 96-station fixture. The Board plate lowers building massing, removes
+   hatching, cast shadows, dormers, lane markings, paper grain and furniture, and
+   uses a heavier uniform ink contour.
+6. **Paper streets without the pipes.** `CanvasCity` draws every street's ink
+   edge in a first pass, then every paper carriageway in a second. The per-street
+   ink-then-paper loop is what put ink through junctions; the two-pass version
+   merges cleanly.
+
+**Why.** The board's information hierarchy is the opposite of the Vintage plate's:
+the landmarks, numbered discs and routes are the strongest layers, and the
+buildings are a quiet roofscape. The director's comparison made that the priority.
+
+**Rejected alternatives.**
+
+1. **Retune Vintage in place.** It would delete the approved etched plate and the
+   side-by-side comparison that the decision needs; both skins now exist.
+2. **Keep Board as a developer-only skin.** The request was to see the game in
+   this direction, so it is the default; `?skin=vintage` and the dev selector
+   still reach the etched skin.
+3. **Copy the study's street/roof renderer.** Rejected on the director's own
+   review: per-street ink passes create "pipes", and the simplified gable end
+   leaves triangles. The live renderer uses the existing prism/roof faces and the
+   two-pass streets.
+4. **Print landmark names in the plate renderer.** Plate text scales with zoom
+   and cannot be hidden by LOD; plaques belong in the overlay, which already has
+   the map data.
+5. **Change the projection to match the board's hand-drawn aerial view.**
+   Rejected: the 2:1 projection is shared by plate, camera, overlay, tokens and
+   ghost, and decision 0010 keeps routes on the streets.
+
+**Verified.** `pnpm typecheck` (all workspaces); `pnpm test` 7 files / 136 tests;
+`pnpm build`; `pnpm check:docs`. Live browser runs at 1440×900 and 390×844 with
+`?skin=board`, `?skin=vintage` and `?skin=basic`: no page errors. A 1440×900
+play-view drag measured ~18.2 ms/frame (p95 25.9) for Board and ~16.7 ms (p95
+20.3) for Vintage; the 390 DPR 2 numbers were not re-taken.
+
+**Known limits.** River and bridges (round-07 item 8) and the pre-rendered sprite
+phase remain open. The play camera still clamps to the projected bounding box, not
+the city parallelogram, so the north-east margin can show as empty paper — a
+pre-existing composition issue. Landmark compounds are still house-scale. Basic
+is denser after the terrace split. The node-class colour is retired from the
+overlay by [decision 0024](docs/decisions/0024-yard-board-skin.md).
+
+---
+
+## 2026-11-12 — Board presentation pack: paper HUD, print pass, named streets, camera fill
+
+**The request.** After the Yard Board skin shipped, the director asked for a
+one-hour pack of improvements with a solid perceived upgrade, explicitly leaving
+the river out. Four were applied; the fifth (a landmark lift) was rejected by the
+director mid-pass.
+
+**What changed.**
+
+1. **Paper HUD for the Board skin.** `.proto.skin-board` now themes the header,
+   side panel, kit cards, public log, map toolbar, legend, station card, result
+   overlay and role chooser as paper-and-ink surfaces. The layout, sizes and
+   interaction are unchanged, and the Vintage and Basic HUDs are untouched.
+2. **Print pass.** The Board theme gained a pale-yellow `stationDisc`; station
+   numerals and landmark plaques use a serif stack with wider tracking and a
+   heavier plaque border. The whole-city view carries a printed cartouche,
+   compass and scale bar, shown only in map view so it never covers play.
+3. **Named streets.** Six roads at play zoom carry names derived from the nearest
+   landmark (`Cathedral Road`, `Station Road`, `Museum Lane`, `Market Road`, …).
+   The names are generated client-side from `CityStreet.rank` and the landmark
+   kinds; they are presentation labels, not map data, and disappear below play
+   zoom. The overlay projects `city.streets` in `projectMap` to draw them.
+4. **Camera fill.** `clampCameraToPlate` shifts the play camera so its view
+   rectangle sits inside the projected city parallelogram, with a focus-safe
+   fallback that tries softer corrections until the Fugitive and legal
+   destinations are at least 54 px from the frame edge. It runs only on stages at
+   least 720×480: on a 390×844 phone the motion banner covers the top, and
+   clamping pushed the Fugitive under it. The map view is unchanged.
+
+**Rejected alternative — landmark lift.** Scaling the four anchors by 1.35× (and
+raising their plaques) was implemented but reverted on the director's steer:
+making landmarks taller to read is not scalable because they cover streets and
+buildings. Presence should come from the plaque and, later, a compound footprint,
+not from height. This is now recorded in `VISUAL_DIRECTION.md` decision 18 and in
+the status known-deviations.
+
+**Why.** The paper HUD was the largest screen-level gap: the map had become
+board-like, but the dark chrome kept the whole screen reading as a web app. The
+print pass and street names add authored detail without touching map data; the
+camera clamp removes the empty plate corner on desktop.
+
+**Verified.** `pnpm typecheck`; `pnpm test` 7 files / 136 tests; `pnpm build`;
+`pnpm check:docs`. Live runs at 1440×900 and 390×844 for Board, Vintage and Basic
+with no page errors. The play view now fills the frame at 1440 with the Fugitive
+and all four legal destinations visible; the phone keeps the follow framing and
+shows the Fugitive and destinations. The 390 clamp disable and the landmark
+revert were re-shot.
+
+**Known limits.** The map view still prints the plate on paper with its cartouche
+(deliberate). Street names can repeat a landmark word with different suffixes. The
+landmark compound footprint and the river remain open. The paper HUD is a Board
+skin surface only; the other skins keep their own HUD.
+
+---
+
+## 2026-11-12 — Building correctness: closed gable ends, cathedral tower, parks-only trees
+
+**The review.** On the latest Board screenshots the director flagged three
+building-level defects: an empty triangle under some roofs (the gable end was an
+opening), the cathedral tower appearing in the middle of the facade, and trees
+appearing on top of houses or in random places. The landmark enlargement from the
+presentation pack was also rejected: tall landmarks cover streets and buildings
+and do not scale.
+
+**What changed.**
+
+1. **Gable ends are closed.** `drawGableRoof` now takes the wall colour and fills
+   the near gable-end triangle in wall colour with the ink outline. The previous
+   version drew only the two roof planes, so the gable end read as an empty
+   triangle through to the paper. Dormers, houses, cathedral, market, church and
+   university all use the same fix.
+2. **The cathedral tower moved to the east end of the nave.** It was drawn at the
+   nave centre, after the nave, so it covered the rose window and read as a tower
+   in the middle of the facade. The rose window is now visible; the tower/spire
+   sit at the end of the nave.
+3. **Landmark layering.** The town-hall tower and the museum dome are drawn
+   before their porticos, so the columns and pediment stay in front. The station
+   clock tower is already at the east end of its shed.
+4. **Trees are parks-only.** `treesForMap` no longer scatters a street tree at a
+   random point inside a built block; that point could be a roof. Park trees
+   remain. The close-up confirms no tree canopy on a house.
+5. **The 1.35× anchor lift was reverted**, as the director asked. Landmark
+   presence is the plaque and, later, a compound footprint; not height. Recorded
+   in `VISUAL_DIRECTION.md` decision 18.
+
+**Verified.** `pnpm typecheck`; `pnpm test` 7 files / 136 tests; `pnpm build`;
+`pnpm check:docs`. Close-up screenshots at 1440×900:
+`design/moodboard/round-08-board/live-board-roofs-close.png` (gable ends, no trees
+on roofs) and `live-board-landmarks-close.png` (cathedral tower at the nave end,
+station/town-hall layering). Board, Vintage and Basic re-shot with no page errors.
+
+**Known limits.** Gable ends are filled but not windowed; a future detail pass can
+add a gable window. The cathedral tower is at the nave end rather than a crossing
+tower, which is a deliberate, safe silhouette. Landmark compound footprints and
+the river remain open.
+
+---
+
+## 2026-11-12 — Tiled plate, stable overlay, and a 6x scale rehearsal
+
+**The request.** The director asked for another performance pass: the game was
+not unusable but should be smoother, routes and houses drifted slightly apart
+while the map moved, and a new map 10x the current size should be tried — then
+narrowed that to **6x for now**.
+
+**What was measured first.** Two independent defects, not one:
+
+1. The Canvas plate drew in `useEffect`, which runs after paint, while the SVG
+   overlay's `viewBox` changed during the React commit. Instrumenting the canvas
+   transform and comparing it with the overlay `viewBox` showed the plate up to
+   ~20 CSS px behind during a drag. That was the route/house drift.
+2. Every camera frame redrew the whole visible city, and the overlay rebuilt its
+   culled network paths whenever its window changed. At 576 stations a tile
+   rebuild cost 100–300 ms and a wheel zoom rebuilt on every scale change,
+   producing 300–560 ms frames.
+
+**What changed.**
+
+1. **Paint before paint.** `CanvasCity` now draws in `useLayoutEffect`. The
+   canvas/overlay probe reports **0 px mismatch** through a drag at both 96 and
+   576 stations.
+2. **Tiled static plate.** The city renders into 256 CSS-pixel tiles. Panning
+   re-blits existing tiles and paints only newly exposed ones; a one-tile ring is
+   prefetched at idle. The cache is bounded at 48 tiles. Spatial grids now cover
+   blocks and streets as well as buildings and trees, so a tile queries only
+   nearby geometry.
+3. **Whole-city overview.** A low-resolution bitmap of the city is built once per
+   map/theme. It is the free map view at fit zoom (no tiles) and sits under the
+   play view, so zooming out never exposes blank paper.
+4. **Deferred zoom rebuild.** Tiles keep their painted scale during a zoom; a
+   rebuild happens at a 2.5x scale difference or once 180 ms after the camera
+   settles when the difference exceeds 1.5x. A wheel zoom no longer rebuilds the
+   plate every frame.
+5. **Stable overlay DOM.** The permanent network and station layers render the
+   whole graph and are memoised; culling is now used only by the street-label
+   search. Their sizing uses a settled scale, so a zoom gesture scales them with
+   the map and snaps to constant screen size when the camera stops, instead of
+   rebuilding every route and disc per frame.
+6. **Generator fast path.** Above 100 stations the generator prefilters candidate
+   pairs by straight-line distance, routes with A*, builds the taxi tree with one
+   multi-source Prim Dijkstra, and limits the special-shortcut search to the
+   taxi candidate band. `validateStreetGeometry` now uses a spatial street index.
+   Maps at 100 or fewer keep the original path, so the 24/60/96 fixtures are
+   byte-identical.
+7. **6x fixture.** `maps/prototype-576-seed-42.json` is committed:
+   `targetNodes: 576`, `encircle`, world 2940x2205 (the same station density as
+   the quarter), four Agents. `?map=576` loads it through a dev-only dynamic
+   import; the production build does not include it. The prototype header now
+   reads the real station count.
+
+**Why.** The director could see the misalignment during camera movement, and the
+6x rehearsal needed both a generator that finishes and a renderer that does not
+re-render the whole city per frame. The tile cache alone was not enough for zoom;
+the overview plus deferred rebuild is what removed the per-frame rebuild.
+
+**Rejected alternatives.** (full reasoning in decisions
+[0025](docs/decisions/0025-tiled-plate-and-stable-overlay.md) and
+[0026](docs/decisions/0026-six-times-scale-fixture.md))
+
+1. **Keep the full-canvas redraw.** ~34 ms/frame (p95 93) at 96 and unusable at
+   576.
+2. **One viewport-sized plate cache.** Tried first; pans re-rendered the whole
+   margin (100 ms+ spikes at 576) and every 18% zoom rebuilt the plate.
+3. **Keep overlay culling.** Tried after tiling; a cull-window change rebuilt
+   1–6k path elements during a drag and produced 100–342 ms stalls at 576.
+4. **Rebuild tiles on every zoom frame.** Measured at 300–560 ms/frame at 576.
+5. **Go straight to 10x.** The director called it overkill for now and the stable
+   overlay has only been validated at 6x; 10x needs Canvas/windowed routes first.
+6. **Keep the 1200x900 world for 576 stations.** Station spacing collapses and
+   many blocks fall below the minimum house footprint; that is a cramped board,
+   not a scale test.
+
+**Verified.** `pnpm install` (exit 0); `pnpm typecheck` (all workspaces);
+`pnpm test` **7 files / 137 tests**; `pnpm build` (17 modules, 223 kB — the 576
+fixture is not in the production bundle); `pnpm check:docs` (61 markdown files).
+Browser runs at 1440×900 for Board and Vintage at 96 and 576, and at 390×844 for
+576, with no page errors. A 576 Fugitive move advances turn 1 to 2. The
+canvas/overlay transform probe is exact at both scales.
+
+Performance at 1440×900 DPR 1 (Board): 96 play drag ~17.4 ms/frame (p95 29.5,
+max 45.4); 576 play drag ~17.6 ms (p95 25.0, max 42.6); steady panning 16.4/17.0;
+576 free map view 16.6/17.1. A 576 wheel zoom runs at ~31 ms/frame (p95 88) while
+the gesture is active and returns to 60 fps after the 180 ms settle. Generator:
+576 stations generate in ~0.5 s (was minutes); the 96 fixture is unchanged.
+
+**Known limits.** The zoom gesture is still limited by the full SVG overlay DOM
+(~6.6k elements at 576); 10x/50x needs Canvas or windowed routes. The free map
+view is a bitmap at fit scale and softens if zoomed far past the overview
+threshold. The first pan over uncached tiles and the settle rebuild after a zoom
+are the remaining one-off costs. The 390 DPR 2 numbers and the Vintage 6x drag
+were not re-taken.
+
+---
+
+## 2026-11-12 — Interactive demo setup: map, turns, tickets and side
+
+**The request.** The director asked for an interactive demo to try different
+parts of the game: choose an existing map or generate a new one (size, route
+density, etc.), choose the total number of moves, choose how many tickets are
+available, and choose whether to play as the Fugitive or the detective side.
+Skins had to stay available.
+
+**What was built.**
+
+1. **A setup screen** at the prototype route, before the table. It offers:
+   - **Map:** a committed fixture (24 / 60 / 96 / 576 stations) or a generated
+     map with station count, local route density (sparse / standard / dense),
+     Agent count (1–6), close/far starts and a seed (with a randomise button).
+   - **Yard length:** 4–32 total turns. Appearances are derived from the same
+     relative points as 5/10/15, so a 16-turn Yard is byte-identical in rules to
+     the old table and a short Yard still has three appearances.
+   - **Tickets:** per-role taxi, bus, metro, special and foot budgets, prefilled
+     from the engine's provisional prototype defaults.
+   - **Side:** Fugitive or Agent (`Falcon` on the Agent side), plus the skin
+     selector. The game header keeps the skin selector and adds **Setup** so the
+     config can be changed without reloading.
+2. **Engine setup overrides.** `createPrototypeGame` accepts an optional
+   `PrototypeSetup`; `PrototypeState` records `turnLimit` and
+   `appearanceTurns`, and resolution/capture uses those instead of module
+   globals. Defaults still come from the ratified constants.
+3. **Generator route density.** `MapOptions.routeDensity` scales only the extra
+   local taxi links and their reach. `standard` reproduces the existing graph;
+   committed fixtures now record `params.routeDensity: 'standard'`.
+4. **Generated map sizing.** The demo scales the world with the station count so
+   a generated Yard keeps roughly the 96-quarter density instead of shrinking
+   blocks below a readable footprint.
+5. **Skins stay shared.** The skin picker is on the setup screen and in the game
+   header, and the setup screen itself uses the active skin.
+6. **Tests.** Four engine tests cover custom turns/appearances, custom ticket and
+   foot budgets, ending at the configured limit, and invalid setups. One
+   generator test covers sparse/standard/dense validity and ordering.
+
+**Why.** The engine was the right place for the turn/ticket overrides: a demo
+that hard-coded its own play table would drift from capture, appearances and
+Agent Practice. The generator option is scoped to the local taxi extras because
+that is the only route budget with a clean demo meaning; the bus/metro tiers and
+the spanning tree stay the game's contract.
+
+**Rejected alternatives.** (full reasoning in
+[decision 0027](docs/decisions/0027-interactive-demo-setup.md))
+
+1. **Hard-code demo presets in the client.** They would duplicate provisional
+   numbers and go stale.
+2. **Mutate the global turn/ticket constants at runtime.** It would break the
+   `PROVISIONAL_` inventory and deterministic state; the setup is passed as
+   state.
+3. **Fork a second play table for the demo.** The reveal, capture and Agent
+   Practice rules would drift.
+4. **Put the demo config on the server.** There is no `projectState` yet and
+   this is a local dev table.
+5. **Offer 10x/50x sizes now.** The overlay is validated at 6x; larger maps need
+   Canvas/windowed routes first.
+
+**Verified.** `pnpm install`; `pnpm typecheck`; `pnpm test` **7 files / 142
+tests**; `pnpm build` (17 modules, 223 kB — the demo, generator import and 576
+fixture are not in the production bundle); `pnpm check:docs`. Browser runs at
+1440×900 and 390×844 with no page errors: default 96 existing map; a generated
+24-station sparse Yard with 3 Agents, 8 turns, custom tickets and the Agent side;
+a generated 192-station dense Yard on the Fugitive side; the committed 576
+rehearsal; and a skin switch from Board to Vintage inside the game. The 8-turn
+header shows `/ 8` and appearances `3 5 8`; the Agent kit shows the configured
+ticket counts.
+
+**Known limits.** The demo is dev-only and the setup screen drops out of the
+production build. Station counts stop at 576 because the stable SVG overlay is
+the next scale limit. Generated maps are schematic districts, not authored
+boards; route density only changes local taxi links. The setup screen adds no
+server or wire protocol.
+
+---
+
+## 2026-11-12 — Routes under houses, legal-move glow, and dash grammar
+
+**The review.** The director flagged three route-display problems: sometimes two
+same-colour routes appeared side by side (e.g. two taxi lines), routes painted on
+top of houses looked unnatural, and a green dotted route was unexplained.
+
+**Diagnosis.**
+
+1. The legal move was drawn as a cream-underlay ribbon plus a mode-colour ribbon
+   over the permanent route. The geometry matched the network path exactly, but
+   the pair read as a second same-colour route, especially where the permanent
+   casing and the legal underlay met.
+2. Every permanent route lived in the SVG overlay above the Canvas city, so it
+   was painted on the roofs rather than printed on the streets.
+3. Bus is green and dashed/dotted; special is purple dotted; foot is a fine
+   dark dotted line. The legend used solid swatches, so the green dashed bus
+   route looked like a new kind of line.
+
+**What changed.**
+
+1. **Shared route grammar.** Widths, offsets, colours, dashes and polyline
+   offsets now live in `apps/web/src/prototype/routes.ts`, used by both the
+   Canvas plate and the overlay.
+2. **Plate routes for Board/Vintage.** Permanent routes are drawn after the
+   streets and before the buildings: a house covers the route where it stands in
+   front. A 10% trace pass after the buildings keeps the route followable over the
+   roofs.
+3. **Semi-transparent crossed houses.** A house is tested against the route grid
+   in screen space; only a route behind it (lower unprojected `x + y`) marks it.
+   That house is drawn at 84% alpha, so the route reads through the roof at low
+   strength without making whole rows look like glass.
+4. **Legal moves are a glow.** The cream underlay and second ribbon are gone; a
+   13 px low-opacity mode-colour glow plus a 2.4 px centreline sits exactly on the
+   permanent route.
+5. **Dash grammar is aligned and visible.** Bus uses a 9/5 dash, special a 3/5
+   dot, foot a 1.5/5 dot; the casing follows the same dash so the gaps show paper
+   rather than solid ink. The map legend now draws each swatch with its real dash.
+6. **Basic/RTS keep the overlay network.** They do not use the Canvas plate, so
+   `PrototypeMap` renders the full network layer only for those skins.
+
+**Rejected alternatives.** (full reasoning in
+[decision 0028](docs/decisions/0028-routes-under-houses-and-legal-glow.md))
+
+1. **Leave routes above the houses.** The core complaint would remain.
+2. **Use one uniform faint route pass over every roof.** Tried first; it read as a
+   line painted on the roof, not seen through the house.
+3. **Make every house near a route translucent.** Tried; rows in front of the
+   route washed out. The behind-only test plus 0.84 alpha keeps the mass.
+4. **Depth-sort every route segment with the buildings.** More correct for routes
+   in front, but it breaks dashes/caps at every segment and adds a large sort to
+   every tile.
+5. **Duplicate building silhouettes as SVG masks.** It would double the geometry
+   and make the overlay heavier.
+
+**Verified.** `pnpm install`; `pnpm typecheck`; `pnpm test` **7 files / 142
+tests**; `pnpm build` (17 modules, 223.10 kB); `pnpm check:docs`. Browser runs at
+1440×900 for Board and Vintage at 96 and 576, Basic/Iron/Night for fallback, and
+390×844 for Board, with no page errors. The overlay DOM drops from ~1.2k to ~0.7k
+elements at 96 and from ~6.6k to ~3.5k at 576. A 576 pan measures ~16.7 ms/frame
+(p95 22.8); a 576 wheel zoom ~20 ms/frame (p95 47) while the gesture runs, back to
+60 fps after the settle.
+
+**Known limits.** The crossed-house effect fades the whole house, not a per-pixel
+hole. Routes in front of a house still use the two-pass approximation. Basic and
+the RTS skins still draw routes over houses; they remain fallback skins.
+
+---
+
+## 2026-11-12 — Neutral Board streets and route keyline
+
+**The review.** The director said the Board streets had become ugly with strong
+black borders and asked for neutral toning — pavement and road in different
+shades of grey/brown.
+
+**Cause.** The Board street edge and every route keyline used `theme.shadow`, the
+same near-black ink as building outlines. Once the routes moved into the plate,
+that shared ink made the whole street network read as black borders.
+
+**What changed.**
+
+1. **A Board street palette** on the theme: `streetEdge` (`#b7a68a`),
+   `streetPavement` (`#e4d9c4`) and `streetFill` (`#cec2ac`). The plate draws the
+   edge, then the pavement strip, then the carriageway.
+2. **A separate route keyline**: `routeCasing` (`#7f6f57`) replaces the ink
+   shadow for route ribbons. Routes stay keylined, but not black-edged.
+3. **Building ink stays ink.** `shadow` remains the strong building/landmark
+   outline. The fields are optional, so Vintage, Basic and the RTS skins keep
+   their existing street grammar.
+
+**Rejected alternatives.** Keeping the black street outline (the complaint),
+reusing `shadow` for routes (couples the keyline to building ink), one flat grey
+road (loses the pavement/kerb read), or changing every skin's streets (Vintage and
+Basic/RTS have their own grammar). Full reasoning in
+[decision 0029](docs/decisions/0029-neutral-board-street-palette.md).
+
+**Verified.** `pnpm install`; `pnpm typecheck`; `pnpm test` **7 files / 142
+tests**; `pnpm build` (17 modules, 223.10 kB); `pnpm check:docs`. Browser shots at
+1440×900 for Board 96/576 (play, map, close), Vintage 96/576, Basic/Iron/Night
+fallback and Board 390, with no page errors. The Board streets now read as warm
+grey-brown pavement and carriageway instead of paper with a black outline; route
+ribbons keep a soft keyline.
+
+---
+
+## 2026-11-12 — Route cutouts replace whole-house alpha
+
+**The correction.** The director saw that almost every house had become
+semi-transparent after the route-occlusion pass. The intent was only to see the
+coloured route where it passes behind a house — not to fade the house or let the
+street show through.
+
+**Why it happened.** The first implementation marked a whole house as translucent
+when any route crossed its screen silhouette. On a dense board most houses back
+onto a routed street, so most of the city was faded. The 84% house alpha also let
+the street and ground beneath show through the walls.
+
+**What changed.**
+
+1. The building/tree/landmark scene is drawn to a transparent **layer**.
+2. The visible route paths are stroked into that layer with
+   `destination-out` and `PROVISIONAL_ROUTE_CUTOUT_ALPHA = 0.4`, using a band the
+   width of the route casing.
+3. The layer is composited over the plate. Only that narrow route band is
+   semi-transparent; the house, street and ground stay opaque everywhere else.
+4. The per-building `routeCrossed` flag, behind-depth test and 84% whole-house
+   alpha are gone. This supersedes only [decision 0028](docs/decisions/0028-routes-under-houses-and-legal-glow.md)'s
+   house-transparency point; the plate routes, legal glow, route grammar and dash
+   legend stand ([decision 0030](docs/decisions/0030-route-cutouts-not-house-alpha.md)).
+
+**Rejected.** Whole-house alpha (the complaint), behind-only whole-house alpha
+(still fades the building), low-alpha route on top of the roof (looks painted on),
+full-alpha cutout (too strong), or per-pixel SVG silhouette masks (duplicates the
+building geometry).
+
+**Verified.** `pnpm typecheck`; `pnpm test` **7 files / 142 tests**; `pnpm build`
+(17 modules, 223.10 kB); `pnpm check:docs`. Board and Vintage screenshots at 96
+and 576, close-up and map; the route channel through houses is now narrow, houses
+keep their mass, and no street/ground bleeds through. Panning stayed at
+~16.6 ms/frame (p95 24) and the 576 wheel zoom at ~20 ms/frame while moving.
+
+---
+
+## 2026-11-12 — Softer house and landmark outlines
+
+**The review.** The director said the house outlines still looked too strong and
+dark on both Board and Vintage.
+
+**Cause.** Every house, roof and landmark stroke used `theme.shadow`, the
+near-black ink shared with labels and Vintage's cast shadows. The new neutral
+streets made the remaining black house outlines more conspicuous.
+
+**What changed.**
+
+1. `RtsTheme` gained optional `outline` and `outlineScale`.
+2. Canvas building, roof, landmark, tree and furniture linework now uses
+   `ink(theme) = theme.outline ?? theme.shadow`.
+3. Board uses `#806e55` at 0.75× line width; Vintage uses `#5c4833` at 0.8×.
+4. Cast shadows still use `shadow`, labels/station rings still use `label`, route
+   keylines still use `routeCasing`, and Board street edges keep the neutral
+   street palette. Basic/Iron/Night fall back to `shadow` unchanged.
+
+**Rejected.** Keeping `shadow` (the complaint), lightening `shadow` globally
+(would weaken labels and cast shadows), removing outlines (roof planes lose
+definition), or changing only one skin (both had the same ink).
+[Decision 0031](docs/decisions/0031-softer-house-outline-ink.md).
+
+**Verified.** `pnpm typecheck`; `pnpm test` **7 files / 142 tests**; `pnpm build`
+(17 modules, 223.10 kB); `pnpm check:docs`. Board and Vintage screenshots at 96
+and 576 (play, map, close) show softer brown-sepia linework while labels, discs,
+shadows and route keylines keep their contrast. No page errors.
+
+---
+
+## 2026-11-12 — Delivery jobs (prototype)
+
+**The request.** Give the Fugitive a second goal beyond survival: pick up a
+shipment at a public place and deliver it for cash. The director set the shape:
+jobs at random public places (not one Black Market), one active job at a time,
+public pickup and private delivery, explicit Collect/Deliver actions that consume
+the turn, no cargo restrictions or job time limits yet, and £10 per delivery in a
+per-Yard cash total.
+
+**What changed.**
+
+1. **Engine.** `PrototypeState` now carries `jobs`, `activeJobId`, `cash`,
+   `jobsDelivered` and the normalised public `jobPickups`. One offer spawns at
+   the start of turns 1, 6, 11, … and expires after five unclaimed turns. A job
+   is collected only at its pickup, delivered only at its destination, and only
+   one can be active; Collect/Deliver end the Fugitive turn. Pickup appends the
+   only public job log row; delivery adds no public row. Delivery pays £10 once.
+2. **Generation.** Pickups are landmark-adjacent stations passed in from the
+   map; destinations are any other station. Titles/icons come from a seeded
+   catalogue; the offer is deterministic from the Yard seed and turn.
+3. **UI.** A Fugitive-only **Smuggling jobs** panel shows the active job and
+   offers (pickup, drop, prize, expiry), with Collect/Deliver buttons. Clicking a
+   job reveals its destination marker. The map draws shipment badges at pickup
+   stations and a flag/ring at the selected or active drop. Agents see only the
+   public pickup marker; delivery stays private. The result screen shows cash,
+   deliveries and a lost-shipment note.
+4. **Bot.** The bot Fugitive collects the earliest expiring reachable offer and
+   heads for the drop, then falls back to evasion.
+5. **Tests.** Cadence, expiry, pickup location, explicit turn-consuming actions,
+   one active job, public pickup/private delivery, payout and the bot commands
+   are covered in `prototype.test.ts`.
+
+**Rejected.** A fixed Black Market source (jobs are at random public places),
+free Collect/Deliver (the turn cost is the risk), a public drop or delivery (it
+would let Agents camp), multiple active jobs (future multi-Fugitive work), job
+deadlines, and implementing ticket-buying/persistent cash in this slice. Full
+reasoning: [decision 0032](docs/decisions/0032-delivery-jobs-prototype.md).
+
+**Verified.** `pnpm install`; `pnpm typecheck`; `pnpm test` **7 files / 148
+tests**; `pnpm build` (17 modules, 223.10 kB); `pnpm check:docs`. Browser checks:
+the Smuggling jobs panel and map markers render on the 96 and Agent Practice
+setups with no page errors; selecting a job adds its destination marker; on the
+24-station fixture the Fugitive reached a pickup, used Collect, produced the
+public pickup row and entered the Agent phase (the test run was then captured at
+the pickup). Delivery and payout are covered by the engine tests; the browser
+flow does not claim a completed drop.
+
+---
+
+## 2026-11-12 — Delivery jobs: final verification
+
+After the entry above, one more engine test was added for the bot's path toward a
+reachable pickup. The current suite is **7 test files / 149 tests**, and
+`pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build` and
+`pnpm check:docs` all pass. No further code changes followed that run.

@@ -28,8 +28,10 @@ and street-following directives were added — see §1 decisions 10–15 and §4
 | 12 | **Movement path display** | **Paths follow the street network.** Straight lines across blocks are forbidden except for genuine off-street modes (metro / special) — see [decision 0010](docs/decisions/0010-legal-moves-follow-streets.md). |
 | 13 | **Screen-first** | **Mobile-first, portrait-primary.** The MVP must be playable on a phone in a ~5–10 minute session; richer detail is added for large screens later. |
 | 14 | **Screen complexity** | **Minimal.** The round-02 mockups are explicitly rejected as an MVP starting point — they are "the most complex possible game screen with lots of modal windows and different options". |
-| 15 | **MVP scope** | **Close to the original Scotland Yard**, plus **on foot**. The electric scooter was removed in the 1907 era pass ([decision 0019](docs/decisions/0019-1907-era-rules.md)). Gadgets, agent skills, contraband missions, safe houses, multi-Yard instances and ~100-player cities are **not MVP**. |
-| 16 | **Prototype skin (2026-10-29)** | **Isometric Vintage Etching** is the default prototype skin: early-1900s sepia/ink city, paper HUD, transit routes in colour. Basic remains the fallback; no motor-scooter. |
+| 15 | **MVP scope** | **Close to the original Scotland Yard**, plus **on foot**. The electric scooter was removed in the 1925 era pass ([decision 0019](docs/decisions/0019-1907-era-rules.md)). Gadgets, agent skills, contraband missions, safe houses, multi-Yard instances and ~100-player cities are **not MVP**. |
+| 16 | **Prototype skin (2026-10-29)** | **Isometric Vintage Etching** is the default prototype skin: 1925 interwar sepia/ink city, paper HUD, transit routes in colour. Basic remains the fallback; no motor-scooter. |
+| 17 | **Default skin (2026-11-12)** | **Yard Board** (`board`) is the default prototype skin: paper plate, short roof-first terraces, one numbered station disc with a mode collar, keylined route ribbons, landmark plaques. **Vintage Etching** and **Basic** remain selectable. See [decision 0024](docs/decisions/0024-yard-board-skin.md). |
+| 18 | **Landmark scale (2026-11-12)** | Do **not** scale landmarks up to make them read. Tall landmarks cover streets and buildings and do not scale; keep them house-scale with plaques until a compound footprint is designed. |
 
 ### The ambient-actor rule (from decision 6)
 
@@ -83,6 +85,10 @@ session does not discover them halfway through an implementation.
 - **Art style and perspective** — shortlisted to **F** (flat vector, 2.5D tilt) and
   **H** (painterly, pure top-down, night) in `design/moodboard/round-02-city/`.
   New mobile-first mockups are being built before this is closed.
+  **Update 2026-11-12:** the playable default is now the **Yard Board** skin
+  (decision 17/0024), derived from the original *Scotland Yard* board grammar.
+  This does not settle the wider F-versus-H art direction for the 600–900-node
+  renderer; it is the prototype's presentation choice.
 - **The fog layer in H.** H renders three large soft `gFog` ellipses at opacity
   .55–.70. It is purely decorative — **nothing in the game state drives it** — and
   the director read it as an implied visibility mechanic, which is the problem.
@@ -96,7 +102,7 @@ session does not discover them halfway through an implementation.
   neither — do **not** widen `TransportMode`. The MVP rules introduce
   `MobilityOption = TransportMode | 'foot'` and
   `LoggedTransport | 'hold'`, leaving the four transport tiers intact. The
-  motor-scooter was removed in the 1907 era pass (decision 0019). On-foot is
+  motor-scooter was removed in the 1925 era pass (decision 0019). On-foot is
   **logged**, so the "silent stealth option" framing that used to be here was
   wrong.
 - **Do stations get in-world names**, or stay numbered (101, 102…)? The round-01
@@ -118,7 +124,7 @@ Recorded because they change what "done" means for the next rounds.
    missions, safe houses, ~100-player cities — is *good but not MVP*. Work now
    targets a buildable, balanced MVP with logical mechanics.
 2. **Stay close to the original Scotland Yard**, adding only what earns its place.
-   The director names **on foot**; the electric scooter was removed in the 1907 era pass.
+   The director names **on foot**; the electric scooter was removed in the 1925 era pass.
 3. **Mobile-first.** Mobile play is treated as primary and desktop is the later
    enhancement — not the reverse. The MVP must work on a small screen.
 4. **Start from the minimum screen.** The round-02 mockups are rejected as an MVP

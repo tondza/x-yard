@@ -92,7 +92,7 @@ street-following edge geometry, and a **local 96-station prototype**: an
 isometric Vintage Etching city plate (Canvas with spatial culling and zoom LOD), 16 turns, all five movement options, appearances,
 capture, result and restart, with a permanent all-mode transit network, a
 station inspector, a last-appearance ghost, deterministic Agent bots,
-one-at-a-time move playback, a side chooser (Fugitive or Agent Practice) and a follow/map camera. The Vintage Etching skin is the default; Basic remains the fallback. 7 test files and 136 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
+one-at-a-time move playback, an interactive setup screen (existing or generated map, Yard length, ticket budgets, Fugitive or Agent side) and a follow/map camera. The Yard Board skin is the default; Vintage Etching and Basic remain selectable. 7 test files and 149 tests pass, and `pnpm install`, `pnpm typecheck`, `pnpm test`, and `pnpm build` all
 exit 0. `game-core` has zero runtime dependencies.
 
 **The full server turn machine is not implemented yet.** The prototype loop is

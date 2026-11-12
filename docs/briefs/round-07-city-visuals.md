@@ -1,6 +1,6 @@
 # Round 07 — city visuals brief (Vintage Etching upgrade)
 
-**Objective.** Make the playable prototype look appealing as an early-1900s etched
+**Objective.** Make the playable prototype look appealing as a 1925 interwar etched
 city: varied houses with **pitched roofs as the norm** (not uniform "brick boxes"), a
 set of **distinct landmarks** (sports ground, town hall, church, gardens, and more),
 and a richer Vintage Etching treatment — all behind the existing developer skin
@@ -19,7 +19,7 @@ memory of prior conversation should be able to execute this file top to bottom.
 | Projection | 2:1 isometric in `apps/web/src/prototype/projection.ts` | The whole overlay (stations, routes, tokens, ghost) is projected against it |
 | Skin boundary | `apps/web/src/prototype/skins/index.ts` + `MapStage` | `vintage` is default; `basic` is the fallback and must stay |
 | Transit colour | the network is the **only** saturated layer (`VINTAGE.route` in `apps/web/src/lab/rts/rtsTheme.ts`) | Core Vintage Etching directive |
-| Era | early 1900s ([decision 0019](../decisions/0019-1907-era-rules.md)) | No modern props (cars, AC, neon, billboards, antennas) |
+| Era | **1925, interwar** ([decision 0023](../decisions/0023-era-1925.md)) | No modern props (neon, AC, billboards, antennas); motor traffic stays sparse |
 
 ## The delta — ordered by bang-for-buck
 
@@ -45,7 +45,7 @@ Do them in this order. Each item is independently shippable.
    train-shed/clock, market hall roof, square fountain/obelisk). Pure renderer; no data
    change.
 5. **New landmark kinds.** Widen `LandmarkModel['kind']` in
-   `packages/map-generator/src/types.ts` with a period set — `sportsGround` (the 1907
+   `packages/map-generator/src/types.ts` with a period set — `sportsGround` (the 1920s
    "stadium"), `townHall` (city hall, clock tower + portico), `church` (nave + steeple +
    spire), `gardens` (named park with bandstand, distinct from anonymous `park` blocks),
    plus `hospital`, `museum`, `university`, `theatre`, `gasworks`. In `grid.ts`, select a

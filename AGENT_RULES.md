@@ -190,7 +190,7 @@ curl -s localhost:3001/health
 curl -s localhost:3001/board
 ```
 
-Expected state today: 7 test files and 136 tests, all passing. The server serves
+Expected state today: 7 test files and 149 tests, all passing. The server serves
 `/health` and `/board` and rejects every game message explicitly as
 "not implemented" — it does not pretend to play. Report what you actually ran and
 what the output was. Do not claim a check passed that you did not execute.
