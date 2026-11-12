@@ -61,3 +61,10 @@ start-dsh.sh
 
 # Scratch snapshots
 .git-status-before.txt
+
+# Personal / per-developer overrides — never committed
+AGENTS.local.md
+CLAUDE.local.md
+docs/lessons.local.md
+docs/notes.local.md
+.prof/

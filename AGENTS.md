@@ -10,6 +10,18 @@ Solo-developed, low-budget, and built to be maintained largely by autonomous
 agent sessions — which is why the rules engine is a pure, deterministic,
 serializable state machine and why these governance files exist.
 
+## For contributors
+
+If you are a **contributor** rather than the maintainer, start at
+[`CONTRIBUTING.md`](CONTRIBUTING.md) (the contribution rules) and
+[`docs/setup.md`](docs/setup.md) (the environment guide). The batch brief you were
+handed is the contract for your task; the rules below still apply in full.
+
+Personal, per-developer instructions live in `AGENTS.local.md` and
+`docs/lessons.local.md` (both gitignored). If they exist, read them as an
+addendum to this file — never commit them, and never let them override a shared
+rule.
+
 ## The three non-negotiables
 
 Set by the product director. Not negotiable, not contextual:
@@ -137,4 +149,6 @@ Use the brief's vocabulary — `fugitive`, `agent`, `turn`, `Yard`, `underground
 | [`docs/decisions/`](docs/decisions/) | Settled decisions with the rejected alternative |
 | [`docs/briefs/`](docs/briefs/) | Self-contained briefs for delegated work |
 | [`docs/status.md`](docs/status.md) | Current state, edited in place — read this instead of scanning the log |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contributor entry point: rules, workflow, PR expectations |
+| [`docs/setup.md`](docs/setup.md) | New-contributor environment setup, from checkout to running game |
 | `archive/` | Superseded approaches, kept with a `WHY_SUPERSEDED.md` |
