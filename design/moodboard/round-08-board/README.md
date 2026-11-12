@@ -8,13 +8,12 @@ how they are presented. The study below is kept as the design record; the live
 implementation is recorded in
 [decision 0024](../../../docs/decisions/0024-yard-board-skin.md).
 
-The full-screen render is [`proposed-1440.png`](proposed-1440.png), a 1:1 crop is
-[`proposed-detail.png`](proposed-detail.png), and
-[`compare.png`](compare.png) sets the live Vintage plate beside the proposal.
-The **applied** result is [`live-board-1440.png`](live-board-1440.png),
-[`live-board-390.png`](live-board-390.png),
-[`live-board-map-1440.png`](live-board-map-1440.png) and
-[`compare-live.png`](compare-live.png).
+Renders are local work artifacts and are not committed; see
+[`design/moodboard/README.md`](../README.md) and [Re-render](#re-render). The
+study's renders are `proposed-1440.png`, `proposed-detail.png` and
+`compare.png` (the live Vintage plate beside the proposal). The **applied**
+result is `live-board-1440.png`, `live-board-390.png`,
+`live-board-map-1440.png` and `compare-live.png`.
 
 ---
 
@@ -77,14 +76,11 @@ was rejected:
    no longer covers the rose window; the town-hall tower and museum dome are
    drawn before their porticos; street trees were removed because a random point
    inside a built block could be a roof. Close-ups:
-   [`live-board-roofs-close.png`](live-board-roofs-close.png) and
-   [`live-board-landmarks-close.png`](live-board-landmarks-close.png).
+   `live-board-roofs-close.png` and `live-board-landmarks-close.png`.
 
-The follow-up screenshots are [`live-board-1440.png`](live-board-1440.png),
-[`live-board-390.png`](live-board-390.png),
-[`live-board-map-1440.png`](live-board-map-1440.png),
-[`live-board-role-1440.png`](live-board-role-1440.png) and
-[`live-board-station-1440.png`](live-board-station-1440.png).
+The follow-up screenshots are `live-board-1440.png`, `live-board-390.png`,
+`live-board-map-1440.png`, `live-board-role-1440.png` and
+`live-board-station-1440.png`.
 
 ## What is real and what is stand-in
 
@@ -103,13 +99,15 @@ The follow-up screenshots are [`live-board-1440.png`](live-board-1440.png),
 
 ## Files
 
+Sources are committed; renders are local work artifacts listed here for reference.
+
 | File | Role |
 | --- | --- |
 | `mockup.html` / `mockup.js` | The study's page, layout and renderer (plain SVG) |
 | `city-bundle.js` | Generated: `apps/web/src/prototype/city.ts` bundled with esbuild |
 | `mock-data.js` | Generated: the committed 96-station map as `window.__MAP__` |
-| `compare.html` / `compare.png` | Now-versus-proposed comparison sheet (study) |
-| `compare-live.html` / `compare-live.png` | Vintage-versus-Board comparison of the live app |
+| `compare.html` / `compare.png` | Now-versus-proposed contact sheet (local artifact, not committed) |
+| `compare-live.html` / `compare-live.png` | Vintage-versus-Board comparison of the live app (local artifact) |
 | `proposed-1440.png` | Full 1440 × 900 screen at 2× device pixel ratio |
 | `proposed-detail.png` | 1:1 crop for judging houses, nodes, routes and a plaque |
 | `live-board-1440.png`, `live-board-map-1440.png`, `live-board-390.png`, `live-board-map-390.png` | The applied skin at play and whole-city zoom, desktop and phone |

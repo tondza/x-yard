@@ -42,3 +42,22 @@ test-results/
 .playwright-browsers/
 .chromium-libs/
 .apt/
+
+# Renders are work artifacts, not repository content. Mockup sources
+# (html/css/js) are committed; their output is regenerated locally with the
+# moodboard tooling. Contact sheets only wrap renders, so they are artifacts
+# too. See design/moodboard/README.md.
+design/**/*.png
+design/**/*.jpg
+design/**/*.jpeg
+design/**/*.webp
+design/**/compare*.html
+maps/shots/
+
+# Local dev-host helpers (Codespace-specific, not project code)
+fix-502.sh
+fix-proxy.sh
+start-dsh.sh
+
+# Scratch snapshots
+.git-status-before.txt

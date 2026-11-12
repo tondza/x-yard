@@ -23,15 +23,17 @@ Every fixture records `params.routeDensity` (`standard` for all committed maps).
 Sparse/dense local-link budgets are generator/demo options; they do not rewrite
 the committed boards.
 
-Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`,
-`prototype-96-seed-42.png` and `mvp-60-seed-42.png`.
+Review renders of the lab are written to `maps/shots/` locally and are not
+committed: `prototype-24-seed-42.png`, `prototype-96-seed-42.png` and
+`mvp-60-seed-42.png`. Renders are work artifacts; regenerate them with the map
+lab.
 
 The first playable's frames remain for comparison:
 `prototype-96-turn-1.png` (initial city and legal moves),
 `prototype-96-turn-2.png` (after one move), and `prototype-96-result.png`
 (capture overlay).
 
-The **current** prototype is captured in:
+The **current** prototype is captured in (local renders, not committed):
 
 | File | Shows |
 | --- | --- |

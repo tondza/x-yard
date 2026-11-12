@@ -125,3 +125,9 @@ than by eye. `index.html` files are contact sheets and are skipped.
 
 `.tools/`, `.playwright-browsers/`, `.chromium-libs/` and `.apt/` are all
 git-ignored.
+
+**Renders are work artifacts, not repository content.** `shots/` folders (and a
+round's own PNGs) are git-ignored, so a fresh clone contains the mockup sources
+but no images. Regenerate them with the command above. Git carries the source
+that draws the mockup; visual evidence for a change belongs in the pull request
+that made it, not in the tree.
