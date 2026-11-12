@@ -12,7 +12,7 @@
  * @module apps/web/prototype/skins
  */
 
-export type SkinId = 'basic' | 'vintage' | 'iron' | 'nightops';
+export type SkinId = 'basic' | 'vintage' | 'board' | 'iron' | 'nightops';
 
 export interface SkinOption {
   readonly id: SkinId;
@@ -22,12 +22,13 @@ export interface SkinOption {
 
 export const SKIN_OPTIONS: readonly SkinOption[] = [
   { id: 'basic', label: 'Basic', kicker: 'F · 2.5D · prototype baseline' },
-  { id: 'vintage', label: 'Vintage', kicker: 'Isometric · 1907 · paper & ink' },
+  { id: 'vintage', label: 'Vintage', kicker: 'Isometric · 1925 · etched sepia' },
+  { id: 'board', label: 'Board', kicker: 'Isometric · 1925 · paper board' },
   { id: 'iron', label: 'Iron', kicker: '2.5D · RTS city' },
   { id: 'nightops', label: 'Night', kicker: '2.5D · night · lit windows' },
 ];
 
-export const DEFAULT_SKIN: SkinId = 'vintage';
+export const DEFAULT_SKIN: SkinId = 'board';
 
 export function isSkinId(value: string | null): value is SkinId {
   return value !== null && SKIN_OPTIONS.some((option) => option.id === value);

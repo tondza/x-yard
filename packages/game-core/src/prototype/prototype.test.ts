@@ -4,13 +4,15 @@ import { DEMO_BOARD } from '../demo-board';
 import {
   applyFugitiveCommand,
   chooseAgentMove,
+  chooseFugitiveCommand,
   chooseFugitiveMove,
   createPrototypeGame,
   legalMoves,
+  prototypeAppearanceTurns,
   resolveAgentPhase,
   revealAppearance,
 } from './engine';
-import type { PrototypeSeat, PrototypeState } from './types';
+import type { PrototypeJobPickup, PrototypeSeat, PrototypeState } from './types';
 
 const STARTS = {
   fugitive: 's1',
@@ -107,6 +109,59 @@ describe('prototype turn, appearance and capture', () => {
     if (!resolved.ok) return;
     expect(resolved.state.lastAppearanceTurn).toBe(5);
     expect(resolved.state.log.some((entry) => entry.kind === 'appearance')).toBe(true);
+  });
+
+  it('honours a custom Yard length and derives its appearances', () => {
+    expect(prototypeAppearanceTurns(16)).toEqual([5, 10, 15]);
+    const state = createPrototypeGame(DEMO_BOARD, STARTS, 7, { turnLimit: 8 });
+    expect(state.turnLimit).toBe(8);
+    expect(state.appearanceTurns).toEqual([3, 5, 8]);
+  });
+
+  it('honours the demo ticket and foot-step budgets', () => {
+    const state = createPrototypeGame(DEMO_BOARD, STARTS, 7, {
+      fugitiveTickets: { taxi: 1, special: 0 },
+      agentTickets: { taxi: 2 },
+      fugitiveFootSteps: 0,
+      agentFootSteps: 1,
+    });
+    expect(state.seats[0]?.tickets).toEqual({ taxi: 1, bus: 4, underground: 3, special: 0 });
+    expect(state.seats[0]?.footSteps).toBe(0);
+    expect(state.seats[1]?.tickets).toEqual({ taxi: 2, bus: 5, underground: 3, special: 0 });
+    expect(state.seats[1]?.footSteps).toBe(1);
+  });
+
+  it('ends at the configured turn limit, not the ratified 16', () => {
+    const base = createPrototypeGame(DEMO_BOARD, STARTS, 7, { turnLimit: 1 });
+    const seats = base.seats.map((seat, index) =>
+      index === 0 ? seat : { ...seat, node: 's6' },
+    );
+    const state: PrototypeState = {
+      ...base,
+      phase: 'agents',
+      seats,
+      lastKnown: 's6',
+      pendingAppearance: false,
+    };
+    const resolved = resolveAgentPhase(DEMO_BOARD, state);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.state.result).toEqual({
+      winner: 'fugitives',
+      reason: 'survived',
+      turn: 1,
+      capturedBy: null,
+    });
+  });
+
+  it('rejects an impossible demo setup as a programming error', () => {
+    expect(() => createPrototypeGame(DEMO_BOARD, STARTS, 7, { turnLimit: 0 })).toThrow(RangeError);
+    expect(() =>
+      createPrototypeGame(DEMO_BOARD, STARTS, 7, { turnLimit: 4, appearanceTurns: [5] }),
+    ).toThrow(RangeError);
+    expect(() =>
+      createPrototypeGame(DEMO_BOARD, STARTS, 7, { fugitiveTickets: { taxi: -1 } }),
+    ).toThrow(RangeError);
   });
 
   it('returns no Agent moves for a Fugitive command', () => {
@@ -325,6 +380,198 @@ describe('bot Fugitive policy', () => {
     if (first !== null) {
       expect(legalMoves(DEMO_BOARD, state, 'fugitive')).toContainEqual(first);
     }
+  });
+});
+
+
+
+describe('delivery jobs', () => {
+  const JOB_PICKUPS: readonly PrototypeJobPickup[] = [
+    { node: 's1', label: 'Old Square' },
+    { node: 's8', label: 'The Gasworks' },
+  ];
+
+  function jobGame(seed = 7): PrototypeState {
+    return createPrototypeGame(DEMO_BOARD, STARTS, seed, { jobPickups: JOB_PICKUPS });
+  }
+
+  function atNode(state: PrototypeState, node: string): PrototypeState {
+    const seats = state.seats.map((seat, index) =>
+      index === 0 ? { ...seat, node } : seat,
+    );
+    return { ...state, seats };
+  }
+
+  function resolveHold(state: PrototypeState): PrototypeState {
+    const applied = applyFugitiveCommand(DEMO_BOARD, state, { kind: 'hold' });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return state;
+    const holds = applied.state.seats
+      .filter((seat) => seat.role === 'agent')
+      .map((seat) => seat.id);
+    const resolved = resolveAgentPhase(DEMO_BOARD, applied.state, { holds });
+    expect(resolved.ok).toBe(true);
+    return resolved.ok ? resolved.state : applied.state;
+  }
+
+  it('spawns one deterministic offer at turn 1, at a public pickup', () => {
+    const state = jobGame();
+    expect(state.jobs).toHaveLength(1);
+    const job = state.jobs[0];
+    expect(job).toBeDefined();
+    if (job === undefined) return;
+    expect(job.status).toBe('available');
+    expect(job.spawnedTurn).toBe(1);
+    expect(job.expiresTurn).toBe(6);
+    expect(job.prize).toBe(10);
+    expect(job.pickup).toBe('s1');
+    expect(job.pickupLabel).toBe('Old Square');
+    expect(job.destination).not.toBe(job.pickup);
+    expect(job.title.length).toBeGreaterThan(0);
+    expect(job.icon.length).toBeGreaterThan(0);
+    expect(jobGame()).toEqual(state);
+  });
+
+  it('expires an uncollected offer after five turns and spawns the next one', () => {
+    let state = jobGame();
+    for (let turn = 1; turn < 6; turn += 1) {
+      state = resolveHold(state);
+      expect(state.turn).toBe(turn + 1);
+    }
+    expect(state.jobs.find((job) => job.id === 'job-1')?.status).toBe('expired');
+    const next = state.jobs.find((job) => job.id === 'job-6');
+    expect(next?.status).toBe('available');
+    expect(next?.spawnedTurn).toBe(6);
+  });
+
+  it('collects only at the pickup and ends the Fugitive turn', () => {
+    const state = jobGame();
+    const job = state.jobs[0];
+    const fugitive = state.seats[0];
+    if (job === undefined || fugitive === undefined) return;
+
+    const elsewhere = job.pickup === 's2' ? 's3' : 's2';
+    const wrong = atNode(state, elsewhere);
+    expect(applyFugitiveCommand(DEMO_BOARD, wrong, { kind: 'collect-job', jobId: job.id })).toEqual({
+      ok: false,
+      reason: 'illegal-job',
+    });
+
+    const collected = applyFugitiveCommand(DEMO_BOARD, atNode(state, job.pickup), {
+      kind: 'collect-job',
+      jobId: job.id,
+    });
+    expect(collected.ok).toBe(true);
+    if (!collected.ok) return;
+    expect(collected.move).toBeNull();
+    expect(collected.state.phase).toBe('agents');
+    expect(collected.state.activeJobId).toBe(job.id);
+    expect(collected.state.jobs.find((candidate) => candidate.id === job.id)?.status).toBe('active');
+    expect(collected.state.log.at(-1)?.kind).toBe('pickup');
+    expect(collected.state.log.at(-1)?.node).toBe(job.pickup);
+    expect(collected.state.cash).toBe(0);
+  });
+
+  it('rejects a second job while one is active', () => {
+    const state = jobGame();
+    const job = state.jobs[0];
+    if (job === undefined) return;
+    const collected = applyFugitiveCommand(DEMO_BOARD, atNode(state, job.pickup), {
+      kind: 'collect-job',
+      jobId: job.id,
+    });
+    expect(collected.ok).toBe(true);
+    if (!collected.ok) return;
+
+    const resolvedCollect = resolveAgentPhase(DEMO_BOARD, collected.state, {
+      holds: collected.state.seats.filter((seat) => seat.role === 'agent').map((seat) => seat.id),
+    });
+    expect(resolvedCollect.ok).toBe(true);
+    if (!resolvedCollect.ok) return;
+    let activeState = resolvedCollect.state;
+    for (let turn = 2; turn < 6; turn += 1) activeState = resolveHold(activeState);
+    const nextOffer = activeState.jobs.find((candidate) => candidate.status === 'available');
+    expect(nextOffer).toBeDefined();
+    if (nextOffer === undefined) return;
+    const second = applyFugitiveCommand(DEMO_BOARD, atNode(activeState, nextOffer.pickup), {
+      kind: 'collect-job',
+      jobId: nextOffer.id,
+    });
+    expect(second).toEqual({ ok: false, reason: 'illegal-job' });
+  });
+
+  it('delivers at the destination, pays once and stays out of the public log', () => {
+    const state = jobGame();
+    const job = state.jobs[0];
+    if (job === undefined) return;
+    const collected = applyFugitiveCommand(DEMO_BOARD, atNode(state, job.pickup), {
+      kind: 'collect-job',
+      jobId: job.id,
+    });
+    expect(collected.ok).toBe(true);
+    if (!collected.ok) return;
+    const resolved = resolveAgentPhase(DEMO_BOARD, collected.state, {
+      holds: collected.state.seats.filter((seat) => seat.role === 'agent').map((seat) => seat.id),
+    });
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+
+    const wrong = applyFugitiveCommand(DEMO_BOARD, resolved.state, { kind: 'deliver-job' });
+    expect(wrong).toEqual({ ok: false, reason: 'illegal-job' });
+
+    const delivered = applyFugitiveCommand(DEMO_BOARD, atNode(resolved.state, job.destination), {
+      kind: 'deliver-job',
+    });
+    expect(delivered.ok).toBe(true);
+    if (!delivered.ok) return;
+    expect(delivered.state.activeJobId).toBeNull();
+    expect(delivered.state.cash).toBe(10);
+    expect(delivered.state.jobsDelivered).toBe(1);
+    expect(delivered.state.jobs.find((candidate) => candidate.id === job.id)?.status).toBe(
+      'delivered',
+    );
+    expect(delivered.state.log.length).toBe(resolved.state.log.length);
+    expect(delivered.state.log.some((entry) => entry.kind === 'pickup')).toBe(true);
+  });
+
+  it('walks the bot toward a reachable pickup', () => {
+    const state = createPrototypeGame(
+      DEMO_BOARD,
+      { fugitive: 's2', agents: ['s3', 's4', 's5', 's6'] },
+      7,
+      { jobPickups: [{ node: 's1', label: 'Old Square' }] },
+    );
+    expect(state.jobs[0]?.pickup).toBe('s1');
+    expect(chooseFugitiveCommand(DEMO_BOARD, state)).toEqual({
+      kind: 'move',
+      mode: 'taxi',
+      to: 's1',
+    });
+  });
+
+  it('drives the bot to collect and deliver the active job', () => {
+    const state = jobGame();
+    const job = state.jobs[0];
+    if (job === undefined) return;
+    expect(chooseFugitiveCommand(DEMO_BOARD, atNode(state, job.pickup))).toEqual({
+      kind: 'collect-job',
+      jobId: job.id,
+    });
+
+    const collected = applyFugitiveCommand(DEMO_BOARD, atNode(state, job.pickup), {
+      kind: 'collect-job',
+      jobId: job.id,
+    });
+    expect(collected.ok).toBe(true);
+    if (!collected.ok) return;
+    const resolved = resolveAgentPhase(DEMO_BOARD, collected.state, {
+      holds: collected.state.seats.filter((seat) => seat.role === 'agent').map((seat) => seat.id),
+    });
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(chooseFugitiveCommand(DEMO_BOARD, atNode(resolved.state, job.destination))).toEqual({
+      kind: 'deliver-job',
+    });
   });
 });
 

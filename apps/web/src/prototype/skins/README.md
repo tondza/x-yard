@@ -7,18 +7,21 @@ overlay. This is the narrow boundary that makes “try a much richer city” che
 
 | `SkinId` | Renderer | Default? |
 | --- | --- | --- |
-| `vintage` | `CanvasCity` with `VINTAGE`, projected city; the overlay is projected and viewport-culled | **yes** |
+| `board` | `CanvasCity` with `BOARD` — paper plate, roof-first houses, keylined overlay; the overlay is projected and viewport-culled | **yes** |
+| `vintage` | `CanvasCity` with `VINTAGE` — the etched sepia plate, same projection | no |
 | `basic` | `../CityPlate.tsx` — the original F-style plate | fallback |
 | `iron` | `Rts25CityFragment` with `COMMAND`, `overlay={false}` | no |
 | `nightops` | `Rts25CityFragment` with `NIGHT_OPS`, `overlay={false}` | no |
 
-`SKIN_OPTIONS` is the selector list. `vintage` is the default; `basic` is the
-fallback and must stay. The 1907 rules have no motor-scooter.
+`SKIN_OPTIONS` is the selector list. `board` is the default ([decision
+0024](../../../../../docs/decisions/0024-yard-board-skin.md)); `vintage` stays
+selectable and `basic` is the fallback and must stay. The 1925 rules have no
+motor-scooter.
 
 ## Switching
 
 - Dev header: the `SKIN` select (not an end-user feature).
-- URL: `?skin=vintage`, `?skin=basic`, `?skin=iron`, `?skin=nightops`.
+- URL: `?skin=board`, `?skin=vintage`, `?skin=basic`, `?skin=iron`, `?skin=nightops`.
 - Persisted in `localStorage['xyard.skin']`; the URL wins over storage.
 
 ## Adding another 2.5D skin
@@ -36,9 +39,10 @@ not change station positions, routes, tokens, the ghost or any game value.
 
 ## What is intentionally not here
 
-- The isometric renderer lives in `apps/web/src/lab/rts/` and is now used by the
-  default Vintage skin. The lab Command City card remains a study/comparison.
+- The isometric renderer lives in `apps/web/src/lab/rts/` and is used by the
+  Board and Vintage skins through `CanvasCity`. The lab Command City card remains
+  a study/comparison.
 - The pastel themes from round 04 live in `visualThemes.ts` / `CitySkinBase.tsx`
   as historical lab material; they are not in the game selector.
 - There is no end-user skin picker and no server-side skin state, and no
-  motor-scooter in the 1907 rules.
+  motor-scooter in the 1925 rules.

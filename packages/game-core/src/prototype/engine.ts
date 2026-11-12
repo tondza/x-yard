@@ -12,6 +12,7 @@
  */
 
 import { neighboursOf } from '../graph';
+import { pickRandom, seedRngState, type RngState } from '../rng';
 import { spend } from '../tickets';
 import {
   APPEARANCE_TURNS,
@@ -19,6 +20,7 @@ import {
   YARD_TURN_LIMIT,
   type NodeId,
   type PlayerId,
+  type TicketBag,
   type TransitGraph,
 } from '../types';
 import type {
@@ -26,9 +28,13 @@ import type {
   PrototypeAgentOrders,
   PrototypeCommand,
   PrototypeCommandResult,
+  PrototypeJob,
+  PrototypeJobIcon,
+  PrototypeJobPickup,
   PrototypeLogEntry,
   PrototypeMoveOption,
   PrototypeSeat,
+  PrototypeSetup,
   PrototypeState,
 } from './types';
 
@@ -54,6 +60,107 @@ const PROVISIONAL_AGENT_TICKETS = {
 };
 
 const AGENT_NAMES = ['Falcon', 'Harrier', 'Osprey', 'Merlin', 'Kestrel', 'Shrike'] as const;
+
+/*
+ * PROVISIONAL (delivery jobs): the director set the cadence and £10 prize in
+ * conversation; the timing is explicitly "to be tested". These are not in
+ * GAME_VISION.md, so they stay provisional.
+ */
+const PROVISIONAL_JOB_INTERVAL_TURNS = 5;
+const PROVISIONAL_JOB_LIFETIME_TURNS = 5;
+const PROVISIONAL_JOB_PRIZE_POUNDS = 10;
+
+/** Seeded shipment titles and their icons. */
+const JOB_CATALOGUE: readonly { readonly title: string; readonly icon: PrototypeJobIcon }[] = [
+  { title: 'The Gin Run', icon: 'barrel' },
+  { title: "The Doctor's Bag", icon: 'bag' },
+  { title: 'The Ledger', icon: 'ledger' },
+  { title: 'The Revolver Case', icon: 'case' },
+  { title: 'The Opium Box', icon: 'box' },
+  { title: "The Jeweller's Packet", icon: 'pouch' },
+  { title: 'The Cigarette Carton', icon: 'carton' },
+  { title: 'The Silk Bolts', icon: 'silk' },
+];
+
+/*
+ * PROVISIONAL (demo only): a Yard shorter or longer than the ratified 16 turns
+ * keeps three appearances at the same relative points (5/10/15 of 16). The
+ * fractions are a presentation default for the interactive demo, not a rule.
+ */
+const PROVISIONAL_APPEARANCE_FRACTIONS = [5 / 16, 10 / 16, 15 / 16] as const;
+
+/** Appearance turns for an arbitrary Yard length, sorted and unique. */
+export function prototypeAppearanceTurns(turnLimit: number): readonly number[] {
+  if (!Number.isInteger(turnLimit) || turnLimit < 1) {
+    throw new RangeError(`turnLimit must be a positive integer, received ${String(turnLimit)}`);
+  }
+  const turns = PROVISIONAL_APPEARANCE_FRACTIONS.map((fraction) =>
+    Math.min(turnLimit, Math.max(1, Math.round(turnLimit * fraction))),
+  );
+  return [...new Set(turns)].sort((left, right) => left - right);
+}
+
+/** The fully populated default setup, safe for the demo to prefill from. */
+export interface PrototypeDefaults {
+  readonly turnLimit: number;
+  readonly appearanceTurns: readonly number[];
+  readonly fugitiveTickets: TicketBag;
+  readonly agentTickets: TicketBag;
+  readonly fugitiveFootSteps: number;
+  readonly agentFootSteps: number;
+}
+
+/**
+ * The defaults the prototype has always used. Exported so the interactive demo
+ * can prefill its controls without repeating the numbers in the client.
+ */
+export const PROVISIONAL_PROTOTYPE_SETUP: PrototypeDefaults = {
+  turnLimit: YARD_TURN_LIMIT,
+  appearanceTurns: APPEARANCE_TURNS,
+  fugitiveTickets: { ...PROVISIONAL_FUGITIVE_TICKETS },
+  agentTickets: { ...PROVISIONAL_AGENT_TICKETS },
+  fugitiveFootSteps: PROVISIONAL_FUGITIVE_FOOT_STEPS,
+  agentFootSteps: PROVISIONAL_AGENT_FOOT_STEPS,
+};
+
+function countOrThrow(value: number | undefined, fallback: number, label: string): number {
+  const resolved = value ?? fallback;
+  if (!Number.isInteger(resolved) || resolved < 0) {
+    throw new RangeError(`${label} must be a non-negative integer, received ${String(resolved)}`);
+  }
+  return resolved;
+}
+
+function ticketBag(base: TicketBag, override: Partial<TicketBag> | undefined): TicketBag {
+  return {
+    taxi: countOrThrow(override?.taxi, base.taxi, 'taxi tickets'),
+    bus: countOrThrow(override?.bus, base.bus, 'bus tickets'),
+    underground: countOrThrow(override?.underground, base.underground, 'underground tickets'),
+    special: countOrThrow(override?.special, base.special, 'special tickets'),
+  };
+}
+
+function normaliseAppearances(
+  turnLimit: number,
+  appearances: readonly number[] | undefined,
+): readonly number[] {
+  const source =
+    appearances === undefined
+      ? turnLimit === YARD_TURN_LIMIT
+        ? APPEARANCE_TURNS
+        : prototypeAppearanceTurns(turnLimit)
+      : appearances;
+  const cleaned: number[] = [];
+  for (const turn of source) {
+    if (!Number.isInteger(turn) || turn < 1 || turn > turnLimit) {
+      throw new RangeError(
+        `appearance turn ${String(turn)} must be an integer in [1, ${turnLimit}]`,
+      );
+    }
+    if (!cleaned.includes(turn)) cleaned.push(turn);
+  }
+  return cleaned.sort((left, right) => left - right);
+}
 
 const MODE_ORDER = [...TRANSPORT_MODES, 'foot'] as const;
 
@@ -84,6 +191,93 @@ function replaceSeat(state: PrototypeState, seat: PrototypeSeat): PrototypeState
 
 function appendLog(state: PrototypeState, entry: PrototypeLogEntry): PrototypeState {
   return { ...state, log: [...state.log, entry] };
+}
+
+/**
+ * Normalise the public pickup stations. If the caller supplies none, every
+ * station is a fallback so unit tests and small fixtures still have jobs.
+ */
+function normaliseJobPickups(
+  graph: TransitGraph,
+  pickups: readonly PrototypeJobPickup[] | undefined,
+): readonly PrototypeJobPickup[] {
+  const nodes = new Set(graph.nodes.map((node) => node.id));
+  const source = pickups ?? [];
+  const cleaned: PrototypeJobPickup[] = [];
+  const seen = new Set<NodeId>();
+  for (const pickup of source) {
+    if (!nodes.has(pickup.node)) throw new Error(`unknown job pickup node: ${pickup.node}`);
+    if (seen.has(pickup.node)) continue;
+    seen.add(pickup.node);
+    cleaned.push({
+      node: pickup.node,
+      label: pickup.label.trim() === '' ? pickup.node : pickup.label,
+    });
+  }
+  if (cleaned.length > 0) return cleaned;
+  return graph.nodes
+    .map((node) => ({ node: node.id, label: node.id }))
+    .sort((left, right) => left.node.localeCompare(right.node));
+}
+
+/** A separate seeded stream per spawn turn keeps existing jobs stable. */
+function jobRng(seed: number, turn: number): RngState {
+  return seedRngState((seed ^ Math.imul(turn, 0x9e3779b1)) >>> 0);
+}
+
+/** Build one deterministic offer for `turn`. */
+function generateJob(graph: TransitGraph, state: PrototypeState, turn: number): PrototypeJob {
+  let rng = jobRng(state.seed, turn);
+  const pickupDraw = pickRandom(rng, state.jobPickups);
+  rng = pickupDraw.state;
+  const pickup = pickupDraw.value;
+
+  const destinations = graph.nodes
+    .map((node) => node.id)
+    .filter((id) => id !== pickup.node)
+    .sort();
+  let destination = pickup.node;
+  if (destinations.length > 0) {
+    const destinationDraw = pickRandom(rng, destinations);
+    rng = destinationDraw.state;
+    destination = destinationDraw.value;
+  }
+
+  const liveTitles = new Set(
+    state.jobs
+      .filter((job) => job.status === 'available' || job.status === 'active')
+      .map((job) => job.title),
+  );
+  const availableTitles = JOB_CATALOGUE.filter((entry) => !liveTitles.has(entry.title));
+  const catalogue = availableTitles.length > 0 ? availableTitles : JOB_CATALOGUE;
+  const titleDraw = pickRandom(rng, catalogue);
+
+  return {
+    id: `job-${turn}`,
+    title: titleDraw.value.title,
+    icon: titleDraw.value.icon,
+    pickup: pickup.node,
+    pickupLabel: pickup.label,
+    destination,
+    prize: PROVISIONAL_JOB_PRIZE_POUNDS,
+    spawnedTurn: turn,
+    expiresTurn: turn + PROVISIONAL_JOB_LIFETIME_TURNS,
+    status: 'available',
+  };
+}
+
+/** Expire old offers and spawn the offer for this turn, if one is due. */
+function beginTurn(graph: TransitGraph, state: PrototypeState, turn: number): PrototypeState {
+  let jobs = state.jobs.map((job) =>
+    job.status === 'available' && job.expiresTurn <= turn
+      ? { ...job, status: 'expired' as const }
+      : job,
+  );
+  const spawnDue = (turn - 1) % PROVISIONAL_JOB_INTERVAL_TURNS === 0;
+  if (spawnDue && !jobs.some((job) => job.spawnedTurn === turn)) {
+    jobs = [...jobs, generateJob(graph, { ...state, jobs }, turn)];
+  }
+  return { ...state, jobs };
 }
 
 function incidentEdges(graph: TransitGraph, node: NodeId): readonly {
@@ -142,6 +336,7 @@ export function createPrototypeGame(
   graph: TransitGraph,
   starts: { readonly fugitive: NodeId; readonly agents: readonly NodeId[] },
   seed: number,
+  setup: PrototypeSetup = {},
 ): PrototypeState {
   const nodeIds = new Set(graph.nodes.map((node) => node.id));
   if (!nodeIds.has(starts.fugitive)) throw new Error(`unknown Fugitive start: ${starts.fugitive}`);
@@ -150,13 +345,24 @@ export function createPrototypeGame(
   }
   if (starts.agents.length === 0) throw new Error('the prototype needs at least one Agent');
 
+  const turnLimit = setup.turnLimit ?? YARD_TURN_LIMIT;
+  if (!Number.isInteger(turnLimit) || turnLimit < 1) {
+    throw new RangeError(`turnLimit must be a positive integer, received ${String(turnLimit)}`);
+  }
+  const appearanceTurns = normaliseAppearances(turnLimit, setup.appearanceTurns);
+  const jobPickups = normaliseJobPickups(graph, setup.jobPickups);
+
   const fugitive: PrototypeSeat = {
     id: 'fugitive',
     name: 'Vulture',
     role: 'fugitive',
     node: starts.fugitive,
-    tickets: { ...PROVISIONAL_FUGITIVE_TICKETS },
-    footSteps: PROVISIONAL_FUGITIVE_FOOT_STEPS,
+    tickets: ticketBag(PROVISIONAL_FUGITIVE_TICKETS, setup.fugitiveTickets),
+    footSteps: countOrThrow(
+      setup.fugitiveFootSteps,
+      PROVISIONAL_FUGITIVE_FOOT_STEPS,
+      'fugitive foot steps',
+    ),
   };
 
   const agents: PrototypeSeat[] = starts.agents.map((node, index) => ({
@@ -164,21 +370,29 @@ export function createPrototypeGame(
     name: AGENT_NAMES[index] ?? `Agent ${index + 1}`,
     role: 'agent',
     node,
-    tickets: { ...PROVISIONAL_AGENT_TICKETS },
-    footSteps: PROVISIONAL_AGENT_FOOT_STEPS,
+    tickets: ticketBag(PROVISIONAL_AGENT_TICKETS, setup.agentTickets),
+    footSteps: countOrThrow(setup.agentFootSteps, PROVISIONAL_AGENT_FOOT_STEPS, 'agent foot steps'),
   }));
 
-  return {
+  const initial: PrototypeState = {
     seed,
     turn: 1,
+    turnLimit,
+    appearanceTurns,
     phase: 'fugitive',
     seats: [fugitive, ...agents],
+    jobPickups,
+    jobs: [],
+    activeJobId: null,
+    cash: 0,
+    jobsDelivered: 0,
     lastKnown: starts.fugitive,
     lastAppearanceTurn: null,
-    pendingAppearance: APPEARANCE_TURNS.includes(1),
+    pendingAppearance: appearanceTurns.includes(1),
     log: [],
     result: null,
   };
+  return beginTurn(graph, initial, 1);
 }
 
 /** Apply the human Fugitive's command and hand the turn to the Agents. */
@@ -192,6 +406,7 @@ export function applyFugitiveCommand(
 
   const fugitive = fugitiveOf(state);
   let move: PrototypeMoveOption | null = null;
+  let next = state;
 
   if (command.kind === 'move') {
     const match = legalMoves(graph, state, fugitive.id).find(
@@ -199,22 +414,59 @@ export function applyFugitiveCommand(
     );
     if (match === undefined) return { ok: false, reason: 'illegal-move' };
     move = match;
-  }
-
-  let next = state;
-
-  if (move !== null) {
-    const moved = applyMove(fugitive, move);
+    const moved = applyMove(fugitive, match);
     if (moved === null) return { ok: false, reason: 'illegal-move' };
     next = replaceSeat(next, moved);
     next = appendLog(next, {
       turn: state.turn,
       seatId: fugitive.id,
       kind: 'move',
-      mode: move.mode,
+      mode: match.mode,
       node: null,
     });
-
+  } else if (command.kind === 'collect-job') {
+    const job = state.jobs.find((candidate) => candidate.id === command.jobId);
+    if (
+      state.activeJobId !== null ||
+      job === undefined ||
+      job.status !== 'available' ||
+      job.pickup !== fugitive.node
+    ) {
+      return { ok: false, reason: 'illegal-job' };
+    }
+    next = {
+      ...next,
+      activeJobId: job.id,
+      jobs: next.jobs.map((candidate) =>
+        candidate.id === job.id ? { ...candidate, status: 'active' as const } : candidate,
+      ),
+    };
+    // The pickup is the only public job event; the destination and prize stay private.
+    next = appendLog(next, {
+      turn: state.turn,
+      seatId: fugitive.id,
+      kind: 'pickup',
+      mode: 'unknown',
+      node: job.pickup,
+    });
+  } else if (command.kind === 'deliver-job') {
+    const job = next.jobs.find((candidate) => candidate.id === next.activeJobId);
+    if (
+      job === undefined ||
+      job.status !== 'active' ||
+      job.destination !== fugitive.node
+    ) {
+      return { ok: false, reason: 'illegal-job' };
+    }
+    next = {
+      ...next,
+      activeJobId: null,
+      cash: next.cash + job.prize,
+      jobsDelivered: next.jobsDelivered + 1,
+      jobs: next.jobs.map((candidate) =>
+        candidate.id === job.id ? { ...candidate, status: 'delivered' as const } : candidate,
+      ),
+    };
   } else {
     next = appendLog(next, {
       turn: state.turn,
@@ -232,7 +484,7 @@ export function applyFugitiveCommand(
     state: {
       ...next,
       phase: 'agents',
-      pendingAppearance: APPEARANCE_TURNS.includes(next.turn),
+      pendingAppearance: state.appearanceTurns.includes(next.turn),
     },
   };
 }
@@ -409,6 +661,42 @@ export function chooseFugitiveMove(
   return bestDistance > current ? best : null;
 }
 
+/**
+ * Bot Fugitive policy for Agent Practice with jobs. It collects the earliest
+ * expiring offer it can reach and then heads for the drop. If no job is
+ * reachable it falls back to evading the Agents.
+ */
+export function chooseFugitiveCommand(
+  graph: TransitGraph,
+  state: PrototypeState,
+): PrototypeCommand | null {
+  if (state.result !== null || state.phase !== 'fugitive') return null;
+  const fugitive = fugitiveOf(state);
+
+  const active = state.jobs.find((job) => job.id === state.activeJobId);
+  if (active !== undefined && active.status === 'active') {
+    if (fugitive.node === active.destination) return { kind: 'deliver-job' };
+    const hop = firstHopToward(graph, fugitive, active.destination);
+    return hop === null ? null : { kind: 'move', mode: hop.mode, to: hop.to };
+  }
+
+  const offers = state.jobs
+    .filter((job) => job.status === 'available')
+    .sort(
+      (left, right) =>
+        left.expiresTurn - right.expiresTurn || left.id.localeCompare(right.id),
+    );
+  const offer = offers[0];
+  if (offer !== undefined) {
+    if (fugitive.node === offer.pickup) return { kind: 'collect-job', jobId: offer.id };
+    const hop = firstHopToward(graph, fugitive, offer.pickup);
+    if (hop !== null) return { kind: 'move', mode: hop.mode, to: hop.to };
+  }
+
+  const move = chooseFugitiveMove(graph, state);
+  return move === null ? null : { kind: 'move', mode: move.mode, to: move.to };
+}
+
 /** Resolve the Agent phase, apply capture, and advance or end the Yard. */
 export function resolveAgentPhase(
   graph: TransitGraph,
@@ -490,7 +778,7 @@ export function resolveAgentPhase(
     };
   }
 
-  if (next.turn >= YARD_TURN_LIMIT) {
+  if (next.turn >= state.turnLimit) {
     const result = {
       winner: 'fugitives' as const,
       reason: 'survived' as const,
@@ -514,16 +802,22 @@ export function resolveAgentPhase(
     };
   }
 
+  const nextTurn = next.turn + 1;
+  const started = beginTurn(
+    graph,
+    {
+      ...next,
+      turn: nextTurn,
+      phase: 'fugitive',
+      pendingAppearance: next.appearanceTurns.includes(nextTurn),
+    },
+    nextTurn,
+  );
   return {
     ok: true,
     move: null,
     agentMoves,
-    state: {
-      ...next,
-      turn: next.turn + 1,
-      phase: 'fugitive',
-      pendingAppearance: APPEARANCE_TURNS.includes(next.turn + 1),
-    },
+    state: started,
   };
 }
 

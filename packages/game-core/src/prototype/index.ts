@@ -10,20 +10,30 @@ export type {
   PrototypeCommand,
   PrototypeCommandError,
   PrototypeCommandResult,
+  PrototypeJob,
+  PrototypeJobIcon,
+  PrototypeJobPickup,
+  PrototypeJobStatus,
   PrototypeLogEntry,
   PrototypeMoveOption,
   PrototypePhase,
   PrototypeResult,
   PrototypeSeat,
+  PrototypeSetup,
   PrototypeState,
 } from './types';
 
+export type { PrototypeDefaults } from './engine';
+
 export {
+  PROVISIONAL_PROTOTYPE_SETUP,
   applyFugitiveCommand,
   chooseAgentMove,
+  chooseFugitiveCommand,
   chooseFugitiveMove,
   createPrototypeGame,
   legalMoves,
+  prototypeAppearanceTurns,
   recentLog,
   resolveAgentPhase,
   revealAppearance,

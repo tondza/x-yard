@@ -86,6 +86,67 @@ export function clampCamera(camera: Camera, bounds: WorldBounds, stage: StageSiz
   };
 }
 
+/**
+ * Keep an axis-aligned view rectangle inside a convex plate polygon.
+ *
+ * The projected city is a parallelogram, but a camera clamped to its bounding
+ * box can show the empty corners beside the city. This shifts the centre (never
+ * the scale) until every edge clears the view; if the view is too large to fit,
+ * it settles at the least-violating centre.
+ */
+export function clampCameraToPlate(
+  camera: Camera,
+  plate: readonly MapPoint[],
+  stage: StageSize,
+  strength = 1,
+): Camera {
+  if (plate.length < 3 || stage.width <= 0 || stage.height <= 0) return camera;
+  const halfWidth = stage.width / (2 * camera.scale);
+  const halfHeight = stage.height / (2 * camera.scale);
+
+  let area = 0;
+  for (let index = 0; index < plate.length; index += 1) {
+    const a = plate[index];
+    const b = plate[(index + 1) % plate.length];
+    if (a === undefined || b === undefined) continue;
+    area += a.x * b.y - b.x * a.y;
+  }
+  const points = area < 0 ? [...plate].reverse() : plate;
+
+  let { x, y } = camera;
+  for (let pass = 0; pass < 4; pass += 1) {
+    let moved = false;
+    for (let index = 0; index < points.length; index += 1) {
+      const a = points[index];
+      const b = points[(index + 1) % points.length];
+      if (a === undefined || b === undefined) continue;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      if (length === 0) continue;
+      // Left normal: inward for a counter-clockwise polygon.
+      const nx = -dy / length;
+      const ny = dx / length;
+      const support = Math.abs(nx) * halfWidth + Math.abs(ny) * halfHeight;
+      const distance = nx * (x - a.x) + ny * (y - a.y);
+      if (distance < support) {
+        const shift = support - distance;
+        x += nx * shift;
+        y += ny * shift;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  // A partial shift keeps the framed focus nearer the centre while still
+  // removing most of the empty plate corner.
+  return {
+    ...camera,
+    x: camera.x + (x - camera.x) * strength,
+    y: camera.y + (y - camera.y) * strength,
+  };
+}
+
 /** The `viewBox` both the city plate and the overlay use. */
 export function cameraViewBox(camera: Camera, stage: StageSize): string {
   if (stage.width <= 0 || stage.height <= 0) return '0 0 1 1';

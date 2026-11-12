@@ -77,6 +77,19 @@ export function projectMap(map: GeneratedMap, projection: Projection): Generated
         return { ...edge, path: projection.path(edge.path) };
       }),
     },
+    // The overlay draws landmark plaques, so their anchors must share the
+    // projection the stations use. The plate still reads the unprojected map.
+    city: {
+      ...map.city,
+      landmarks: map.city.landmarks.map((landmark) => ({
+        ...landmark,
+        at: projection.point(landmark.at),
+      })),
+      streets: map.city.streets.map((street) => ({
+        ...street,
+        path: projection.path(street.path),
+      })),
+    },
   };
 }
 

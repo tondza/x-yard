@@ -11,12 +11,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GeneratedMap, MapPoint, NodeId } from '@x-yard/map-generator';
-import type { MobilityOption, PrototypeMoveOption, PrototypeSeat } from '@x-yard/game-core';
+import type {
+  MobilityOption,
+  PrototypeJob,
+  PrototypeMoveOption,
+  PrototypeSeat,
+} from '@x-yard/game-core';
 
 import { CityPlate } from './CityPlate';
 import { Rts25CityFragment } from '../lab/rts/Rts25CityFragment';
 import { CanvasCity } from './CanvasCity';
-import { COMMAND, NIGHT_OPS, VINTAGE } from '../lab/rts/rtsTheme';
+import { BOARD, COMMAND, NIGHT_OPS, VINTAGE } from '../lab/rts/rtsTheme';
 import type { SkinId } from './skins';
 import { PrototypeMap } from './PrototypeMap';
 import { isoProjection, mapProjection, projectMap, projectStep, projectTrail } from './projection';
@@ -55,6 +60,9 @@ interface MapStageProps {
   readonly selectedStation: NodeId | null;
   readonly onInspectStation: (node: NodeId) => void;
   readonly onCloseStation: () => void;
+  readonly jobs: readonly PrototypeJob[];
+  readonly activeJobId: string | null;
+  readonly selectedJobId: string | null;
 }
 
 const STATION_MODES = ['taxi', 'bus', 'underground', 'special'] as const;
@@ -128,6 +136,22 @@ function bannerText(banner: PhaseBanner | null, turn: number, playSide: 'fugitiv
     };
   }
 
+  if (banner.kind === 'pickup') {
+    return {
+      kicker: 'SHIPMENT COLLECTED',
+      main: `Picked up at ${banner.node}`,
+      detail: 'The Agents saw the public pickup',
+    };
+  }
+
+  if (banner.kind === 'delivery') {
+    return {
+      kicker: 'SHIPMENT DELIVERED',
+      main: `£${banner.prize} banked`,
+      detail: 'The drop stayed private',
+    };
+  }
+
   return {
     kicker: `AGENT PHASE · ${banner.index + 1} / ${banner.total}`,
     main: `${banner.step.label} · ${MOVE_STYLE[banner.step.mode].label}`,
@@ -161,6 +185,9 @@ export function MapStage({
   selectedStation,
   onInspectStation,
   onCloseStation,
+  jobs,
+  activeJobId,
+  selectedJobId,
 }: MapStageProps): React.JSX.Element {
   const frameRef = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState<StageSize>({ width: 0, height: 0 });
@@ -192,10 +219,19 @@ export function MapStage({
   }, []);
 
   const projection = useMemo(
-    () => (skin === 'vintage' ? isoProjection(map.bounds) : mapProjection(map.bounds)),
+    () => (skin === 'vintage' || skin === 'board' ? isoProjection(map.bounds) : mapProjection(map.bounds)),
     [map.bounds, skin],
   );
   const displayMap = useMemo(() => projectMap(map, projection), [map, projection]);
+  const playPlate = useMemo(
+    () => [
+      projection.point({ x: 0, y: 0 }),
+      projection.point({ x: map.bounds.width, y: 0 }),
+      projection.point({ x: map.bounds.width, y: map.bounds.height }),
+      projection.point({ x: 0, y: map.bounds.height }),
+    ],
+    [map.bounds.height, map.bounds.width, projection],
+  );
   const displayStep = useMemo(
     () => (activeStep === null ? null : projectStep(activeStep, projection)),
     [activeStep, projection],
@@ -251,7 +287,7 @@ export function MapStage({
     if (pending) setHoveredStation(null);
   }, [pending]);
 
-  const camera = useMapCamera({ bounds: projection.bounds, stage, focusPoints });
+  const camera = useMapCamera({ bounds: projection.bounds, stage, focusPoints, playPlate });
   const centerOn = camera.centerOn;
   const viewBox = cameraViewBox(camera.camera, stage);
 
@@ -432,8 +468,8 @@ export function MapStage({
         onPointerUp={finishPointers}
         onPointerCancel={finishPointers}
       >
-        {skin === 'vintage' ? (
-          <CanvasCity map={map} theme={VINTAGE} viewBox={viewBox} stage={stage} />
+        {skin === 'vintage' || skin === 'board' ? (
+          <CanvasCity map={map} theme={skin === 'board' ? BOARD : VINTAGE} viewBox={viewBox} stage={stage} />
         ) : skin === 'iron' ? (
           <Rts25CityFragment map={map} theme={COMMAND} viewBox={viewBox} overlay={false} />
         ) : skin === 'nightops' ? (
@@ -443,6 +479,7 @@ export function MapStage({
         )}
         <PrototypeMap
           map={displayMap}
+          theme={skin === 'board' ? BOARD : skin === 'vintage' ? VINTAGE : skin === 'iron' ? COMMAND : skin === 'nightops' ? NIGHT_OPS : VINTAGE}
           seats={seats}
           selectedMode={selectedMode}
           legal={legal}
@@ -458,6 +495,11 @@ export function MapStage({
           activeStep={displayStep}
           trails={displayTrails}
           selectedStation={selectedStation ?? hoveredStation}
+          jobs={jobs}
+          activeJobId={activeJobId}
+          selectedJobId={selectedJobId}
+          jobView={playSide}
+          plateRoutes={skin === 'board' || skin === 'vintage'}
         />
 
         <div className="map-hud">
@@ -604,16 +646,43 @@ export function MapStage({
             </div>
           )}
         </div>
+
+        {skin === 'board' && camera.viewMode === 'map' && (
+          <div className="plate-cartouche" aria-hidden="true">
+            <span className="plate-title">Cathedral Quarter</span>
+            <span className="plate-sub">Transit plate · 1925</span>
+            <div className="plate-row">
+              <svg className="plate-compass" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" />
+                <path d="M12 3 L14 11 L12 9.5 L10 11 Z" fill="currentColor" />
+                <path d="M12 21 L10 13 L12 14.5 L14 13 Z" fill="currentColor" opacity="0.55" />
+                <path d="M12 5.5 V8.4 M12 15.6 V18.5" stroke="currentColor" strokeWidth="0.8" />
+              </svg>
+              <span className="plate-scale"><i />0 — 100 yd</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="map-legend">
         {Object.entries(MOVE_STYLE).map(([mode, style]) => (
-          <span key={mode} className="legend-item">
-            <i style={{ background: style.colour }} />
+          <span key={mode} className="legend-item" title={`${style.label} route${style.dash ? ' (dashed)' : ''}`}>
+            <svg className="legend-swatch" viewBox="0 0 22 8" aria-hidden="true">
+              <line
+                x1="1"
+                y1="4"
+                x2="21"
+                y2="4"
+                stroke={style.colour}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={style.dash}
+              />
+            </svg>
             {style.label}
           </span>
         ))}
-        <span className="legend-badges">Stops: B bus · M metro · S special</span>
+        <span className="legend-badges">Rim arc: bus · metro · special</span>
         <span className="legend-ghost">
           <i className="ghost-swatch" /> {ghostLabel}
         </span>

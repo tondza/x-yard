@@ -19,6 +19,24 @@ import type {
   TicketBag,
 } from '../types';
 
+/**
+ * Optional overrides for a local demo. A real table uses the ratified defaults;
+ * this exists so the interactive demo can vary the Yard length and ticket
+ * budgets without editing a rules constant.
+ */
+export interface PrototypeSetup {
+  /** Turns the Yard lasts. Defaults to the ratified 16. */
+  readonly turnLimit?: number;
+  /** Appearance turns; defaults to the 5/10/15 schedule, scaled for other lengths. */
+  readonly appearanceTurns?: readonly number[];
+  readonly fugitiveTickets?: Partial<TicketBag>;
+  readonly agentTickets?: Partial<TicketBag>;
+  readonly fugitiveFootSteps?: number;
+  readonly agentFootSteps?: number;
+  /** Stations near public landmarks where jobs may be collected. */
+  readonly jobPickups?: readonly PrototypeJobPickup[];
+}
+
 /** A local prototype turn is one Fugitive move followed by the Agent phase. */
 export type PrototypePhase = 'fugitive' | 'agents' | 'result';
 
@@ -30,6 +48,31 @@ export interface PrototypeSeat {
   readonly node: NodeId;
   readonly tickets: TicketBag;
   readonly footSteps: number;
+}
+
+/** A public place where a job can be collected. */
+export interface PrototypeJobPickup {
+  readonly node: NodeId;
+  readonly label: string;
+}
+
+/** The shipment icon keys the UI can draw. */
+export type PrototypeJobIcon = 'barrel' | 'bag' | 'ledger' | 'case' | 'box' | 'pouch' | 'carton' | 'silk';
+
+export type PrototypeJobStatus = 'available' | 'active' | 'delivered' | 'expired';
+
+/** One smuggling job. Values are immutable; the state replaces the object on change. */
+export interface PrototypeJob {
+  readonly id: string;
+  readonly title: string;
+  readonly icon: PrototypeJobIcon;
+  readonly pickup: NodeId;
+  readonly pickupLabel: string;
+  readonly destination: NodeId;
+  readonly prize: number;
+  readonly spawnedTurn: number;
+  readonly expiresTurn: number;
+  readonly status: PrototypeJobStatus;
 }
 
 /** A legal move for a seat. */
@@ -60,7 +103,9 @@ export type PrototypeCommand =
       readonly mode: MobilityOption;
       readonly to: NodeId;
     }
-  | { readonly kind: 'hold' };
+  | { readonly kind: 'hold' }
+  | { readonly kind: 'collect-job'; readonly jobId: string }
+  | { readonly kind: 'deliver-job' };
 
 /** Why a command was rejected. Ordinary conditions are values, not throws. */
 export type PrototypeCommandError =
@@ -68,7 +113,8 @@ export type PrototypeCommandError =
   | 'not-agent-phase'
   | 'game-over'
   | 'no-such-seat'
-  | 'illegal-move';
+  | 'illegal-move'
+  | 'illegal-job';
 
 /** Optional human Agent orders for one Agent-phase resolution. */
 export interface PrototypeAgentOrders {
@@ -93,9 +139,9 @@ export type PrototypeCommandResult =
 export interface PrototypeLogEntry {
   readonly turn: number;
   readonly seatId: PlayerId | null;
-  readonly kind: 'move' | 'appearance' | 'result';
+  readonly kind: 'move' | 'appearance' | 'result' | 'pickup';
   readonly mode: LoggedTransport;
-  /** Set for an appearance; `null` for an ordinary move row. */
+  /** Set for an appearance or pickup; `null` for an ordinary move row. */
   readonly node: NodeId | null;
 }
 
@@ -111,9 +157,21 @@ export interface PrototypeResult {
 export interface PrototypeState {
   readonly seed: number;
   readonly turn: number;
+  /** The configured length of this Yard. */
+  readonly turnLimit: number;
+  /** The configured appearance turns, sorted and unique. */
+  readonly appearanceTurns: readonly number[];
   readonly phase: PrototypePhase;
   /** Fugitive first, then Agents. */
   readonly seats: readonly PrototypeSeat[];
+  /** Public pickup stations for jobs, stored so later spawns are deterministic. */
+  readonly jobPickups: readonly PrototypeJobPickup[];
+  readonly jobs: readonly PrototypeJob[];
+  /** The single job the Fugitive is carrying, or `null`. */
+  readonly activeJobId: string | null;
+  /** Pounds earned this Yard. */
+  readonly cash: number;
+  readonly jobsDelivered: number;
   /** The node the Agents currently believe the Fugitive is at. */
   readonly lastKnown: NodeId;
   /** The turn of the last appearance, or `null` before the first one. */

@@ -34,6 +34,16 @@ export interface RtsTheme {
   readonly asphalt: string;
   readonly sidewalk: string;
   readonly lane: string;
+  /** Optional neutral street palette for the Board plate. */
+  readonly streetEdge?: string;
+  readonly streetPavement?: string;
+  readonly streetFill?: string;
+  /** Optional softer keyline for route ribbons. Defaults to `shadow`. */
+  readonly routeCasing?: string;
+  /** Optional house/landmark line ink. Defaults to `shadow`. */
+  readonly outline?: string;
+  /** Multiplier on the building line width. Defaults to 1. */
+  readonly outlineScale?: number;
   readonly shadow: string;
   readonly shadowOpacity: number;
   readonly walls: readonly WallPalette[];
@@ -47,6 +57,8 @@ export interface RtsTheme {
   readonly treeLight: string;
   readonly treeTrunk: string;
   readonly stationPad: string;
+  /** Disc fill. Falls back to stationPad when omitted. */
+  readonly stationDisc?: string;
   readonly stationRing: string;
   readonly label: string;
   readonly labelStroke: string;
@@ -63,6 +75,8 @@ export interface RtsTheme {
   readonly sun: string;
   readonly night: boolean;
   readonly etching?: boolean;
+  /** The paper-board renderer: flat fills, ink edges, no hatching or cast shadows. */
+  readonly board?: boolean;
 }
 
 export const COMMAND: RtsTheme = {
@@ -199,7 +213,7 @@ export const NIGHT_OPS: RtsTheme = {
 export const VINTAGE: RtsTheme = {
   id: 'vintage',
   title: 'Vintage Etching',
-  kicker: 'Isometric · early 1900s · sepia',
+  kicker: 'Isometric · 1925 · sepia',
   pitch: 'A hand-etched sepia city where the only saturated colour is the transit network.',
   strengths: [
     'The map and menus read as one period object',
@@ -209,31 +223,47 @@ export const VINTAGE: RtsTheme = {
   watchouts: 'A full period pass still needs more period street furniture and a river/bridges.',
   effort: 'Medium',
   accent: '#7a2f25',
-  ground: '#eee1c6',
-  block: '#e4d5b8',
-  blockEdge: '#7f6b52',
-  park: '#d9d1ad',
-  parkEdge: '#8b775a',
-  water: '#c9c6aa',
-  waterEdge: '#7d6f58',
-  asphalt: '#d8c6a4',
-  sidewalk: '#c9b691',
-  lane: '#7f6a4e',
-  shadow: '#3d3428',
-  shadowOpacity: 0.38,
+  ground: '#e8d8b7',
+  block: '#dfceac',
+  blockEdge: '#634b31',
+  park: '#d2c9a1',
+  parkEdge: '#756146',
+  water: '#c4c2a4',
+  waterEdge: '#6d5f48',
+  asphalt: '#9c825c',
+  sidewalk: '#c4ad84',
+  lane: '#4f3b26',
+  routeCasing: '#5a4733',
+  outline: '#5c4833',
+  outlineScale: 0.8,
+  shadow: '#231c13',
+  shadowOpacity: 0.5,
+  /*
+   * Render, stone, brick, timber, distemper and grey stone, all desaturated:
+   * the transit network remains the only saturated layer. The Canvas renderer
+   * picks one palette per building from the seeded building hash. These are
+   * deliberately mid-toned — a paper-and-ink plate needs walls that can carry a
+   * dark outline, not near-white cards.
+   */
   walls: [
-    { light: '#d9c8a8', mid: '#c4b08c', dark: '#8f7b5e' },
-    { light: '#cfbc9a', mid: '#b9a37e', dark: '#826e53' },
-    { light: '#ddcdae', mid: '#c9b590', dark: '#93805f' },
-    { light: '#c8b292', mid: '#af9874', dark: '#78634a' },
-    { light: '#d3c0a0', mid: '#bda984', dark: '#897458' },
+    { light: '#dcc8a4', mid: '#c2aa81', dark: '#846b4a' },
+    { light: '#d3bd97', mid: '#b89f75', dark: '#7c6446' },
+    { light: '#cfb091', mid: '#b18b69', dark: '#78573e' },
+    { light: '#c8ab80', mid: '#ab8c61', dark: '#735b3d' },
+    { light: '#dccbab', mid: '#c1ab84', dark: '#806948' },
+    { light: '#beb49d', mid: '#9f967e', dark: '#6a624c' },
+    { light: '#d3bd97', mid: '#b79c72', dark: '#796246' },
+    { light: '#c9b18b', mid: '#ac9268', dark: '#755d3f' },
   ],
   roofs: [
-    { top: '#8d775b', edge: '#5a4936' },
-    { top: '#79654e', edge: '#4f3f30' },
-    { top: '#9a8566', edge: '#65523e' },
-    { top: '#6d5b47', edge: '#463a2c' },
-    { top: '#867257', edge: '#564633' },
+    { top: '#8a7358', edge: '#66533e' },
+    { top: '#75604a', edge: '#574634' },
+    { top: '#96805f', edge: '#715f47' },
+    { top: '#65533f', edge: '#4b3d2e' },
+    { top: '#806a50', edge: '#5f4e3b' },
+    { top: '#74766f', edge: '#565852' },
+    { top: '#5f6059', edge: '#474841' },
+    { top: '#947f5c', edge: '#6e5c44' },
   ],
   window: '#7a6a54',
   windowLit: '#f1dfae',
@@ -260,4 +290,93 @@ export const VINTAGE: RtsTheme = {
   sun: '#fff0c9',
   night: false,
   etching: true,
+};
+
+/*
+ * The board treatment: the reference is the printed Scotland Yard city, not an
+ * etching. Flat fills, a heavy uniform ink contour, paper streets, short
+ * roof-first houses and saturated route ribbons. `board: true` makes CanvasCity
+ * skip hatching, cast shadows, lane markings and paper grain.
+ */
+export const BOARD: RtsTheme = {
+  id: 'board',
+  title: 'Yard Board',
+  kicker: 'Isometric · 1925 · paper board',
+  pitch: 'The printed board: roof-first houses, paper streets and the transit network as the boldest layer.',
+  strengths: [
+    'Landmarks, numbered discs and routes read at a glance',
+    'The plate fills the frame like a board, not a vignette',
+    'One colour language from route ribbon to kit card',
+  ],
+  watchouts: 'Needs a river and a denser block plan to match the reference city.',
+  effort: 'Medium',
+  accent: '#a43d33',
+  ground: '#fdf9ec',
+  block: '#fdf9ec',
+  blockEdge: '#eadfc6',
+  park: '#a9bd6d',
+  parkEdge: '#6f7f45',
+  water: '#5c93ad',
+  waterEdge: '#3f6c82',
+  asphalt: '#cec2ac',
+  sidewalk: '#e4d9c4',
+  lane: '#8b7d67',
+  streetEdge: '#b7a68a',
+  streetPavement: '#e4d9c4',
+  streetFill: '#cec2ac',
+  routeCasing: '#7f6f57',
+  outline: '#806e55',
+  outlineScale: 0.75,
+  shadow: '#2a2018',
+  shadowOpacity: 0.2,
+  /*
+   * Warm plaster and tile. The plate keeps the 1925 palette, but every tone is
+   * flat enough to carry a heavy contour; the ink does the work, not shading.
+   */
+  walls: [
+    { light: '#f6e8c8', mid: '#e9d5ac', dark: '#c9ae80' },
+    { light: '#f2dfba', mid: '#e2c997', dark: '#bfa16f' },
+    { light: '#efd9b0', mid: '#dcbf8a', dark: '#b69865' },
+    { light: '#f8edcf', mid: '#ead7ae', dark: '#cbb384' },
+    { light: '#e9dcc2', mid: '#d6c5a4', dark: '#af9c7b' },
+    { light: '#f4e4c4', mid: '#e3cda2', dark: '#c0a576' },
+    { light: '#ead2ae', mid: '#d4b88b', dark: '#ac8f64' },
+    { light: '#f7e9cd', mid: '#e6d1a8', dark: '#c3a97c' },
+  ],
+  roofs: [
+    { top: '#c26a4a', edge: '#8e4a32' },
+    { top: '#b85b3e', edge: '#843c28' },
+    { top: '#c7954c', edge: '#946b33' },
+    { top: '#7f8c94', edge: '#5b666e' },
+    { top: '#5f9b84', edge: '#3f7462' },
+    { top: '#b9a98d', edge: '#8e7f66' },
+    { top: '#a85a44', edge: '#7c3f2f' },
+    { top: '#8d8477', edge: '#6a6257' },
+  ],
+  window: '#5d4b39',
+  windowLit: '#f1dfae',
+  windowLitChance: 0.05,
+  steel: '#5e4d3a',
+  rust: '#8a4b34',
+  tree: '#7f9a4e',
+  treeLight: '#96ad61',
+  treeTrunk: '#6d5638',
+  stationPad: '#f9f0da',
+  stationDisc: '#f7e6ac',
+  stationRing: '#2a2018',
+  label: '#2a2018',
+  labelStroke: '#fdf9ec',
+  route: {
+    taxi: '#c08a2c',
+    bus: '#3f7a52',
+    underground: '#a43d33',
+    special: '#6a4b9a',
+  },
+  fugitive: '#8f2f26',
+  agent: '#2f6fed',
+  ghost: '#8f2f26',
+  sky: '#fdf9ec',
+  sun: '#fff6d8',
+  night: false,
+  board: true,
 };

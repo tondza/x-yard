@@ -23,10 +23,12 @@ import type {
 export const MOVE_STYLE: Readonly<
   Record<MobilityOption, { readonly colour: string; readonly label: string; readonly dash?: string }>
 > = {
-  taxi: { colour: '#d99a1f', label: 'Taxi' },
-  bus: { colour: '#3b8a5a', label: 'Bus', dash: '9 5' },
-  underground: { colour: '#b8403b', label: 'Metro' },
-  special: { colour: '#6d4bb5', label: 'Special', dash: '3 5' },
+  // These are the BOARD route colours: the kit, the log and the map ribbons
+  // must agree, or the collar's mode colour is a third vocabulary.
+  taxi: { colour: '#c08a2c', label: 'Taxi' },
+  bus: { colour: '#3f7a52', label: 'Bus', dash: '9 5' },
+  underground: { colour: '#a43d33', label: 'Metro' },
+  special: { colour: '#6a4b9a', label: 'Special', dash: '3 5' },
   foot: { colour: '#33475c', label: 'Foot', dash: '1.5 5' },
 };
 
@@ -73,6 +75,8 @@ export type PhaseBanner =
   | { readonly kind: 'hold' }
   | { readonly kind: 'hidden' }
   | { readonly kind: 'reveal'; readonly node: NodeId }
+  | { readonly kind: 'pickup'; readonly node: NodeId }
+  | { readonly kind: 'delivery'; readonly prize: number }
   | {
       readonly kind: 'agents';
       readonly step: MoveStep;

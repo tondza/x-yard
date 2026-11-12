@@ -116,7 +116,7 @@ function BuildingShape({ building }: { readonly building: Building }): React.JSX
           x={building.x + gap + index * (windowWidth + gap)}
           y={wallTop + 2.2}
           width={windowWidth}
-          height={Math.min(3.6, building.lift - 4)}
+          height={Math.max(1, Math.min(3.6, building.lift - 4))}
           fill="#a9c9d5"
           stroke="#7d9aa5"
           strokeWidth={0.35}
@@ -232,27 +232,41 @@ function OldSquare({ landmark }: { readonly landmark: LandmarkModel }): React.JS
   );
 }
 
+/**
+ * A neutral period hall for the civic landmark kinds the Vintage renderer draws
+ * in detail. Basic stays a working fallback, so a new kind gets a building under
+ * its label rather than a floating name.
+ */
+function CivicHall({ landmark }: { readonly landmark: LandmarkModel }): React.JSX.Element {
+  const { x, y } = landmark.at;
+  return (
+    <g>
+      <rect x={x - 32} y={y - 16} width={64} height={34} fill="#d8cbb1" stroke="#b7a88d" strokeWidth={0.8} />
+      <polygon points={`${x - 36},${y - 16} ${x},${y - 38} ${x + 36},${y - 16}`} fill="#727f87" stroke="#59656d" strokeWidth={0.8} />
+      <rect x={x - 7} y={y - 42} width={14} height={28} fill="#d8cbb1" stroke="#b7a88d" strokeWidth={0.7} />
+      <polygon points={`${x - 7},${y - 42} ${x},${y - 57} ${x + 7},${y - 42}`} fill="#727f87" stroke="#59656d" strokeWidth={0.6} />
+      <circle cx={x} cy={y - 36} r={3.2} fill="#f3ecd9" stroke="#6f6656" strokeWidth={0.6} />
+    </g>
+  );
+}
+
 function Landmark({ landmark }: { readonly landmark: LandmarkModel }): React.JSX.Element {
+  const anchored =
+    landmark.kind === 'cathedral' ||
+    landmark.kind === 'station' ||
+    landmark.kind === 'market' ||
+    landmark.kind === 'square';
   return (
     <g>
       {landmark.kind === 'cathedral' && <Cathedral landmark={landmark} />}
       {landmark.kind === 'station' && <StationHall landmark={landmark} />}
       {landmark.kind === 'market' && <MarketHall landmark={landmark} />}
       {landmark.kind === 'square' && <OldSquare landmark={landmark} />}
-      <text
-        x={landmark.at.x}
-        y={landmark.at.y - 52}
-        textAnchor="middle"
-        fontSize={10.5}
-        letterSpacing={1.4}
-        fill="#6d6556"
-        paintOrder="stroke"
-        stroke="#f2ecdd"
-        strokeWidth={3}
-        style={{ textTransform: 'uppercase' }}
-      >
-        {landmark.label}
-      </text>
+      {!anchored && <CivicHall landmark={landmark} />}
+      {/*
+       * Landmark names are drawn once, by the live overlay, in every skin. The
+       * plate used to print its own; two sets of labels overlapped.
+       */}
     </g>
   );
 }

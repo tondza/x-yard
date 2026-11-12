@@ -928,6 +928,26 @@ function OldSquare({
   );
 }
 
+/** Fallback for civic kinds the rich Vintage renderer handles in Canvas. */
+function CivicHall({
+  landmark,
+  theme,
+}: {
+  readonly landmark: LandmarkModel;
+  readonly theme: VisualTheme;
+}): React.JSX.Element {
+  const { x, y } = landmark.at;
+  const { stone, stoneEdge, roof, roofEdge } = theme.landmark;
+  return (
+    <g>
+      <rect x={x - 32} y={y - 16} width={64} height={34} fill={stone} stroke={stoneEdge} strokeWidth={0.8} />
+      <polygon points={`${x - 36},${y - 16} ${x},${y - 38} ${x + 36},${y - 16}`} fill={roof} stroke={roofEdge} strokeWidth={0.8} />
+      <rect x={x - 7} y={y - 42} width={14} height={28} fill={stone} stroke={stoneEdge} strokeWidth={0.7} />
+      <polygon points={`${x - 7},${y - 42} ${x},${y - 57} ${x + 7},${y - 42}`} fill={roof} stroke={roofEdge} strokeWidth={0.6} />
+    </g>
+  );
+}
+
 function Landmark({
   landmark,
   theme,
@@ -935,12 +955,18 @@ function Landmark({
   readonly landmark: LandmarkModel;
   readonly theme: VisualTheme;
 }): React.JSX.Element {
+  const anchored =
+    landmark.kind === 'cathedral' ||
+    landmark.kind === 'station' ||
+    landmark.kind === 'market' ||
+    landmark.kind === 'square';
   return (
     <g>
       {landmark.kind === 'cathedral' && <Cathedral landmark={landmark} theme={theme} />}
       {landmark.kind === 'station' && <StationHall landmark={landmark} theme={theme} />}
       {landmark.kind === 'market' && <MarketHall landmark={landmark} theme={theme} />}
       {landmark.kind === 'square' && <OldSquare landmark={landmark} theme={theme} />}
+      {!anchored && <CivicHall landmark={landmark} theme={theme} />}
       <text
         x={landmark.at.x}
         y={landmark.at.y - 56}

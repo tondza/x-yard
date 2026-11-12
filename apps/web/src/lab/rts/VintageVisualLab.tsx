@@ -38,7 +38,7 @@ export default function VintageVisualLab(): React.JSX.Element {
       <div className="vintage-screen">
         <header className="vintage-masthead">
           <div className="vintage-mark">
-            <span className="vintage-eyebrow">X-YARD · YARD 04 · 1907</span>
+            <span className="vintage-eyebrow">X-YARD · YARD 04 · 1925</span>
             <h1>Cathedral Quarter</h1>
             <p>Sheet IV · the fugitive is somewhere in the quarter</p>
           </div>
@@ -63,7 +63,7 @@ export default function VintageVisualLab(): React.JSX.Element {
           <section className="vintage-map">
             <div className="vintage-map-head">
               <span>THE CATHEDRAL QUARTER</span>
-              <span>Surveyed for the Yard · 1907</span>
+              <span>Surveyed for the Yard · 1925</span>
             </div>
             <div className="vintage-map-frame">
               <IsoCityFragment map={MAP} theme={VINTAGE} xray={false} />
@@ -87,7 +87,7 @@ export default function VintageVisualLab(): React.JSX.Element {
                   </div>
                 ))}
               </div>
-              <p className="vintage-small">The 1907 rules have no motor-scooter.</p>
+              <p className="vintage-small">The 1925 rules have no motor-scooter.</p>
             </section>
 
             <section className="vintage-panel">

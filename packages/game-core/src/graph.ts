@@ -454,16 +454,100 @@ function distanceToSegment(point: MapPoint, a: MapPoint, b: MapPoint): number {
 }
 
 /** Distance from a point to the nearest authored street centreline. */
-function distanceToStreets(point: MapPoint, streets: readonly StreetSegment[]): number {
-  let best = Number.POSITIVE_INFINITY;
+interface IndexedSegment {
+  readonly a: MapPoint;
+  readonly b: MapPoint;
+}
+
+interface StreetIndex {
+  readonly cell: number;
+  readonly segments: readonly IndexedSegment[];
+  readonly cells: ReadonlyMap<string, readonly number[]>;
+  readonly minCellX: number;
+  readonly minCellY: number;
+  readonly maxCellX: number;
+  readonly maxCellY: number;
+}
+
+/*
+ * PROVISIONAL: the cell size of the internal street index used by the R5
+ * geometry check. It is a lookup accelerator, not a game measurement: any
+ * positive cell size returns the same nearest-segment distance.
+ */
+const PROVISIONAL_STREET_INDEX_CELL = 64;
+
+function buildStreetIndex(streets: readonly StreetSegment[]): StreetIndex {
+  const cell = PROVISIONAL_STREET_INDEX_CELL;
+  const segments: IndexedSegment[] = [];
+  const cells = new Map<string, number[]>();
+  let minCellX = Number.POSITIVE_INFINITY;
+  let minCellY = Number.POSITIVE_INFINITY;
+  let maxCellX = Number.NEGATIVE_INFINITY;
+  let maxCellY = Number.NEGATIVE_INFINITY;
 
   for (const street of streets) {
     for (let index = 1; index < street.path.length; index += 1) {
       const a = street.path[index - 1] as MapPoint;
       const b = street.path[index] as MapPoint;
-      const distance = distanceToSegment(point, a, b);
-      if (distance < best) best = distance;
+      const segmentIndex = segments.length;
+      segments.push({ a, b });
+
+      const firstX = Math.floor(Math.min(a.x, b.x) / cell);
+      const lastX = Math.floor(Math.max(a.x, b.x) / cell);
+      const firstY = Math.floor(Math.min(a.y, b.y) / cell);
+      const lastY = Math.floor(Math.max(a.y, b.y) / cell);
+      minCellX = Math.min(minCellX, firstX);
+      minCellY = Math.min(minCellY, firstY);
+      maxCellX = Math.max(maxCellX, lastX);
+      maxCellY = Math.max(maxCellY, lastY);
+
+      for (let x = firstX; x <= lastX; x += 1) {
+        for (let y = firstY; y <= lastY; y += 1) {
+          const key = `${x},${y}`;
+          const list = cells.get(key);
+          if (list === undefined) cells.set(key, [segmentIndex]);
+          else list.push(segmentIndex);
+        }
+      }
     }
+  }
+
+  return { cell, segments, cells, minCellX, minCellY, maxCellX, maxCellY };
+}
+
+/**
+ * Exact nearest-segment distance, searching grid rings outwards. Stop as soon
+ * as the best distance is closer than any segment in an unscanned cell can be;
+ * a point on a street usually resolves in the first ring.
+ */
+function distanceToStreets(point: MapPoint, index: StreetIndex): number {
+  if (index.segments.length === 0) return Number.POSITIVE_INFINITY;
+  let best = Number.POSITIVE_INFINITY;
+  const cellX = Math.floor(point.x / index.cell);
+  const cellY = Math.floor(point.y / index.cell);
+  const limit = Math.max(
+    cellX - index.minCellX,
+    index.maxCellX - cellX,
+    cellY - index.minCellY,
+    index.maxCellY - cellY,
+  ) + 1;
+
+  for (let ring = 0; ring <= limit; ring += 1) {
+    for (let x = cellX - ring; x <= cellX + ring; x += 1) {
+      for (let y = cellY - ring; y <= cellY + ring; y += 1) {
+        if (ring > 0 && Math.abs(x - cellX) !== ring && Math.abs(y - cellY) !== ring) continue;
+        const list = index.cells.get(`${x},${y}`);
+        if (list === undefined) continue;
+        for (const segmentIndex of list) {
+          const segment = index.segments[segmentIndex];
+          if (segment === undefined) continue;
+          const distance = distanceToSegment(point, segment.a, segment.b);
+          if (distance < best) best = distance;
+        }
+      }
+    }
+    // Any cell beyond this ring is at least ring * cell away from the point.
+    if (best <= ring * index.cell) return best;
   }
 
   return best;
@@ -513,6 +597,7 @@ export function validateStreetGeometry(
   const sampleStep = options.sampleStep ?? PROVISIONAL_STREET_GEOMETRY_SAMPLE_STEP;
   const errors: string[] = [];
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+  const streetIndex = buildStreetIndex(streets);
   let checkedEdges = 0;
 
   for (const edge of graph.edges) {
@@ -538,7 +623,7 @@ export function validateStreetGeometry(
 
     let worst = 0;
     for (const point of samplePath(edge.path, sampleStep)) {
-      const distance = distanceToStreets(point, streets);
+      const distance = distanceToStreets(point, streetIndex);
       if (distance > worst) worst = distance;
       if (worst > tolerance) break;
     }

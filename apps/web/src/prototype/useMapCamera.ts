@@ -22,6 +22,7 @@ import {
   clamp,
   clampCamera,
   easeOutCubic,
+  clampCameraToPlate,
   fitScale,
   framePoints,
   lerp,
@@ -40,6 +41,8 @@ export interface MapCameraOptions {
   readonly stage: StageSize;
   /** Points the play camera should keep in frame. Empty means the map centre. */
   readonly focusPoints: readonly MapPoint[];
+  /** The projected city plate, used to keep the play view off the empty corners. */
+  readonly playPlate?: readonly MapPoint[] | null;
 }
 
 export interface MapCamera {
@@ -62,7 +65,7 @@ function focusSignature(points: readonly MapPoint[]): string {
   return points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join('|');
 }
 
-export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): MapCamera {
+export function useMapCamera({ bounds, stage, focusPoints, playPlate = null }: MapCameraOptions): MapCamera {
   const [camera, setCamera] = useState<Camera>(() => ({
     x: bounds.width / 2,
     y: bounds.height / 2,
@@ -124,14 +127,44 @@ export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): 
     [bounds, commit, stage, stopAnimation],
   );
 
+  /*
+   * Push the play camera off the plate's empty corners, but never so far that a
+   * framed focus (the Fugitive or a legal destination) falls under the HUD edge.
+   * Try the full correction first, then progressively softer ones.
+   */
+  const clampPlay = useCallback(
+    (target: Camera): Camera => {
+      if (playPlate === null || playPlate.length < 3) return target;
+      // On a phone the map frame is small and the motion banner covers the top
+      // of it; clamping there can push the Fugitive under the banner. Keep the
+      // follow framing there, and fill the frame only where it is safe.
+      if (stage.width < 720 || stage.height < 480) return target;
+      const margin = 54;
+      for (const strength of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) {
+        const next = clampCameraToPlate(target, playPlate, stage, strength);
+        const halfWidth = (stage.width - margin * 2) / (2 * next.scale);
+        const halfHeight = (stage.height - margin * 2) / (2 * next.scale);
+        if (halfWidth <= 0 || halfHeight <= 0) return target;
+        const fits = focusPoints.every(
+          (point) => Math.abs(point.x - next.x) <= halfWidth && Math.abs(point.y - next.y) <= halfHeight,
+        );
+        if (fits) return next;
+      }
+      return target;
+    },
+    [focusPoints, playPlate, stage],
+  );
+
   const playTarget = useMemo(
     () =>
-      framePoints(focusPoints, bounds, stage, {
-        paddingPx: 104,
-        maxScale: playScale(bounds, stage) * followZoom,
-        minScale: Math.max(fitScale(bounds, stage), 0.05),
-      }),
-    [bounds, focusPoints, followZoom, stage],
+      clampPlay(
+        framePoints(focusPoints, bounds, stage, {
+          paddingPx: 104,
+          maxScale: playScale(bounds, stage) * followZoom,
+          minScale: Math.max(fitScale(bounds, stage), 0.05),
+        }),
+      ),
+    [bounds, clampPlay, focusPoints, followZoom, stage],
   );
 
   // Follow every new focus — the Fugitive after a move, the active Agent during
@@ -168,13 +201,15 @@ export function useMapCamera({ bounds, stage, focusPoints }: MapCameraOptions): 
     setFollowZoom(1);
     setViewMode('play');
     animateTo(
-      framePoints(focusPoints, bounds, stage, {
-        paddingPx: 104,
-        maxScale: playScale(bounds, stage),
-        minScale: Math.max(fitScale(bounds, stage), 0.05),
-      }),
+      clampPlay(
+        framePoints(focusPoints, bounds, stage, {
+          paddingPx: 104,
+          maxScale: playScale(bounds, stage),
+          minScale: Math.max(fitScale(bounds, stage), 0.05),
+        }),
+      ),
     );
-  }, [animateTo, bounds, focusPoints, stage]);
+  }, [animateTo, bounds, clampPlay, focusPoints, stage]);
 
   const zoomIn = useCallback((): void => {
     if (viewMode === 'play') {

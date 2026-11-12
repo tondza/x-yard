@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  APPEARANCE_TURNS,
   applyFugitiveCommand,
-  chooseFugitiveMove,
+  chooseFugitiveCommand,
   createPrototypeGame,
   legalMoves,
   recentLog,
@@ -14,15 +13,26 @@ import type {
   MobilityOption,
   PrototypeAgentOrders,
   PrototypeCommand,
+  PrototypeJobPickup,
   PrototypeLogEntry,
   PrototypeMoveOption,
   PrototypeSeat,
+  PrototypeSetup,
   PrototypeState,
 } from '@x-yard/game-core';
 import type { GeneratedMap, NodeId } from '@x-yard/map-generator';
 
-import mapJson from '../../../../maps/prototype-96-seed-42.json';
+import { DemoSetup } from './DemoSetup';
 import { MapStage } from './MapStage';
+import { SmugglingJobs } from './SmugglingJobs';
+import {
+  defaultDemoConfig,
+  loadDemoMap,
+  mapLabelFor,
+  setupFromConfig,
+  type DemoConfig,
+  type PlaySide,
+} from './demo';
 import { DEFAULT_SKIN, SKIN_OPTIONS, isSkinId, type SkinId } from './skins';
 import {
   HOLD_PAUSE_MS,
@@ -39,10 +49,6 @@ import {
 } from './motion';
 import './prototype.css';
 
-const MAP = mapJson as unknown as GeneratedMap;
-
-/** Which side the director chose for this local table. */
-type PlaySide = 'fugitive' | 'agent';
 const HUMAN_AGENT_ID = 'agent-1';
 const BOT_MOVE_PAUSE_MS = 650;
 
@@ -53,10 +59,6 @@ const MODES: readonly { readonly mode: MobilityOption; readonly label: string }[
   { mode: 'special', label: 'Special' },
   { mode: 'foot', label: 'Foot' },
 ];
-
-function initialGame(): PrototypeState {
-  return createPrototypeGame(MAP.graph, MAP.starts, MAP.seed);
-}
 
 /**
  * Developer skin preference: URL first (shareable), then localStorage, then the
@@ -88,57 +90,66 @@ function countFor(seat: PrototypeSeat | undefined, mode: MobilityOption): number
 
 function logRow(entry: PrototypeLogEntry): string {
   if (entry.kind === 'appearance') return `T${entry.turn} · VULTURE APPEARANCE · ${entry.node ?? '?'}`;
+  if (entry.kind === 'pickup') return `T${entry.turn} · VULTURE · PICKUP · ${entry.node ?? '?'}`;
   if (entry.kind === 'result') return `T${entry.turn} · YARD OVER`;
   return `T${entry.turn} · VULTURE · ${entry.mode.toUpperCase()}`;
 }
 
-function RoleChoice({ onChoose, skin }: { readonly onChoose: (side: PlaySide) => void; readonly skin: SkinId }): React.JSX.Element {
-  return (
-    <div className={`proto skin-${skin} role-chooser`}>
-      <div className="role-shell">
-        <span className="proto-eyebrow">X-YARD · 96-STATION PROTOTYPE</span>
-        <h1>Choose your side</h1>
-        <p className="role-lede">
-          The Vulture is loose in the Cathedral Quarter. Run with it, or take a badge and
-          hunt it down.
-        </p>
-
-        <div className="role-grid">
-          <button className="role-card" type="button" onClick={() => onChoose('fugitive')}>
-            <span className="role-kicker">FUGITIVE</span>
-            <strong>Run the quarter</strong>
-            <p>
-              You move first, follow your own route and survive to turn 16. Appearances
-              show the Agents exactly where you are.
-            </p>
-            <span className="role-cta">Play as Fugitive →</span>
-          </button>
-
-          <button className="role-card agent" type="button" onClick={() => onChoose('agent')}>
-            <span className="role-kicker">AGENTS</span>
-            <strong>Hunt the Vulture</strong>
-            <p>
-              Command Falcon. The Fugitive is bot-controlled and hidden; you get only
-              appearances, ticket modes and the public log. The other three Agents follow.
-            </p>
-            <span className="role-cta">Start Agent Practice →</span>
-          </button>
-        </div>
-
-        <p className="role-note">
-          Agent Practice is a local training table. It uses the same map, tickets, appearances
-          and capture rule as the Fugitive run.
-        </p>
-      </div>
-    </div>
-  );
+/** Landmarks are the public places where jobs may be collected. */
+function jobPickupsForMap(map: GeneratedMap): readonly PrototypeJobPickup[] {
+  const pickups: PrototypeJobPickup[] = [];
+  const seen = new Set<string>();
+  for (const landmark of map.city.landmarks) {
+    let nearest = map.graph.nodes[0];
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const node of map.graph.nodes) {
+      const distance = Math.hypot(node.x - landmark.at.x, node.y - landmark.at.y);
+      if (
+        distance < nearestDistance ||
+        (distance === nearestDistance && nearest !== undefined && node.id.localeCompare(nearest.id) < 0)
+      ) {
+        nearest = node;
+        nearestDistance = distance;
+      }
+    }
+    if (nearest === undefined || seen.has(nearest.id)) continue;
+    seen.add(nearest.id);
+    pickups.push({ node: nearest.id, label: landmark.label });
+  }
+  return pickups;
 }
 
-/** The 96-station prototype, now with sequential playback and a camera. */
-export default function Prototype(): React.JSX.Element {
-  const [side, setSide] = useState<PlaySide | null>(null);
+interface PrototypeGameProps {
+  readonly map: GeneratedMap;
+  readonly mapLabel: string;
+  readonly setup: PrototypeSetup;
+  readonly side: PlaySide;
+  readonly skin: SkinId;
+  readonly onSkinChange: (skin: SkinId) => void;
+  readonly onSetup: () => void;
+}
+
+/** The playable table, with sequential playback and a camera. */
+function PrototypeGame({
+  map,
+  mapLabel,
+  setup,
+  side: initialSide,
+  skin,
+  onSkinChange,
+  onSetup,
+}: PrototypeGameProps): React.JSX.Element {
+  const MAP = map;
+  const side = initialSide;
+  const jobPickups = useMemo(() => jobPickupsForMap(MAP), [MAP]);
+  const createGame = useCallback(
+    (): PrototypeState =>
+      createPrototypeGame(MAP.graph, MAP.starts, MAP.seed, { ...setup, jobPickups }),
+    [MAP, setup, jobPickups],
+  );
   const [awaitingAgent, setAwaitingAgent] = useState(false);
-  const [game, setGame] = useState<PrototypeState>(initialGame);
+  const [game, setGame] = useState<PrototypeState>(createGame);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<MobilityOption>('taxi');
   const [pending, setPending] = useState(false);
   const [banner, setBanner] = useState<PhaseBanner | null>(null);
@@ -150,7 +161,6 @@ export default function Prototype(): React.JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const [selectedStation, setSelectedStation] = useState<NodeId | null>(null);
   const [focusRequest, setFocusRequest] = useState<{ readonly node: NodeId; readonly nonce: number } | null>(null);
-  const [skin, setSkin] = useState<SkinId>(initialSkin);
 
   const runIdRef = useRef(0);
   const busyRef = useRef(false);
@@ -275,8 +285,19 @@ export default function Prototype(): React.JSX.Element {
       await sleep(STEP_GAP_MS);
       if (!alive(runId)) return;
     } else {
-      setBanner({ kind: 'hold' });
-      await sleep(HOLD_PAUSE_MS);
+      const lastLog = applied.state.log.at(-1);
+      const delivered = game.activeJobId !== null && applied.state.activeJobId === null;
+      if (lastLog?.kind === 'pickup' && lastLog.node !== null) {
+        setBanner({ kind: 'pickup', node: lastLog.node });
+        await sleep(HOLD_PAUSE_MS);
+      } else if (delivered) {
+        const prize = game.jobs.find((job) => job.id === game.activeJobId)?.prize ?? 0;
+        setBanner({ kind: 'delivery', prize });
+        await sleep(HOLD_PAUSE_MS);
+      } else {
+        setBanner({ kind: 'hold' });
+        await sleep(HOLD_PAUSE_MS);
+      }
       if (!alive(runId)) return;
     }
 
@@ -371,9 +392,7 @@ export default function Prototype(): React.JSX.Element {
     await sleep(BOT_MOVE_PAUSE_MS);
     if (!alive(runId)) return;
 
-    const option = chooseFugitiveMove(MAP.graph, game);
-    const command: PrototypeCommand =
-      option === null ? { kind: 'hold' } : { kind: 'move', mode: option.mode, to: option.to };
+    const command: PrototypeCommand = chooseFugitiveCommand(MAP.graph, game) ?? { kind: 'hold' };
     const applied = applyFugitiveCommand(MAP.graph, game, command);
     if (!applied.ok) {
       setError(applied.reason);
@@ -512,6 +531,17 @@ export default function Prototype(): React.JSX.Element {
     applyCommand({ kind: 'hold' });
   }, [applyAgentOrders, applyCommand, side]);
 
+  const handleCollectJob = useCallback(
+    (jobId: string): void => {
+      applyCommand({ kind: 'collect-job', jobId });
+    },
+    [applyCommand],
+  );
+
+  const handleDeliverJob = useCallback((): void => {
+    applyCommand({ kind: 'deliver-job' });
+  }, [applyCommand]);
+
   const resetTable = useCallback((): void => {
     runIdRef.current += 1;
     busyRef.current = false;
@@ -529,21 +559,8 @@ export default function Prototype(): React.JSX.Element {
     setExpanded(false);
     setSelectedStation(null);
     setFocusRequest(null);
-    setGame(initialGame());
-  }, []);
-
-  const startSide = useCallback(
-    (next: PlaySide): void => {
-      resetTable();
-      setSide(next);
-    },
-    [resetTable],
-  );
-
-  const changeSide = useCallback((): void => {
-    resetTable();
-    setSide(null);
-  }, [resetTable]);
+    setGame(createGame());
+  }, [createGame]);
 
   const restart = useCallback((): void => {
     resetTable();
@@ -586,23 +603,11 @@ export default function Prototype(): React.JSX.Element {
     [focusMapNode, game.lastKnown, game.seats, side],
   );
 
-  const changeSkin = useCallback((next: SkinId): void => {
-    if (!isSkinId(next)) return;
-    setSkin(next);
-    try {
-      window.localStorage.setItem('xyard.skin', next);
-    } catch {
-      // The URL still carries the choice if storage is unavailable.
-    }
-    const url = new URL(window.location.href);
-    url.searchParams.set('skin', next);
-    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-  }, []);
-
   useEffect(() => {
     const scope = window as unknown as {
       __XYARD_PROTOTYPE__?: {
         state: PrototypeState;
+        map: GeneratedMap;
         side: PlaySide | null;
         awaitingAgent: boolean;
         humanSeatId: string;
@@ -628,10 +633,11 @@ export default function Prototype(): React.JSX.Element {
     };
     scope.__XYARD_PROTOTYPE__ = {
       state: game,
+      map: MAP,
       side,
       awaitingAgent,
       humanSeatId,
-      chooseSide: startSide,
+      chooseSide: onSetup,
       seats: displaySeats,
       legal,
       pending,
@@ -656,7 +662,7 @@ export default function Prototype(): React.JSX.Element {
       setExpanded,
       inspectStation,
       skin,
-      setSkin: changeSkin,
+      setSkin: onSkinChange,
     };
     return () => {
       delete scope.__XYARD_PROTOTYPE__;
@@ -666,9 +672,10 @@ export default function Prototype(): React.JSX.Element {
     displaySeats,
     expanded,
     game,
+    MAP,
     handleHold,
     handleMove,
-    changeSkin,
+    onSkinChange,
     inspectStation,
     legal,
     pending,
@@ -677,15 +684,11 @@ export default function Prototype(): React.JSX.Element {
     side,
     awaitingAgent,
     humanSeatId,
-    startSide,
+    onSetup,
     skin,
     skipPlayback,
     trails.length,
   ]);
-
-  if (side === null) {
-    return <RoleChoice skin={skin} onChoose={startSide} />;
-  }
 
   const agents = displaySeats.slice(1);
   // The Agents' last-known node, shown as a ghost once it is no longer where the
@@ -698,25 +701,31 @@ export default function Prototype(): React.JSX.Element {
         : null;
   const logs = [...recentLog(game, 9)].reverse();
   const selectedOptions = byMode.get(selectedMode) ?? [];
+  const selectedJob =
+    game.jobs.find(
+      (job) =>
+        job.id === selectedJobId && (job.status === 'available' || job.status === 'active'),
+    ) ?? game.jobs.find((job) => job.id === game.activeJobId && job.status === 'active');
+  const effectiveSelectedJobId = selectedJob?.id ?? null;
   const showResult = game.result !== null && !pending;
 
   return (
     <div className={`proto skin-${skin}${expanded ? ' map-expanded' : ''}`}>
       <header className="proto-header">
         <div className="proto-brand">
-          <span className="proto-eyebrow">X-YARD · 96-STATION PROTOTYPE</span>
-          <strong>Cathedral Quarter</strong>
+          <span className="proto-eyebrow">X-YARD · INTERACTIVE DEMO</span>
+          <strong>{mapLabel}</strong>
         </div>
 
         <div className="proto-turn">
           <span>TURN</span>
           <b>{String(game.turn).padStart(2, '0')}</b>
-          <span>/ 16</span>
+          <span>/ {game.turnLimit}</span>
         </div>
 
         <div className="proto-appearances">
           <span className="appearance-label">APPEARANCES</span>
-          {APPEARANCE_TURNS.map((turn) => (
+          {game.appearanceTurns.map((turn) => (
             <span
               key={turn}
               className={`appearance-chip${game.turn === turn ? ' current' : ''}${game.turn > turn ? ' passed' : ''}`}
@@ -737,7 +746,7 @@ export default function Prototype(): React.JSX.Element {
           <select
             aria-label="City skin"
             value={skin}
-            onChange={(event) => changeSkin(event.target.value as SkinId)}
+            onChange={(event) => onSkinChange(event.target.value as SkinId)}
           >
             {SKIN_OPTIONS.map((option) => (
               <option key={option.id} value={option.id} title={option.kicker}>
@@ -747,8 +756,8 @@ export default function Prototype(): React.JSX.Element {
           </select>
         </label>
 
-        <button className="proto-change-side" type="button" onClick={changeSide}>
-          Change side
+        <button className="proto-change-side" type="button" onClick={onSetup}>
+          Setup
         </button>
 
         <button className="proto-restart" type="button" onClick={restart}>
@@ -783,6 +792,9 @@ export default function Prototype(): React.JSX.Element {
           selectedStation={selectedStation}
           ghostNode={ghostNode}
           onCloseStation={closeStation}
+          jobs={game.jobs}
+          activeJobId={game.activeJobId}
+          selectedJobId={effectiveSelectedJobId}
         />
 
         <aside className="proto-side">
@@ -844,6 +856,22 @@ export default function Prototype(): React.JSX.Element {
             {error !== null && <p className="proto-error">{error}</p>}
           </section>
 
+          {side === 'fugitive' && humanSeat !== undefined && (
+            <SmugglingJobs
+              jobs={game.jobs}
+              activeJobId={game.activeJobId}
+              selectedJobId={effectiveSelectedJobId}
+              cash={game.cash}
+              jobsDelivered={game.jobsDelivered}
+              turn={game.turn}
+              currentNode={humanSeat.node}
+              disabled={pending || game.result !== null}
+              onSelectJob={setSelectedJobId}
+              onCollect={handleCollectJob}
+              onDeliver={handleDeliverJob}
+            />
+          )}
+
           <section className="side-section">
             <div className="side-heading">
               <span>Public log</span>
@@ -904,14 +932,15 @@ export default function Prototype(): React.JSX.Element {
             <p>
               {side === 'agent' ? (
                 <>
-                  The Fugitive moves first and stays hidden. You command Falcon; the other
-                  three Agents follow. Appearances on 5, 10 and 15 reveal the exact node.
-                  Capture by ending the Agent phase on it.
+                  The Fugitive moves first and stays hidden. You command Falcon; other
+                  Agents move on their own. Appearances on {game.appearanceTurns.join(', ')}
+                  reveal the exact node. Capture by ending the Agent phase on it.
                 </>
               ) : (
                 <>
-                  You move first. The Fugitive appears on 5, 10 and 15, showing the exact
-                  node to the Agents before they move. Survive to turn 16.
+                  You move first. The Fugitive appears on {game.appearanceTurns.join(', ')},
+                  showing the exact node to the Agents before they move. Survive to turn{' '}
+                  {game.turnLimit}.
                 </>
               )}
             </p>
@@ -932,28 +961,123 @@ export default function Prototype(): React.JSX.Element {
               {game.result?.reason === 'capture'
                 ? `${agents.find((agent) => agent.id === game.result?.capturedBy)?.name ?? 'An Agent'} ended the turn on Vulture's node.`
                 : side === 'agent'
-                  ? 'Sixteen turns, and the Vulture stayed ahead of the badge.'
-                  : 'Sixteen turns, no Agent on your node.'}
+                  ? `${game.turnLimit} turns, and the Vulture stayed ahead of the badge.`
+                  : `${game.turnLimit} turns, no Agent on your node.`}
             </p>
+            {side === 'fugitive' && game.activeJobId !== null && (
+              <p className="result-job">The shipment was lost.</p>
+            )}
             <dl>
               <div>
                 <dt>Turn</dt>
-                <dd>{game.result?.turn} / 16</dd>
+                <dd>{game.result?.turn} / {game.turnLimit}</dd>
               </div>
               <div>
                 <dt>Seed</dt>
                 <dd>{game.seed}</dd>
               </div>
+              {side === 'fugitive' && (
+                <>
+                  <div>
+                    <dt>Cash</dt>
+                    <dd>£{game.cash}</dd>
+                  </div>
+                  <div>
+                    <dt>Jobs</dt>
+                    <dd>{game.jobsDelivered} delivered</dd>
+                  </div>
+                </>
+              )}
             </dl>
             <button type="button" onClick={restart}>
               Play again
             </button>
-            <button type="button" className="result-change-side" onClick={changeSide}>
-              Change side
+            <button type="button" className="result-change-side" onClick={onSetup}>
+              Change setup
             </button>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The interactive demo route: a setup screen, then a remounted playable table.
+ * `?map=576` still selects the six-times rehearsal fixture as the initial map.
+ */
+export default function Prototype(): React.JSX.Element {
+  const [config, setConfig] = useState<DemoConfig>(defaultDemoConfig);
+  const [skin, setSkin] = useState<SkinId>(initialSkin);
+  const [active, setActive] = useState<{
+    readonly map: GeneratedMap;
+    readonly config: DemoConfig;
+    readonly key: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const buildRef = useRef(0);
+
+  const changeSkin = useCallback((next: SkinId): void => {
+    if (!isSkinId(next)) return;
+    setSkin(next);
+    try {
+      window.localStorage.setItem('xyard.skin', next);
+    } catch {
+      // The URL still carries the choice if storage is unavailable.
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('skin', next);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+
+  const start = useCallback(async (): Promise<void> => {
+    const run = buildRef.current + 1;
+    buildRef.current = run;
+    setLoading(true);
+    setError(null);
+    try {
+      const map = await loadDemoMap(config);
+      if (buildRef.current !== run) return;
+      setActive({ map, config, key: run });
+    } catch (caught) {
+      if (buildRef.current === run) {
+        setError(caught instanceof Error ? caught.message : String(caught));
+      }
+    } finally {
+      if (buildRef.current === run) setLoading(false);
+    }
+  }, [config]);
+
+  if (active === null) {
+    return (
+      <DemoSetup
+        config={config}
+        skin={skin}
+        loading={loading}
+        error={error}
+        onChange={setConfig}
+        onSkinChange={changeSkin}
+        onStart={() => {
+          void start();
+        }}
+      />
+    );
+  }
+
+  return (
+    <PrototypeGame
+      key={active.key}
+      map={active.map}
+      mapLabel={mapLabelFor(active.config)}
+      setup={setupFromConfig(active.config)}
+      side={active.config.side}
+      skin={skin}
+      onSkinChange={changeSkin}
+      onSetup={() => {
+        setActive(null);
+        setError(null);
+      }}
+    />
   );
 }
