@@ -103,6 +103,14 @@ the maintainer knows the change is safe to read.
 - The maintainer reviews scope, correctness and rules, then merges and writes the
   [`PROJECT_LOG.md`](PROJECT_LOG.md) entry.
 
+## Licensing
+
+This project is source-available under a proprietary license ([`LICENSE`](LICENSE)).
+By submitting a pull request you grant the copyright holder a worldwide,
+royalty-free, irrevocable, perpetual license to your contribution under those
+terms — this lets the project be monetized or relicensed later without asking
+each contributor again.
+
 ## Getting help
 
 - Ask your agent to read [`AGENTS.md`](AGENTS.md) first — it routes every task to
