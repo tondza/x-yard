@@ -32,6 +32,8 @@ the default rather than a one-off.
 
 ## Rules
 
+- Candidate work is tracked in [`backlog.md`](backlog.md); an idea becomes a brief
+  (with its `paths:` scope lock) only when someone is ready to start it.
 - **The lead session writes the brief, not the worker.** Context spent writing the
   brief is context not spent on the work itself, and it is reusable across units.
 - A brief records **what to report back**, so the returning message is a result
