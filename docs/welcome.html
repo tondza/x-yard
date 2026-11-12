@@ -248,7 +248,28 @@
     <pre>node --version   <span class="cmt"># ≥ 20.19</span>
 pnpm --version  <span class="cmt"># 12.3.4</span></pre>
 
-    <h2>4 · The commands you'll use</h2>
+    <h2>4 · Just want to play? The configurable demo</h2>
+    <p>The fastest taste of the game needs no branching or contribution — the same
+    Codespace, one command, then a setup screen:</p>
+
+    <div class="cmd"><button onclick="copy('c_play')">copy</button><pre id="c_play">pnpm --filter @x-yard/web dev   <span class="cmt"># then open forwarded port 5173</span></pre></div>
+
+    <p>The screen that opens is a <strong>setup board</strong> — "pick a board, tune the chase":</p>
+    <table>
+      <tr><th>Control</th><th>What it sets</th></tr>
+      <tr><td>Map</td><td>an existing board (24 / 60 / 96 / 576 stations) or a generated one (24–576 stations, route density, seed)</td></tr>
+      <tr><td>Starts</td><td>where the Agents begin (encircle / far)</td></tr>
+      <tr><td>Agents</td><td>how many opponents (1–6)</td></tr>
+      <tr><td>Turns</td><td>session length; appearances fire on turns 5 / 10 / 15</td></tr>
+      <tr><td>Tickets</td><td>taxi / bus / metro / special budgets, plus on-foot steps, for each side</td></tr>
+      <tr><td>Side</td><td>play the hidden Fugitive, or command one Agent while a hidden bot Fugitive ("Vulture") runs</td></tr>
+    </table>
+
+    <p>Click start and play — move, watch the appearances, chase or be chased, and reach a
+    capture or a result screen. This is the local single-player prototype (you + bots); the
+    multiplayer game is the next milestone, not this demo.</p>
+
+    <h2>5 · The commands you'll use</h2>
     <div class="cmd"><button onclick="copy('c1')">copy</button><pre id="c1">pnpm install                       <span class="cmt"># first install (runs automatically in Codespaces)</span>
 pnpm test                          <span class="cmt"># the gate — full suite, every workspace</span>
 pnpm typecheck                     <span class="cmt"># tsc --noEmit</span>
@@ -262,7 +283,7 @@ git push -u origin batch-09-river-bridges <span class="cmt"># push, then open a 
 
     <p>The running game is at <code>https://&lt;codespace&gt;-5173.app.github.dev/</code> once port 5173 is forwarded.</p>
 
-    <h2>5 · Your AI agent: prompt examples</h2>
+    <h2>6 · Your AI agent: prompt examples</h2>
     <p>Whichever agent you use (Claude Code, Deepseek Harness, Cline, Hermes), give it this
     first prompt. It reads <code>AGENTS.md</code> automatically, so the project's rules come along for free.</p>
 
@@ -280,7 +301,7 @@ Do not edit PROJECT_LOG.md or docs/status.md. Do not run `git push`.</pre></div>
     <div class="note">Standing rule: <strong>the agent never runs <code>git push</code></strong> and never edits
     <code>PROJECT_LOG.md</code> or <code>docs/status.md</code> — you push, the maintainer merges.</div>
 
-    <h2>6 · What it looks like</h2>
+    <h2>7 · What it looks like</h2>
     <p>The game ships a "paper and ink" board. Renders are local work artifacts and are not
     committed, so the best way to see it is to <strong>run it</strong> (<code>pnpm --filter @x-yard/web dev</code>).
     The committed mockup sources also render in a browser:</p>
@@ -289,7 +310,7 @@ Do not edit PROJECT_LOG.md or docs/status.md. Do not run `git push`.</pre></div>
       <li><a href="https://github.com/tondza/x-yard/blob/main/design/moodboard/round-06-vintage/">Vintage Etching</a> — the earlier skin.</li>
     </ul>
 
-    <h2>7 · Next steps</h2>
+    <h2>8 · Next steps</h2>
     <table>
       <tr><th>You want to…</th><th>Read</th></tr>
       <tr><td>Follow the full setup step by step</td><td><code>docs/setup.md</code></td></tr>

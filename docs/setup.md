@@ -90,8 +90,10 @@ In Codespaces, open forwarded port **5173**:
 https://<CODESPACE_NAME>-5173.app.github.dev/
 ```
 
-You should see the 96-station prototype with a side chooser. `?lab` opens the
-seeded map lab; `?board` opens the old server-backed scaffold.
+You should see the configurable demo: a setup screen to pick an existing board
+(24 / 60 / 96 / 576 stations) or generate one, set Agents, turns and ticket
+budgets, then choose the Fugitive or Agent side. `?lab` opens the seeded map lab;
+`?board` opens the old server-backed scaffold.
 
 ## 6. Set up your AI agent
 
