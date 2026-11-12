@@ -19,6 +19,8 @@ Game design authority remains [`/GAME_VISION.md`](../../GAME_VISION.md).
 | 04 — illustrative city skins | [`round-04-city-visuals/`](round-04-city-visuals/) | **Superseded by 05.** Palette/detail passes that the director judged too illustrative (“children's drawing”). Kept as history. |
 | 05 — RTS city skins | [`round-05-rts/`](round-05-rts/) | RTS-inspired directions; Iron/Night remain live developer skins. |
 | 06 — Vintage Etching | [`round-06-vintage/`](round-06-vintage/) | **Current and applied.** Early-1900s sepia/ink isometric skin, paper HUD, coloured network; the default prototype skin. |
+| 07 — city visuals | applied in the prototype | House/roof variety, materials and landmark kinds (see `docs/briefs/round-07-city-visuals.md`). Not a moodboard round. |
+| 08 — Yard Board | [`round-08-board/`](round-08-board/) | **Applied as the default `board` skin (2026-11-12).** Re-draws the Cathedral Quarter with the board grammar of the original *Scotland Yard*: roof-first houses, paper streets, numbered discs with mode collars, keylined routes and landmark plaques. Vintage and Basic stay selectable. |
 
 ### Round 03 — why it looks so different
 
@@ -29,6 +31,18 @@ therefore shows the *minimum* that works, built on
 no modals, a 92 px top bar, a map, and a 176 px tray. Scenarios 2 and 5 are the
 *same screen* in the two surviving art directions, so the F-versus-H choice can be
 made on the real MVP screen instead of on a showcase.
+
+### Round 08 — the board study
+
+The director compared the live Vintage plate with a photo of the original
+*Scotland Yard* board and asked what a closer match would look like. Round 08 is
+that answer and is now the default skin: the same map, graph and routes, re-drawn
+with the board's visual grammar — short roof-first terraces, paper streets with ink edges, one numbered
+disc per station with a colour arc for bus/metro/special, thicker keylined route
+ribbons, and printed landmark plaques. See
+[`round-08-board/README.md`](round-08-board/README.md) for what is real data,
+what is stand-in, and the questions it raises (new skin versus retuning Vintage,
+retiring node-class colour, house density, landmark-compound budget).
 
 ### Round 06 — the 1900s etching pass
 
