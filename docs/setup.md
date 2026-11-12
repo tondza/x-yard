@@ -11,13 +11,28 @@ The goal: from nothing to a running game and a green `pnpm test` in one sitting.
 - A browser.
 - Nothing else — the toolchain is installed for you or pinned by the repo.
 
-## 1. Open the repository
+## 1. Open the repository — create your own Codespace
 
-**Recommended: GitHub Codespaces.** On the repository page: **Code → Codespaces →
-Create codespace on `main`**. A dev container installs Node and pnpm and runs the
-first install automatically.
+The recommended path is GitHub Codespaces Cloud: an isolated Linux machine in the
+cloud, created in your own GitHub account, with the toolchain already pinned.
 
-**Alternative: clone locally.**
+1. **Accept the collaborator invite** from the repository owner (you need Write
+   access to push branches).
+2. Open <https://github.com/tondza/x-yard>.
+3. Click the green **Code ▾** button, then the **Codespaces** tab.
+4. Click **Create codespace on `main`** (or the **+** menu → *New with options* if
+   you want to pick a machine size — the default 2-core is enough for this repo).
+5. Wait for the container to build. The dev container
+   ([`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json)) installs
+   Node 22 and pnpm 12.3.4, then runs `pnpm install` automatically.
+6. The Codespace opens as VS Code in the browser (or connect it to your desktop
+   VS Code via the **>** menu → *Open in VS Code Desktop*).
+
+Your Codespace is yours alone — anything you change or install lives in it, and it
+is stopped and eventually deleted after ~30 days of inactivity (your work is safe
+once pushed to a branch). You can create several, one per task if you like.
+
+**Alternative: clone locally** (skip this if you used Codespaces):
 
 ```bash
 git clone https://github.com/tondza/x-yard
@@ -77,15 +92,70 @@ seeded map lab; `?board` opens the old server-backed scaffold.
 
 ## 6. Set up your AI agent
 
-The repository is designed to be driven by an agent. Point yours at the entry
-files and it will pick up the project's rules automatically:
+The repository is designed to be driven by an agent: the agent reads `AGENTS.md`
+and is routed to the right rule for the task. Any of these work inside your
+Codespace; pick one.
 
-- **Claude Code:** run `claude` in the repo; it auto-reads `AGENTS.md`. Personal
-  instructions go in `AGENTS.local.md` (gitignored).
-- **Any agent:** start with — *"Read `AGENTS.md`, then `CONTRIBUTING.md`. I am a
-  contributor, not the maintainer."*
+### Claude Code (recommended)
 
-Two standing instructions for your agent:
+Anthropic's terminal agent. Install it in the Codespace terminal:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude        # first run: sign in (GitHub or Claude account)
+```
+
+Then run it in the repo:
+
+```bash
+cd /workspaces/x-yard
+claude
+```
+
+Claude Code reads `AGENTS.md` automatically, so it inherits the project's rules
+without you explaining them. Start the first session with:
+
+> Read `AGENTS.md`, then `CONTRIBUTING.md`. I am a contributor, not the
+> maintainer. Work on branch `batch-NN-<slug>` and read that brief.
+
+Personal instructions go in `AGENTS.local.md` (gitignored) — see §7.
+
+### Deepseek Harness (DSH)
+
+The harness the maintainer uses day-to-day; it runs the same agent workflow
+through a web GUI.
+
+1. Node is already installed by the dev container.
+2. Install the harness globally:
+   ```bash
+   npm install -g @deepseek-ai/dsh
+   ```
+3. Start the web GUI:
+   ```bash
+   dsh web --no-open
+   ```
+   It serves on port **3080**.
+4. In the Codespaces **Ports** panel, forward port **3080**, then open the
+   forwarded URL (`https://<codespace>-3080.app.github.dev/`).
+5. Sign in with your DeepSeek account when the GUI asks.
+
+DSH also reads `AGENTS.md`, so the same shared rules apply. If you want the exact
+same experience as the maintainer, use this.
+
+### Cline (VS Code extension)
+
+A plugin for VS Code (the editor your Codespace opens). Install it from the
+marketplace (search **Cline**) inside your Codespace, add an API key for any model
+(Claude, OpenAI, DeepSeek, or a local one), and drive it from the sidebar. Point
+it at `AGENTS.md` the same way as above.
+
+### Hermes Agent
+
+A self-hosted / local agent runner. Install it per its own documentation, run it
+inside the repo, and give it the same opening prompt. The project rules apply
+regardless of which tool you choose.
+
+### Two standing instructions for whichever agent you use
 
 - **Do not run `git push`** — you open the pull request.
 - **Do not edit `PROJECT_LOG.md` or `docs/status.md`** — those are the maintainer's.
