@@ -59,7 +59,17 @@ Follow [`0001-native-pnpm-workspaces.md`](0001-native-pnpm-workspaces.md):
 | [0016](0016-appearance-terminology.md) | The player-facing term is Appearance, not Pulse |
 | [0017](0017-always-visible-network-and-last-appearance.md) | The transit network is always visible; no route planner; last-appearance ghost |
 | [0018](0018-developer-switchable-city-skins.md) | City skins are developer-switchable; Basic stays the default fallback |
-| [0019](0019-1907-era-rules.md) | The 1907 era rules remove the motor-scooter; special stays; Vintage is the default skin |
+| [0019](0019-1907-era-rules.md) | The 1907 era rules remove the motor-scooter; special stays; Vintage is the default skin (era framing superseded by 0023) |
 | [0020](0020-canvas-city-renderer-for-scale.md) | The scalable Vintage city is Canvas with culling/LOD; the SVG overlay is viewport-culled |
 | [0021](0021-building-and-landmark-variety.md) | Landmark variety is map data; house/roof variety is seeded client decoration; visual work is sequenced by bang-for-buck |
 | [0022](0022-agent-practice-local-mode.md) | Agent Practice is a local human-Agent role with a hidden bot Fugitive, public information and a paused Agent phase |
+| [0023](0023-era-1925.md) | The presentation era is 1925 (interwar), superseding 0019's era framing; rules and mode names are unchanged |
+| [0024](0024-yard-board-skin.md) | The Yard Board skin is the default city presentation; Vintage and Basic stay selectable |
+| [0025](0025-tiled-plate-and-stable-overlay.md) | The city plate is tiled with a whole-city overview; the overlay DOM stays stable through pans and zooms |
+| [0026](0026-six-times-scale-fixture.md) | The 6x scale rehearsal is a committed 576-station fixture, dev-loaded with `?map=576` |
+| [0027](0027-interactive-demo-setup.md) | The interactive demo is a dev-only setup screen; turns, tickets and route density are explicit engine/generator inputs |
+| [0028](0028-routes-under-houses-and-legal-glow.md) | Permanent routes are painted in the plate under houses; legal moves are a glow; the legend shows dash grammar |
+| [0029](0029-neutral-board-street-palette.md) | Board streets use a neutral pavement/road palette separate from building ink |
+| [0030](0030-route-cutouts-not-house-alpha.md) | Routes show through houses via a narrow layer cutout, not whole-house alpha |
+| [0031](0031-softer-house-outline-ink.md) | House/landmark outlines use a softened outline ink, separate from shadow |
+| [0032](0032-delivery-jobs-prototype.md) | Delivery jobs: public pickups, private drops, one active job, turn-consuming actions, £10 per Yard |
