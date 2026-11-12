@@ -34,6 +34,9 @@ the default rather than a one-off.
 
 - Candidate work is tracked in [`backlog.md`](backlog.md); an idea becomes a brief
   (with its `paths:` scope lock) only when someone is ready to start it.
+- **Keep [`backlog.md`](backlog.md) current in the same change** that affects it:
+  mark an epic in progress when a batch starts, move it to Done (struck) when it
+  lands, and strike anything superseded — including work finished "by accident".
 - **The lead session writes the brief, not the worker.** Context spent writing the
   brief is context not spent on the work itself, and it is reusable across units.
 - A brief records **what to report back**, so the returning message is a result

@@ -51,6 +51,7 @@ authority**. An open question there is not a decision.
 | Change game behaviour, numbers, or vocabulary | [`GAME_VISION.md`](GAME_VISION.md) §1–§6 |
 | Write or change tests | [`TESTING_STRATEGY.md`](TESTING_STRATEGY.md) |
 | Make a design or process decision | [`AGENT_RULES.md`](AGENT_RULES.md), then record it in [`PROJECT_LOG.md`](PROJECT_LOG.md); reuse a settled one from [`docs/decisions/`](docs/decisions/) |
+| Start, finish, or retire a piece of work | update [`docs/briefs/backlog.md`](docs/briefs/backlog.md) in the same change — mark an epic in progress, done, or superseded |
 | Hit an environment or tooling failure | [`docs/lessons.md`](docs/lessons.md) — measured facts, check here before debugging |
 | Touch the client's look and feel | [`VISUAL_DIRECTION.md`](VISUAL_DIRECTION.md) (refines the vision, never overrides) |
 | Work on art exploration | [`design/moodboard/README.md`](design/moodboard/README.md) — `design/` is not production code |
