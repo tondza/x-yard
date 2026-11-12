@@ -151,4 +151,5 @@ Use the brief's vocabulary — `fugitive`, `agent`, `turn`, `Yard`, `underground
 | [`docs/status.md`](docs/status.md) | Current state, edited in place — read this instead of scanning the log |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contributor entry point: rules, workflow, PR expectations |
 | [`docs/setup.md`](docs/setup.md) | New-contributor environment setup, from checkout to running game |
+| [`docs/collaboration.md`](docs/collaboration.md) | Collaboration layer: permissions, batch protocol, revert-to-solo checklist |
 | `archive/` | Superseded approaches, kept with a `WHY_SUPERSEDED.md` |

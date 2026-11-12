@@ -26,6 +26,9 @@ important as the code.
 | [PROJECT_LOG.md](PROJECT_LOG.md) | Append-only decision and progress log |
 | [docs/status.md](docs/status.md) | Current state, edited in place — what is done, what is next |
 | [docs/lessons.md](docs/lessons.md) | Measured environment and tooling facts |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributor entry point: rules, workflow, PR expectations |
+| [docs/setup.md](docs/setup.md) | New-contributor environment setup |
+| [docs/collaboration.md](docs/collaboration.md) | Collaboration layer: permissions, batch protocol, revert-to-solo checklist |
 
 ## Layout
 
