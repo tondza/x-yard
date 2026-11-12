@@ -21,6 +21,11 @@ Last updated: 2026-11-12.
 | `apps/server`: boots, serves `/health` and `/board` | ✅ done | manual `curl`; no integration suite yet |
 | `apps/web`: scaffold board on Canvas 2D | 🟡 scaffold only | `?board`, `pnpm build` |
 | Governance: entry point, enforceable invariants, doc checks | ✅ done | `pnpm check:docs` |
+| **Collaboration-ready** — `CONTRIBUTING.md` + `docs/setup.md`, CI gate + batch scope guard, pinned toolchain (`.devcontainer`/`packageManager`), proprietary `LICENSE`, screenshots purged from history | ✅ done | CI run #1 green; `git ls-remote` matches local |
+
+The collaboration model is in [`docs/collaboration.md`](collaboration.md)
+(asymmetric: contributor branches + PRs, maintainer owns `main`); candidate work
+lives in [`docs/briefs/backlog.md`](briefs/backlog.md).
 
 ## Map generator — current shape
 

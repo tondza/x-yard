@@ -2329,3 +2329,61 @@ mockup; visual evidence for a change belongs in the pull request, not the tree.
 `pnpm typecheck`; `pnpm test` **7 files / 149 tests**; `pnpm build`;
 `pnpm check:docs` (69 markdown files, all links resolve). Baseline tagged
 `v0.4-clean-baseline`.
+
+---
+
+## 2026-11-12 — Collaboration-ready: contributor docs, CI, and a clean history
+
+**The request.** Make the repository ready for a second, non-equal contributor
+who will drive an AI agent, while keeping the maintainer's own workflow light.
+
+**What changed.**
+
+1. **Contributor entry points.** `CONTRIBUTING.md` (roles, batch protocol, the
+   three non-negotiables, shared/local split, verification gate, PR
+   expectations) and `docs/setup.md` (a new-contributor environment guide for
+   Codespaces + an AI agent). `AGENTS.md` gained a "For contributors" section
+   and now links both, plus the collaboration record.
+2. **Personal-file tier.** `.gitignore` ignores `AGENTS.local.md`,
+   `CLAUDE.local.md`, `docs/lessons.local.md`, `docs/notes.local.md` and
+   `.prof/`; `AGENTS.local.example.md` and `docs/lessons.local.example.md` are
+   committed templates. Personal instructions are addenda to the shared rules,
+   never committed and never allowed to override them.
+3. **Toolchain pinning.** `packageManager: pnpm@12.3.4`, a `.devcontainer` that
+   reproduces it in a fresh Codespace, and a `.editorconfig`.
+4. **CI gate.** `.github/workflows/ci.yml` runs install/typecheck/test/build/
+   check:docs on every push to `main` and every PR, plus
+   `scripts/check-batch-scope.mjs`, which fails a `batch-*` branch whose diff
+   escapes its brief's `paths:` scope lock. A PR template asks for the batch,
+   verification and evidence.
+5. **Collaboration record.** `docs/collaboration.md` — the asymmetric model and
+   the revert-to-solo map. A shared `docs/briefs/backlog.md` holds candidate
+   work.
+6. **Proprietary license.** `LICENSE` (all rights reserved, © 2026 Tõnn Sikk)
+   with a trademark notice for the X-Yard name and a contributor grant.
+7. **History purge.** Every `.png` was removed from *history* with
+   `git filter-repo` (the earlier entry above had only untracked them from
+   HEAD). `.git` fell from 222 MB to 1.6 MB; the tree is unchanged and the
+   suite stays green.
+
+**Why.** The contributor is a trusted guest, not an equal: all friction (branch,
+PR, CI, scope lock) sits on them while the maintainer keeps direct push to
+`main`. Screenshots are work artifacts, not repository content, so history
+should not carry them — especially now that the repository is public.
+
+**Rejected alternatives.**
+
+1. **Symmetric rules (treat both as maintainers).** Rejected — it would force
+   the maintainer to review their own work and invite conflicts on the
+   append-only log and the edited-in-place status.
+2. **Keep the renders in history.** Rejected — 222 MB of binary for reproducible
+   output, exposed by going public.
+3. **Git LFS or a fresh squashed repo** for the purge. LFS adds paid
+   infrastructure for reproducible assets; a fresh repo discards the granular
+   commit history. `filter-repo` keeps the history and drops only the images.
+
+**Verified.** `git ls-remote` shows `origin/main` at the same SHA as local and
+the `v0.4-clean-baseline` tag intact; CI run #1 green on the force-push; `pnpm
+typecheck`, `pnpm test` (7 files / 149 tests), `pnpm build`, `pnpm check:docs`
+(76 markdown files) all pass. Branch protection on `main` requires a PR and the
+`verify` check, with the maintainer exempt.
