@@ -5,6 +5,9 @@ Node, pnpm, or Codespaces, and that an AI agent is helping run the commands.
 
 The goal: from nothing to a running game and a green `pnpm test` in one sitting.
 
+Prefer a single, illustrated page? [`welcome.html`](welcome.html) is the same
+guide as a self-contained HTML file with diagrams and prompt examples.
+
 ## 0. What you need
 
 - A GitHub account with access to the repository.

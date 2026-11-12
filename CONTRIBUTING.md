@@ -5,6 +5,9 @@ and where to get help. It assumes you may be new to this project and to this sty
 of development, and that an AI agent (Claude Code, DeepSeek, …) will do most of
 the mechanical work under your direction.
 
+> Prefer a visual walkthrough? Open [`docs/welcome.html`](docs/welcome.html) — a
+> single self-contained page with diagrams, command and prompt examples.
+
 X-Yard is a browser game of hidden movement — several **Fugitives** versus
 **Agents** on a generated transit network. The code is a small monorepo with a
 deliberately pure rules engine, and it is developed and maintained largely by
