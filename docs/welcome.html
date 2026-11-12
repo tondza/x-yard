@@ -309,11 +309,17 @@ Do not edit PROJECT_LOG.md or docs/status.md. Do not run `git push`.</pre></div>
     <h2>7 · What it looks like</h2>
     <p>The game ships a "paper and ink" board. Renders are local work artifacts and are not
     committed, so the best way to see it is to <strong>run it</strong> (<code>pnpm --filter @x-yard/web dev</code>).
-    The committed mockup sources also render in a browser:</p>
+    The committed mockup sources also render in a browser. GitHub shows HTML as code, so use
+    the <strong>render</strong> link to open a page directly:</p>
     <ul>
-      <li><a href="https://github.com/tondza/x-yard/blob/main/design/moodboard/round-08-board/mockup.html">Yard Board study</a> — the default look.</li>
-      <li><a href="https://github.com/tondza/x-yard/blob/main/design/moodboard/round-06-vintage/">Vintage Etching</a> — the earlier skin.</li>
+      <li><strong>Yard Board study</strong> — the default look.
+        <a href="https://github.com/tondza/x-yard/blob/main/design/moodboard/round-08-board/mockup.html">source</a> ·
+        <a href="https://htmlpreview.github.io/?https://github.com/tondza/x-yard/blob/main/design/moodboard/round-08-board/mockup.html">render</a></li>
+      <li><strong>Vintage Etching</strong> — the earlier skin.
+        <a href="https://github.com/tondza/x-yard/tree/main/design/moodboard/round-06-vintage">folder</a></li>
     </ul>
+    <p>Tip: any <code>.html</code> file in the repo can be opened rendered with
+    <code>https://htmlpreview.github.io/?&lt;github-url&gt;</code>.</p>
 
     <h2>8 · Next steps</h2>
     <table>
@@ -322,6 +328,24 @@ Do not edit PROJECT_LOG.md or docs/status.md. Do not run `git push`.</pre></div>
       <tr><td>Know the contribution rules</td><td><code>CONTRIBUTING.md</code></td></tr>
       <tr><td>Understand the game design</td><td><code>GAME_VISION.md</code></td></tr>
       <tr><td>Pick a task</td><td><code>docs/briefs/backlog.md</code></td></tr>
+    </table>
+
+    <h3>Key folders &amp; files (open in GitHub)</h3>
+    <table>
+      <tr><th>Location</th><th>What it is</th></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/packages/game-core/src">packages/game-core/src</a></td><td>the pure rules engine</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/packages/map-generator/src">packages/map-generator/src</a></td><td>the seeded map generator</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/apps/web/src/prototype">apps/web/src/prototype</a></td><td>the playable prototype client</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/maps">maps</a></td><td>committed map fixtures</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/design/moodboard">design/moodboard</a></td><td>art exploration &amp; mockups</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/GAME_VISION.md">GAME_VISION.md</a></td><td>the design brief</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/AGENTS.md">AGENTS.md</a></td><td>entry point for agents</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a></td><td>contribution rules</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/docs/status.md">docs/status.md</a></td><td>current state</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/docs/collaboration.md">docs/collaboration.md</a></td><td>how you two work</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/docs/briefs/backlog.md">docs/briefs/backlog.md</a></td><td>the epics / workstreams</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/blob/main/PROJECT_LOG.md">PROJECT_LOG.md</a></td><td>chronological history</td></tr>
+      <tr><td><a href="https://github.com/tondza/x-yard/tree/main/docs/decisions">docs/decisions</a></td><td>settled decisions</td></tr>
     </table>
 
   </main>
