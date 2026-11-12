@@ -10,7 +10,8 @@
     "worldWidth": 1200,
     "worldHeight": 900,
     "startStrategy": "farthest",
-    "agentCount": 4
+    "agentCount": 4,
+    "routeDensity": "standard"
   },
   "bounds": {
     "width": 1200,
@@ -2592,6 +2593,36 @@
         "at": {
           "x": 509.3022057351967,
           "y": 227.0511041264449
+        }
+      },
+      {
+        "id": "lm-university",
+        "kind": "university",
+        "label": "University",
+        "blockId": "b0-0",
+        "at": {
+          "x": 164.97220721344155,
+          "y": 139.57617269562823
+        }
+      },
+      {
+        "id": "lm-sportsGround",
+        "kind": "sportsGround",
+        "label": "Sports Ground",
+        "blockId": "b2-0",
+        "at": {
+          "x": 182.36371929521363,
+          "y": 348.4828033024711
+        }
+      },
+      {
+        "id": "lm-gasworks",
+        "kind": "gasworks",
+        "label": "Gasworks",
+        "blockId": "b4-5",
+        "at": {
+          "x": 1051.5404238482317,
+          "y": 564.1578809031951
         }
       }
     ]

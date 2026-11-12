@@ -25,6 +25,8 @@ export type {
   MapValidation,
   NodeId,
   ResolvedMapOptions,
+  RouteDensity,
+  StartStrategy,
   StreetRank,
   TransitGraph,
   TransportMode,

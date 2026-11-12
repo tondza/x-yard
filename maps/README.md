@@ -11,6 +11,17 @@ test regenerate each file from its seed and assert it is unchanged.
 | `mvp-60-seed-42.json` | 60 | 42 |
 | `mvp-60-seed-7.json` | 60 | 7 |
 | `prototype-96-seed-42.json` | 96 | 42 |
+| `prototype-576-seed-42.json` | 576 (6x scale rehearsal, 2940x2205 world) | 42 |
+
+The 576-station fixture is a **dev-only scale rehearsal**, not the shipped board.
+Load it with `?map=576`; the normal prototype remains the 96-station quarter. The
+fixture is generated at the same station density as that quarter (the world grows
+with the station count), and it is the input for the performance checks recorded
+in decision 0025.
+
+Every fixture records `params.routeDensity` (`standard` for all committed maps).
+Sparse/dense local-link budgets are generator/demo options; they do not rewrite
+the committed boards.
 
 Review renders of the lab live in [`shots/`](shots/): `prototype-24-seed-42.png`,
 `prototype-96-seed-42.png` and `mvp-60-seed-42.png`.

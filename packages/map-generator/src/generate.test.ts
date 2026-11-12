@@ -132,6 +132,21 @@ describe('generateMap: 60-node MVP-scale maps', () => {
   }
 });
 
+describe('generateMap: route density', () => {
+  it('changes local taxi links while keeping the graph valid', () => {
+    const sparse = generateMap(42, { targetNodes: 24, routeDensity: 'sparse' });
+    const standard = generateMap(42, { targetNodes: 24, routeDensity: 'standard' });
+    const dense = generateMap(42, { targetNodes: 24, routeDensity: 'dense' });
+    assertValid(sparse);
+    assertValid(standard);
+    assertValid(dense);
+    expect(sparse.params.routeDensity).toBe('sparse');
+    expect(dense.params.routeDensity).toBe('dense');
+    expect(dense.stats.byMode.taxi).toBeGreaterThanOrEqual(standard.stats.byMode.taxi);
+    expect(standard.stats.byMode.taxi).toBeGreaterThanOrEqual(sparse.stats.byMode.taxi);
+  });
+});
+
 describe('generateMap: the 96-station prototype scale', () => {
   it('scales the class mix with the station count', () => {
     const map = generateMap(42, { targetNodes: 96, startStrategy: 'encircle' });
@@ -150,6 +165,22 @@ describe('generateMap: the 96-station prototype scale', () => {
     expect(map.params.agentCount).toBe(6);
     expect(map.starts.agents).toHaveLength(6);
     expect(Math.max(...map.stats.startDistances)).toBeLessThanOrEqual(5);
+  });
+});
+
+describe('generateMap: the 6x scale rehearsal', () => {
+  it('builds a valid 576-station map without shrinking the request', () => {
+    const map = generateMap(42, {
+      targetNodes: 576,
+      startStrategy: 'encircle',
+      worldWidth: 2940,
+      worldHeight: 2205,
+    });
+    assertValid(map);
+    expect(map.stats.nodeCount).toBe(576);
+    expect(map.graph.edges.length).toBeGreaterThan(900);
+    expect(map.city.blocks.length).toBeGreaterThan(800);
+    expect(classMix(map)).toEqual({ street: 384, hub: 134, terminal: 58 });
   });
 });
 
@@ -208,6 +239,18 @@ const FIXTURES: readonly { file: string; seed: number; options: MapOptions }[] =
     file: 'prototype-96-seed-42.json',
     seed: 42,
     options: { targetNodes: 96, startStrategy: 'encircle' },
+  },
+  {
+    // The 6x scale rehearsal: the same station density as the 96 quarter, so
+    // the renderer sees ~6x the buildings instead of a cramped small map.
+    file: 'prototype-576-seed-42.json',
+    seed: 42,
+    options: {
+      targetNodes: 576,
+      startStrategy: 'encircle',
+      worldWidth: 2940,
+      worldHeight: 2205,
+    },
   },
 ];
 

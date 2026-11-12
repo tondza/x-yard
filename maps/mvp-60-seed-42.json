@@ -10,7 +10,8 @@
     "worldWidth": 1200,
     "worldHeight": 900,
     "startStrategy": "farthest",
-    "agentCount": 4
+    "agentCount": 4,
+    "routeDensity": "standard"
   },
   "bounds": {
     "width": 1200,
@@ -5865,6 +5866,66 @@
         "at": {
           "x": 600.9012083992361,
           "y": 246.86228217262436
+        }
+      },
+      {
+        "id": "lm-church",
+        "kind": "church",
+        "label": "St Mary’s Church",
+        "blockId": "b6-1",
+        "at": {
+          "x": 260.79115948925414,
+          "y": 512.7718879452144
+        }
+      },
+      {
+        "id": "lm-theatre",
+        "kind": "theatre",
+        "label": "Grand Theatre",
+        "blockId": "b8-6",
+        "at": {
+          "x": 851.261602056192,
+          "y": 645.0418202863837
+        }
+      },
+      {
+        "id": "lm-university",
+        "kind": "university",
+        "label": "University",
+        "blockId": "b1-1",
+        "at": {
+          "x": 266.543947391212,
+          "y": 179.50670928785746
+        }
+      },
+      {
+        "id": "lm-sportsGround",
+        "kind": "sportsGround",
+        "label": "Sports Ground",
+        "blockId": "b4-0",
+        "at": {
+          "x": 127.33840801931089,
+          "y": 379.4023237924345
+        }
+      },
+      {
+        "id": "lm-museum",
+        "kind": "museum",
+        "label": "City Museum",
+        "blockId": "b4-5",
+        "at": {
+          "x": 717.3139728822642,
+          "y": 381.3541416935284
+        }
+      },
+      {
+        "id": "lm-gasworks",
+        "kind": "gasworks",
+        "label": "Gasworks",
+        "blockId": "b7-8",
+        "at": {
+          "x": 1063.5123025822973,
+          "y": 576.4044393328442
         }
       }
     ]

@@ -15,7 +15,10 @@ One `GeneratedMap` from a seed and a target station count:
   there are `terminals - 1` metro edges and no isolated chord pairs;
 - one Black Market and one Safe House, both inert;
 - start positions for 1 Fugitive + N Agents (`agentCount`, default 4), all at
-  least 3 edges away. `startStrategy: 'encircle'` keeps them 3–5 edges away and
+  least 3 edges away;
+- a local-link budget (`routeDensity: 'sparse' | 'standard' | 'dense'`). It only
+  scales the extra taxi links and their reach; the spanning tree, bus, metro and
+  special tiers are unchanged. `standard` is the prototype graph. `startStrategy: 'encircle'` keeps them 3–5 edges away and
   spreads them by angle; `'farthest'` is the lab default;
 - a validation report (graph errors, street-coverage check, provisional warnings).
 
@@ -27,9 +30,10 @@ into the generator.
 
 ```bash
 pnpm --filter @x-yard/web dev     # Vite on :5173
-# /      = 96-station playable prototype
-# ?lab   = schematic map lab
-# ?board = original server-backed board scaffold
+# /          = 96-station playable prototype
+# ?map=576   = dev-only 6x scale rehearsal (576 stations)
+# ?lab       = schematic map lab
+# ?board     = original server-backed board scaffold
 ```
 
 All three are dev-only.
@@ -43,6 +47,7 @@ const map = generateMap(42, {
   targetNodes: 96,
   startStrategy: 'encircle',
   agentCount: 4,
+  routeDensity: 'standard',
 });
 ```
 
@@ -58,6 +63,7 @@ Committed maps live in [`../../maps/`](../../maps/):
 - `prototype-24-seed-*.json`
 - `mvp-60-seed-*.json`
 - `prototype-96-seed-42.json` (the 96-station prototype target)
+- `prototype-576-seed-42.json` (the 6x scale rehearsal; loaded with `?map=576`)
 
 The test suite regenerates each fixture from its stored seed and asserts it is
 byte-for-byte equivalent. To refresh them after a generator change:
@@ -91,3 +97,11 @@ pnpm --filter @x-yard/map-generator test   # re-run without writing
   renderer.
 - Starting seats are 1 Fugitive + 4 Agents. The 4-Fugitive / 16-Agent layout is
   MVP work and needs its own separation rule.
+- Maps above 100 stations take a separate routing path (spatial candidate
+  prefilter, A*, multi-source Prim) so the 6x fixture generates in about half a
+  second instead of minutes. Maps at 100 or fewer keep the original path so the
+  committed 24/60/96 graphs stay byte-identical. The 6x fixture is a scale
+  rehearsal, not a new default.
+- `routeDensity` is a generator input, not a game rule: the committed fixtures
+  record `params.routeDensity: 'standard'`. The interactive demo exposes the
+  other two values when generating a new Yard.

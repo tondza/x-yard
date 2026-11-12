@@ -69,6 +69,26 @@ const PROVISIONAL_MAX_TAXI_EDGES_PER_STATION = 6;
 const PROVISIONAL_TAXI_REACH_FACTOR = 2.4;
 const PROVISIONAL_MAX_STATION_DEGREE = 9;
 
+/*
+ * PROVISIONAL (demo only): the three local-link budgets offered by the
+ * interactive demo. `standard` reproduces the prototype's existing graph; the
+ * other two only scale the extra taxi links and their reach, not the spanning
+ * tree, bus, metro or special tiers.
+ */
+const PROVISIONAL_ROUTE_DENSITY = {
+  sparse: { edgesPerNode: 0.78, reach: 0.9 },
+  standard: { edgesPerNode: 1, reach: 1 },
+  dense: { edgesPerNode: 1.35, reach: 1.15 },
+} as const;
+
+/*
+ * PROVISIONAL: at large-map scale the dead-end repair ranks eligible stations by
+ * straight-line distance and only routes the shortlist. The exact street-order
+ * nearest is not a rule, and routing every station here is what dominated a 6x
+ * generation. Maps at the prototype scale keep the exact original search.
+ */
+const PROVISIONAL_LARGE_DEAD_END_CANDIDATES = 12;
+
 function centroid(build: CityBuild): MapPoint {
   return { x: build.params.worldWidth / 2, y: build.params.worldHeight / 2 };
 }
@@ -96,6 +116,38 @@ function chooseIntersections(build: CityBuild, rng: Rng, count: number): readonl
 
   const chosen: Intersection[] = [rng.pick(sorted)];
   const remaining = sorted.filter((intersection) => intersection.id !== chosen[0]?.id);
+
+  /*
+   * Farthest-point sampling can be updated incrementally: after each pick, only
+   * the distance to the newly chosen point can lower a candidate's nearest
+   * distance. This is the same sequence of picks with the same tie-breaking,
+   * but O(pool) per pick instead of O(pool * chosen). It matters at 6x scale,
+   * where the old scan did hundreds of millions of distance calls.
+   */
+  if (count > 100) {
+    const nearest = remaining.map((candidate) => distance(candidate, chosen[0] as Intersection));
+    while (chosen.length < count && remaining.length > 0) {
+      let bestIndex = 0;
+      let bestScore = -1;
+      for (let index = 0; index < remaining.length; index += 1) {
+        const value = nearest[index] as number;
+        if (value > bestScore) {
+          bestScore = value;
+          bestIndex = index;
+        }
+      }
+      const [next] = remaining.splice(bestIndex, 1);
+      nearest.splice(bestIndex, 1);
+      if (next === undefined) break;
+      chosen.push(next);
+      for (let index = 0; index < remaining.length; index += 1) {
+        const candidate = remaining[index] as Intersection;
+        const value = distance(candidate, next);
+        if (value < (nearest[index] as number)) nearest[index] = value;
+      }
+    }
+    return chosen;
+  }
 
   while (chosen.length < count && remaining.length > 0) {
     let bestIndex = 0;
@@ -278,6 +330,357 @@ function shortestStreetRoute(build: CityBuild, from: Intersection, to: Intersect
   return { distance: polylineLength(points), points };
 }
 
+interface QueueEntry {
+  readonly priority: number;
+  readonly cost: number;
+  readonly tieA: number;
+  readonly tieB: number;
+  readonly node: number;
+}
+
+/** Small binary min-heap. Ties are broken by the two stable integers. */
+class MinHeap {
+  private readonly items: QueueEntry[] = [];
+
+  get size(): number {
+    return this.items.length;
+  }
+
+  push(entry: QueueEntry): void {
+    const items = this.items;
+    items.push(entry);
+    let index = items.length - 1;
+    while (index > 0) {
+      const parent = (index - 1) >> 1;
+      const parentEntry = items[parent] as QueueEntry;
+      if (!queueBefore(entry, parentEntry)) break;
+      items[index] = parentEntry;
+      index = parent;
+    }
+    items[index] = entry;
+  }
+
+  pop(): QueueEntry | undefined {
+    const items = this.items;
+    const top = items[0];
+    const last = items.pop();
+    if (top === undefined || last === undefined) return top;
+    if (items.length === 0) return top;
+    let index = 0;
+    for (;;) {
+      const left = index * 2 + 1;
+      if (left >= items.length) break;
+      const right = left + 1;
+      let child = left;
+      if (right < items.length && queueBefore(items[right] as QueueEntry, items[left] as QueueEntry)) {
+        child = right;
+      }
+      const childEntry = items[child] as QueueEntry;
+      if (!queueBefore(childEntry, last)) break;
+      items[index] = childEntry;
+      index = child;
+    }
+    items[index] = last;
+    return top;
+  }
+
+  clear(): void {
+    this.items.length = 0;
+  }
+}
+
+function queueBefore(left: QueueEntry, right: QueueEntry): boolean {
+  if (left.priority !== right.priority) return left.priority < right.priority;
+  if (left.tieA !== right.tieA) return left.tieA < right.tieA;
+  if (left.tieB !== right.tieB) return left.tieB < right.tieB;
+  return left.node < right.node;
+}
+
+interface StreetStep {
+  readonly to: number;
+  readonly length: number;
+  readonly edge: GridEdge;
+}
+
+interface StreetIndex {
+  readonly intersections: readonly Intersection[];
+  readonly indexById: ReadonlyMap<string, number>;
+  readonly neighbours: readonly (readonly StreetStep[])[];
+  readonly xs: Float64Array;
+  readonly ys: Float64Array;
+}
+
+function indexStreets(build: CityBuild): StreetIndex {
+  const indexById = new Map<string, number>();
+  build.intersections.forEach((intersection, index) => indexById.set(intersection.id, index));
+  const xs = new Float64Array(build.intersections.length);
+  const ys = new Float64Array(build.intersections.length);
+  const neighbours: StreetStep[][] = build.intersections.map((intersection, index) => {
+    xs[index] = intersection.x;
+    ys[index] = intersection.y;
+    return (build.adjacency.get(intersection.id) ?? []).map((edge) => {
+      const other = edge.a.id === intersection.id ? edge.b.id : edge.a.id;
+      return {
+        to: indexById.get(other) ?? -1,
+        length: polylineLength(edge.street.path),
+        edge,
+      };
+    });
+  });
+  return { intersections: build.intersections, indexById, neighbours, xs, ys };
+}
+
+/**
+ * A* over the street lattice for maps above the prototype scale.
+ *
+ * The 96-station fixtures keep the original linear-scan Dijkstra so their
+ * bytes do not move; this path exists because routing every station pair with
+ * that scan is what made a 6x map take minutes. The heuristic is the straight
+ * line, which is admissible and consistent because every street weight is a
+ * polyline length between the same two points.
+ */
+class StreetRouter {
+  private readonly index: StreetIndex;
+  private readonly g: Float64Array;
+  private readonly previous: Int32Array;
+  private readonly previousEdge: (GridEdge | undefined)[];
+  private readonly stamp: Int32Array;
+  private readonly heap = new MinHeap();
+  private run = 0;
+
+  constructor(build: CityBuild) {
+    this.index = indexStreets(build);
+    const count = build.intersections.length;
+    this.g = new Float64Array(count);
+    this.previous = new Int32Array(count);
+    this.previousEdge = new Array(count);
+    this.stamp = new Int32Array(count);
+  }
+
+  private heuristic(from: number, to: number): number {
+    const dx = (this.index.xs[from] as number) - (this.index.xs[to] as number);
+    const dy = (this.index.ys[from] as number) - (this.index.ys[to] as number);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  private pointsTo(
+    start: number,
+    goal: number,
+    previous: Int32Array,
+    previousEdge: readonly (GridEdge | undefined)[],
+  ): MapPoint[] {
+    const steps: { edge: GridEdge; from: number }[] = [];
+    let cursor = goal;
+    let guard = 0;
+    while (cursor !== start && guard <= this.index.intersections.length) {
+      guard += 1;
+      const back = previous[cursor] ?? -1;
+      const edge = previousEdge[cursor];
+      if (back < 0 || edge === undefined) break;
+      steps.push({ edge, from: back });
+      cursor = back;
+    }
+    steps.reverse();
+    const points: MapPoint[] = [];
+    for (const step of steps) {
+      const from = this.index.intersections[step.from];
+      if (from !== undefined) appendPoints(points, edgePoints(step.edge, from));
+    }
+    return points;
+  }
+
+  route(from: Intersection, to: Intersection): Route {
+    const start = this.index.indexById.get(from.id);
+    const goal = this.index.indexById.get(to.id);
+    if (start === undefined || goal === undefined) {
+      return {
+        distance: distance(from, to),
+        points: [
+          { x: from.x, y: from.y },
+          { x: to.x, y: to.y },
+        ],
+      };
+    }
+    if (start === goal) return { distance: 0, points: [{ x: from.x, y: from.y }] };
+
+    /*
+     * Reuse one search workspace with a generation stamp. A 6x map performs
+     * thousands of these searches; allocating and filling three arrays per call
+     * was measurable in both time and GC.
+     */
+    this.run += 1;
+    const run = this.run;
+    const g = this.g;
+    const previous = this.previous;
+    const previousEdge = this.previousEdge;
+    const stamp = this.stamp;
+    const heap = this.heap;
+    heap.clear();
+    g[start] = 0;
+    stamp[start] = run;
+    previous[start] = -1;
+    previousEdge[start] = undefined;
+    heap.push({
+      priority: this.heuristic(start, goal),
+      cost: 0,
+      tieA: start,
+      tieB: 0,
+      node: start,
+    });
+
+    while (heap.size > 0) {
+      const entry = heap.pop() as QueueEntry;
+      if (entry.cost > (stamp[entry.node] === run ? (g[entry.node] as number) : Number.POSITIVE_INFINITY) + 1e-9) {
+        continue;
+      }
+      if (entry.node === goal) break;
+      for (const step of this.index.neighbours[entry.node] ?? []) {
+        if (step.to < 0) continue;
+        const candidate = entry.cost + step.length;
+        if (stamp[step.to] !== run || candidate < (g[step.to] as number) - 1e-9) {
+          g[step.to] = candidate;
+          stamp[step.to] = run;
+          previous[step.to] = entry.node;
+          previousEdge[step.to] = step.edge;
+          heap.push({
+            priority: candidate + this.heuristic(step.to, goal),
+            cost: candidate,
+            tieA: step.to,
+            tieB: 0,
+            node: step.to,
+          });
+        }
+      }
+    }
+
+    if (stamp[goal] !== run) {
+      return {
+        distance: distance(from, to),
+        points: [
+          { x: from.x, y: from.y },
+          { x: to.x, y: to.y },
+        ],
+      };
+    }
+    const points = this.pointsTo(start, goal, previous, previousEdge);
+    if (points.length < 2) {
+      return {
+        distance: distance(from, to),
+        points: [
+          { x: from.x, y: from.y },
+          { x: to.x, y: to.y },
+        ],
+      };
+    }
+    return { distance: polylineLength(points), points };
+  }
+
+  /**
+   * Prim's spanning tree over the stations, with one multi-source Dijkstra
+   * instead of one shortest-path search per station pair.
+   *
+   * Each newly connected station becomes a source at distance zero. Its own
+   * `previous` pointer is deliberately left intact: paths from an older source
+   * may still pass through it, and keeping the old link means those routes stay
+   * reconstructable.
+   */
+  spanningTree(
+    stations: readonly Station[],
+    onConnect: (from: number, to: number, route: Route) => void,
+  ): void {
+    if (stations.length === 0) return;
+    const count = this.index.intersections.length;
+    const dist = new Float64Array(count).fill(Number.POSITIVE_INFINITY);
+    const source = new Int32Array(count).fill(-1);
+    const previous = new Int32Array(count).fill(-1);
+    const previousEdge: (GridEdge | undefined)[] = new Array(count);
+    const connected = new Uint8Array(stations.length);
+    const heap = new MinHeap();
+
+    const firstIndex = this.index.indexById.get(stations[0]?.intersection.id ?? '');
+    if (firstIndex === undefined) return;
+    dist[firstIndex] = 0;
+    source[firstIndex] = 0;
+    connected[0] = 1;
+    heap.push({ priority: 0, cost: 0, tieA: 0, tieB: firstIndex, node: firstIndex });
+    let connectedCount = 1;
+
+    while (connectedCount < stations.length) {
+      while (heap.size > 0) {
+        const entry = heap.pop() as QueueEntry;
+        if (entry.cost > (dist[entry.node] as number) + 1e-9) continue;
+        for (const step of this.index.neighbours[entry.node] ?? []) {
+          if (step.to < 0) continue;
+          const candidate = entry.cost + step.length;
+          if (candidate < (dist[step.to] as number) - 1e-9) {
+            dist[step.to] = candidate;
+            source[step.to] = entry.tieA;
+            previous[step.to] = entry.node;
+            previousEdge[step.to] = step.edge;
+            heap.push({
+              priority: candidate,
+              cost: candidate,
+              tieA: entry.tieA,
+              tieB: step.to,
+              node: step.to,
+            });
+          }
+        }
+      }
+
+      let bestStation = -1;
+      let bestNode = -1;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      let bestSource = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < stations.length; index += 1) {
+        if (connected[index] === 1) continue;
+        const station = stations[index];
+        if (station === undefined) continue;
+        const node = this.index.indexById.get(station.intersection.id);
+        if (node === undefined) continue;
+        const candidateDistance = dist[node] as number;
+        const candidateSource = source[node] ?? -1;
+        if (candidateSource < 0 || candidateDistance === Number.POSITIVE_INFINITY) continue;
+        if (
+          candidateDistance < bestDistance - 1e-9 ||
+          (Math.abs(candidateDistance - bestDistance) <= 1e-9 &&
+            (candidateSource < bestSource ||
+              (candidateSource === bestSource && index < bestStation)))
+        ) {
+          bestDistance = candidateDistance;
+          bestSource = candidateSource;
+          bestStation = index;
+          bestNode = node;
+        }
+      }
+
+      if (bestStation < 0 || bestNode < 0 || bestSource < 0) return;
+      const sourceNode = this.index.indexById.get(stations[bestSource]?.intersection.id ?? '');
+      const targetStation = stations[bestStation];
+      let routePoints =
+        sourceNode === undefined ? [] : this.pointsTo(sourceNode, bestNode, previous, previousEdge);
+      if (routePoints.length < 2 && sourceNode !== undefined && targetStation !== undefined) {
+        const fromIntersection = this.index.intersections[sourceNode];
+        routePoints = [
+          { x: fromIntersection?.x ?? 0, y: fromIntersection?.y ?? 0 },
+          { x: targetStation.intersection.x, y: targetStation.intersection.y },
+        ];
+      }
+      onConnect(bestSource, bestStation, {
+        distance: polylineLength(routePoints),
+        points: routePoints,
+      });
+      connected[bestStation] = 1;
+      connectedCount += 1;
+      // Keep `previous` for this node: older routes may pass through it. The
+      // distance/source pair is what makes it a source.
+      dist[bestNode] = 0;
+      source[bestNode] = bestStation;
+      heap.push({ priority: 0, cost: 0, tieA: bestStation, tieB: bestNode, node: bestNode });
+    }
+  }
+}
+
 /** A route along one row or column, used for bus corridors. */
 function straightCorridorRoute(build: CityBuild, from: Intersection, to: Intersection): Route | null {
   if (from.row === to.row) {
@@ -388,49 +791,77 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
     return true;
   };
 
+  /*
+   * Above the prototype scale, route with A* and build the taxi tree with one
+   * multi-source Dijkstra. The 96-station fixtures keep the original path so
+   * their bytes do not move; the old all-pairs scan is what made a 6x map take
+   * minutes rather than seconds.
+   */
+  const router = build.params.targetNodes > 100 ? new StreetRouter(build) : null;
   const routeCache = new Map<string, Route>();
   const streetRoute = (a: Station, b: Station): Route => {
     // The cache key must be ordered: a route's polyline runs from a to b.
     const key = `${a.id}|${b.id}`;
     const cached = routeCache.get(key);
     if (cached !== undefined) return cached;
-    const route = shortestStreetRoute(build, a.intersection, b.intersection);
+    const route =
+      router === null
+        ? shortestStreetRoute(build, a.intersection, b.intersection)
+        : router.route(a.intersection, b.intersection);
     routeCache.set(key, route);
     return route;
   };
 
   /* Taxi: a spanning tree first, so every node is walkable, then local extras. */
   const degree = new Map<NodeId, number>(stations.map((station) => [station.id, 0]));
-  const connectTaxi = (a: Station, b: Station): boolean => {
-    if (!addEdge(a, b, 'taxi', streetRoute(a, b))) return false;
+  const connectTaxiRoute = (a: Station, b: Station, route: Route): boolean => {
+    if (!addEdge(a, b, 'taxi', route)) return false;
     degree.set(a.id, (degree.get(a.id) ?? 0) + 1);
     degree.set(b.id, (degree.get(b.id) ?? 0) + 1);
     return true;
   };
+  const connectTaxi = (a: Station, b: Station): boolean =>
+    connectTaxiRoute(a, b, streetRoute(a, b));
+  let taxiEdgeCount = 0;
 
-  const connected = new Set<number>([0]);
-  while (connected.size < stations.length) {
-    let best: { from: number; to: number; route: Route } | null = null;
-
-    for (const from of connected) {
+  if (router !== null) {
+    router.spanningTree(stations, (from, to, route) => {
       const a = stations[from];
-      if (a === undefined) continue;
-      for (let to = 0; to < stations.length; to += 1) {
-        if (connected.has(to)) continue;
-        const b = stations[to];
-        if (b === undefined) continue;
-        const route = streetRoute(a, b);
-        if (best === null || route.distance < best.route.distance) best = { from, to, route };
-      }
-    }
+      const b = stations[to];
+      if (a === undefined || b === undefined) return;
+      if (connectTaxiRoute(a, b, route)) taxiEdgeCount += 1;
+    });
+  } else {
+    const connected = new Set<number>([0]);
+    while (connected.size < stations.length) {
+      let best: { from: number; to: number; route: Route } | null = null;
 
-    if (best === null) break;
-    const a = stations[best.from];
-    const b = stations[best.to];
-    if (a === undefined || b === undefined) break;
-    connectTaxi(a, b);
-    connected.add(best.to);
+      for (const from of connected) {
+        const a = stations[from];
+        if (a === undefined) continue;
+        for (let to = 0; to < stations.length; to += 1) {
+          if (connected.has(to)) continue;
+          const b = stations[to];
+          if (b === undefined) continue;
+          const route = streetRoute(a, b);
+          if (best === null || route.distance < best.route.distance) best = { from, to, route };
+        }
+      }
+
+      if (best === null) break;
+      const a = stations[best.from];
+      const b = stations[best.to];
+      if (a === undefined || b === undefined) break;
+      if (connectTaxi(a, b)) taxiEdgeCount += 1;
+      connected.add(best.to);
+    }
   }
+  const density = PROVISIONAL_ROUTE_DENSITY[build.params.routeDensity];
+  const taxiTarget = Math.round(
+    stations.length * PROVISIONAL_TAXI_EDGES_PER_NODE * density.edgesPerNode,
+  );
+  const maxTaxiReach =
+    Math.max(build.spacingX, build.spacingY) * PROVISIONAL_TAXI_REACH_FACTOR * density.reach;
 
   const candidateEdges: { a: Station; b: Station; route: Route }[] = [];
   for (let i = 0; i < stations.length; i += 1) {
@@ -439,20 +870,24 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
       const b = stations[j];
       if (a === undefined || b === undefined) continue;
       if (seen.has(routeKey(a.id, b.id, 'taxi'))) continue;
+      /*
+       * A street route is never shorter than the straight line between its
+       * endpoints, and the loop below rejects anything over `maxTaxiReach`.
+       * Skipping those pairs before routing is therefore exact, and it is the
+       * difference between ~5k and ~165k shortest-path searches at 6x scale.
+       */
+      if (distance(a.intersection, b.intersection) > maxTaxiReach) continue;
       candidateEdges.push({ a, b, route: streetRoute(a, b) });
     }
   }
   candidateEdges.sort((left, right) => left.route.distance - right.route.distance);
 
-  const taxiTarget = Math.round(stations.length * PROVISIONAL_TAXI_EDGES_PER_NODE);
-  const maxTaxiReach = Math.max(build.spacingX, build.spacingY) * PROVISIONAL_TAXI_REACH_FACTOR;
-
   for (const candidate of candidateEdges) {
-    if (edges.filter((edge) => edge.mode === 'taxi').length >= taxiTarget) break;
+    if (taxiEdgeCount >= taxiTarget) break;
     if (candidate.route.distance > maxTaxiReach) continue;
     if ((degree.get(candidate.a.id) ?? 0) >= PROVISIONAL_MAX_TAXI_EDGES_PER_STATION) continue;
     if ((degree.get(candidate.b.id) ?? 0) >= PROVISIONAL_MAX_TAXI_EDGES_PER_STATION) continue;
-    connectTaxi(candidate.a, candidate.b);
+    if (connectTaxi(candidate.a, candidate.b)) taxiEdgeCount += 1;
   }
 
   /* No station may be a dead end: the validator warns, and a one-edge station
@@ -463,21 +898,34 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
     let guard = 0;
     while ((degree.get(station.id) ?? 0) < 2 && guard < stations.length) {
       guard += 1;
-      const nearest = stations
-        .filter(
-          (other) =>
-            other.id !== station.id &&
-            (degree.get(other.id) ?? 0) < PROVISIONAL_MAX_STATION_DEGREE &&
-            !seen.has(routeKey(station.id, other.id, 'taxi')),
-        )
-        .map((other) => ({ other, route: streetRoute(station, other) }))
-        .sort((left, right) => left.route.distance - right.route.distance)[0];
+      const eligible = stations.filter(
+        (other) =>
+          other.id !== station.id &&
+          (degree.get(other.id) ?? 0) < PROVISIONAL_MAX_STATION_DEGREE &&
+          !seen.has(routeKey(station.id, other.id, 'taxi')),
+      );
+      const nearest =
+        router === null
+          ? eligible
+              .map((other) => ({ other, route: streetRoute(station, other) }))
+              .sort((left, right) => left.route.distance - right.route.distance)[0]
+          : eligible
+              .map((other) => ({
+                other,
+                straight: distance(station.intersection, other.intersection),
+              }))
+              .sort(
+                (left, right) =>
+                  left.straight - right.straight || left.other.id.localeCompare(right.other.id),
+              )
+              .slice(0, PROVISIONAL_LARGE_DEAD_END_CANDIDATES)
+              .map((entry) => ({ other: entry.other, route: streetRoute(station, entry.other) }))
+              .sort((left, right) => left.route.distance - right.route.distance)[0];
 
       if (nearest === undefined) break;
       if (!connectTaxi(station, nearest.other)) break;
     }
   }
-
   /* Bus: stations with boulevard frontage, connected along the boulevard. */
   const busStations = stations.filter((station) => station.class === 'hub' || station.class === 'terminal');
 
@@ -519,7 +967,6 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
       if (edges.filter((edge) => edge.mode === 'bus').length >= 2) break;
     }
   }
-
   /*
    * Metro: a connected network, not a set of disjoint chords. Two lines share
    * one interchange terminal; each line is a nearest-neighbour path through its
@@ -581,18 +1028,36 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
   const streetStations = stations.filter((station) => station.class === 'street');
   const minCrow = Math.min(build.spacingX, build.spacingY) * 0.5;
   let bestSpecial: { a: Station; b: Station; ratio: number } | null = null;
-  for (let i = 0; i < streetStations.length; i += 1) {
-    for (let j = i + 1; j < streetStations.length; j += 1) {
-      const a = streetStations[i];
-      const b = streetStations[j];
-      if (a === undefined || b === undefined) continue;
-      if (seen.has(routeKey(a.id, b.id, 'taxi'))) continue;
-      const crow = distance(a.intersection, b.intersection);
+  if (router !== null) {
+    /*
+     * At 6x scale the exhaustive street-station pair scan is ~100k A* searches.
+     * The shortcut is presentation: choose the best ratio among the pairs the
+     * taxi candidate pass already routed (a local band, not the whole city).
+     */
+    for (const candidate of candidateEdges) {
+      if (candidate.a.class !== 'street' || candidate.b.class !== 'street') continue;
+      if (seen.has(routeKey(candidate.a.id, candidate.b.id, 'taxi'))) continue;
+      const crow = distance(candidate.a.intersection, candidate.b.intersection);
       if (crow < minCrow) continue;
-      const street = streetRoute(a, b).distance;
-      const ratio = street / crow;
+      const ratio = candidate.route.distance / crow;
       if (bestSpecial === null || ratio > bestSpecial.ratio) {
-        bestSpecial = { a, b, ratio };
+        bestSpecial = { a: candidate.a, b: candidate.b, ratio };
+      }
+    }
+  } else {
+    for (let i = 0; i < streetStations.length; i += 1) {
+      for (let j = i + 1; j < streetStations.length; j += 1) {
+        const a = streetStations[i];
+        const b = streetStations[j];
+        if (a === undefined || b === undefined) continue;
+        if (seen.has(routeKey(a.id, b.id, 'taxi'))) continue;
+        const crow = distance(a.intersection, b.intersection);
+        if (crow < minCrow) continue;
+        const street = streetRoute(a, b).distance;
+        const ratio = street / crow;
+        if (bestSpecial === null || ratio > bestSpecial.ratio) {
+          bestSpecial = { a, b, ratio };
+        }
       }
     }
   }
@@ -644,7 +1109,6 @@ export function buildTransitNetwork(build: CityBuild, rng: Rng): NetworkBuild {
     nodes,
     edges,
   };
-
   const starts = chooseStarts(
     graph,
     stations,

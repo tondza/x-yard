@@ -48,10 +48,18 @@ export interface MapOptions {
   readonly startStrategy?: StartStrategy;
   /** Agent seats to place. The prototype uses 4; future maps scale this. */
   readonly agentCount?: number;
+  /**
+   * How many local taxi links to add on top of the spanning tree.
+   * `standard` is the prototype's 1.55 edges per station.
+   */
+  readonly routeDensity?: RouteDensity;
 }
 
 /** Start-placement policy. */
 export type StartStrategy = 'farthest' | 'encircle';
+
+/** Local-link budget for the taxi network. */
+export type RouteDensity = 'sparse' | 'standard' | 'dense';
 
 /** Fully resolved options, stored on the map so a fixture is self-describing. */
 export interface ResolvedMapOptions {
@@ -62,6 +70,7 @@ export interface ResolvedMapOptions {
   readonly worldHeight: number;
   readonly startStrategy: StartStrategy;
   readonly agentCount: number;
+  readonly routeDensity: RouteDensity;
 }
 
 /** Street ranks drive the schematic width and bus-corridor selection. */

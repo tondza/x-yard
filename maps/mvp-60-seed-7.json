@@ -10,7 +10,8 @@
     "worldWidth": 1200,
     "worldHeight": 900,
     "startStrategy": "farthest",
-    "agentCount": 4
+    "agentCount": 4,
+    "routeDensity": "standard"
   },
   "bounds": {
     "width": 1200,
@@ -5865,6 +5866,66 @@
         "at": {
           "x": 599.4223688667018,
           "y": 183.80350703227924
+        }
+      },
+      {
+        "id": "lm-hospital",
+        "kind": "hospital",
+        "label": "Royal Infirmary",
+        "blockId": "b9-2",
+        "at": {
+          "x": 363.43352010283206,
+          "y": 721.7675079498778
+        }
+      },
+      {
+        "id": "lm-townHall",
+        "kind": "townHall",
+        "label": "Town Hall",
+        "blockId": "b5-3",
+        "at": {
+          "x": 492.05732657478916,
+          "y": 444.54516801827333
+        }
+      },
+      {
+        "id": "lm-church",
+        "kind": "church",
+        "label": "St Mary’s Church",
+        "blockId": "b6-1",
+        "at": {
+          "x": 265.61833028942345,
+          "y": 514.7878546465527
+        }
+      },
+      {
+        "id": "lm-gasworks",
+        "kind": "gasworks",
+        "label": "Gasworks",
+        "blockId": "b7-8",
+        "at": {
+          "x": 1048.2247544028692,
+          "y": 587.3612189746716
+        }
+      },
+      {
+        "id": "lm-gardens",
+        "kind": "gardens",
+        "label": "Botanic Gardens",
+        "blockId": "b2-7",
+        "at": {
+          "x": 943.1612582206726,
+          "y": 253.6660363926806
+        }
+      },
+      {
+        "id": "lm-museum",
+        "kind": "museum",
+        "label": "City Museum",
+        "blockId": "b4-5",
+        "at": {
+          "x": 721.5774412391914,
+          "y": 381.0567373481664
         }
       }
     ]

@@ -80,6 +80,11 @@ export function resolveOptions(options: MapOptions = {}): ResolvedMapOptions {
     throw new RangeError(`unknown start strategy: ${String(startStrategy)}`);
   }
 
+  const routeDensity = options.routeDensity ?? 'standard';
+  if (routeDensity !== 'sparse' && routeDensity !== 'standard' && routeDensity !== 'dense') {
+    throw new RangeError(`unknown route density: ${String(routeDensity)}`);
+  }
+
   const agentCount = options.agentCount ?? 4;
   if (!Number.isInteger(agentCount) || agentCount < 1 || agentCount > 16) {
     throw new RangeError(`agentCount must be an integer in [1, 16], received ${String(agentCount)}`);
@@ -93,12 +98,64 @@ export function resolveOptions(options: MapOptions = {}): ResolvedMapOptions {
     worldHeight: options.worldHeight ?? 900,
     startStrategy,
     agentCount,
+    routeDensity,
   };
 }
 
 const PROVISIONAL_MARGIN = 80;
 const PROVISIONAL_BLOCK_INSET = 10;
 const PROVISIONAL_PARK_CHANCE = 0.07;
+
+/*
+ * PROVISIONAL (Q7-adjacent): the brief asks for a seeded, varied set of civic
+ * landmarks beside the four anchors, but states no count. Six keeps a quarter
+ * legible; the block budget stops a tiny map turning every block into a
+ * monument. Both numbers are unratified presentation defaults.
+ */
+const PROVISIONAL_EXTRA_LANDMARK_COUNT = 6;
+const PROVISIONAL_BLOCKS_PER_LANDMARK = 5;
+
+interface LandmarkSpec {
+  readonly kind: LandmarkModel['kind'];
+  readonly label: string;
+  readonly fraction: MapPoint;
+}
+
+/** Every map carries these four: the station anchors terminals, the rest give identity. */
+const ANCHOR_LANDMARKS: readonly LandmarkSpec[] = [
+  { kind: 'station', label: 'Central Station', fraction: { x: 0.5, y: 0.5 } },
+  { kind: 'cathedral', label: 'Cathedral', fraction: { x: 0.25, y: 0.3 } },
+  { kind: 'market', label: 'Market Hall', fraction: { x: 0.72, y: 0.62 } },
+  { kind: 'square', label: 'Old Square', fraction: { x: 0.5, y: 0.24 } },
+];
+
+/**
+ * The civic pool. Each kind carries its own plausible location so the seeded
+ * subset is scattered across the quarter rather than clustered in the centre.
+ */
+const CIVIC_LANDMARKS: readonly LandmarkSpec[] = [
+  { kind: 'townHall', label: 'Town Hall', fraction: { x: 0.44, y: 0.44 } },
+  { kind: 'church', label: 'St Mary\u2019s Church', fraction: { x: 0.2, y: 0.56 } },
+  { kind: 'gardens', label: 'Botanic Gardens', fraction: { x: 0.8, y: 0.3 } },
+  { kind: 'hospital', label: 'Royal Infirmary', fraction: { x: 0.3, y: 0.8 } },
+  { kind: 'museum', label: 'City Museum', fraction: { x: 0.64, y: 0.42 } },
+  { kind: 'university', label: 'University', fraction: { x: 0.18, y: 0.2 } },
+  { kind: 'theatre', label: 'Grand Theatre', fraction: { x: 0.72, y: 0.78 } },
+  { kind: 'gasworks', label: 'Gasworks', fraction: { x: 0.88, y: 0.62 } },
+  { kind: 'sportsGround', label: 'Sports Ground', fraction: { x: 0.12, y: 0.4 } },
+];
+
+/** Deterministic Fisher–Yates, so the civic subset is seeded rather than fixed. */
+function seededShuffle<T>(items: readonly T[], rng: Rng): T[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = rng.int(index + 1);
+    const value = copy[index] as T;
+    copy[index] = copy[swap] as T;
+    copy[swap] = value;
+  }
+  return copy;
+}
 
 function districtFor(point: MapPoint, width: number, height: number): DistrictId {
   const west = point.x < width / 2;
@@ -252,15 +309,17 @@ export function buildCity(seed: number, options: MapOptions = {}): CityBuild {
     }
   }
 
-  const landmarkSpecs: readonly {
-    kind: LandmarkModel['kind'];
-    label: string;
-    fraction: MapPoint;
-  }[] = [
-    { kind: 'station', label: 'Central Station', fraction: { x: 0.5, y: 0.5 } },
-    { kind: 'cathedral', label: 'Cathedral', fraction: { x: 0.25, y: 0.3 } },
-    { kind: 'market', label: 'Market Hall', fraction: { x: 0.72, y: 0.62 } },
-    { kind: 'square', label: 'Old Square', fraction: { x: 0.5, y: 0.24 } },
+  const civicCount = Math.min(
+    PROVISIONAL_EXTRA_LANDMARK_COUNT,
+    Math.max(
+      0,
+      Math.floor(landmarkBlocks.length / PROVISIONAL_BLOCKS_PER_LANDMARK) -
+        ANCHOR_LANDMARKS.length,
+    ),
+  );
+  const landmarkSpecs: readonly LandmarkSpec[] = [
+    ...ANCHOR_LANDMARKS,
+    ...seededShuffle(CIVIC_LANDMARKS, rng).slice(0, civicCount),
   ];
 
   const landmarks: LandmarkModel[] = [];

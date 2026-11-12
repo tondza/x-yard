@@ -10,7 +10,8 @@
     "worldWidth": 1200,
     "worldHeight": 900,
     "startStrategy": "encircle",
-    "agentCount": 4
+    "agentCount": 4,
+    "routeDensity": "standard"
   },
   "bounds": {
     "width": 1200,
@@ -8371,6 +8372,66 @@
         "at": {
           "x": 604.2826652628454,
           "y": 221.2119368038785
+        }
+      },
+      {
+        "id": "lm-theatre",
+        "kind": "theatre",
+        "label": "Grand Theatre",
+        "blockId": "b11-8",
+        "at": {
+          "x": 883.5763645063746,
+          "y": 722.3925971169883
+        }
+      },
+      {
+        "id": "lm-museum",
+        "kind": "museum",
+        "label": "City Museum",
+        "blockId": "b4-7",
+        "at": {
+          "x": 773.5994952529669,
+          "y": 339.9591044895924
+        }
+      },
+      {
+        "id": "lm-university",
+        "kind": "university",
+        "label": "University",
+        "blockId": "b1-1",
+        "at": {
+          "x": 232.69637093381453,
+          "y": 163.1588738609965
+        }
+      },
+      {
+        "id": "lm-sportsGround",
+        "kind": "sportsGround",
+        "label": "Sports Ground",
+        "blockId": "b4-0",
+        "at": {
+          "x": 129.14216817874802,
+          "y": 334.2138657468729
+        }
+      },
+      {
+        "id": "lm-townHall",
+        "kind": "townHall",
+        "label": "Town Hall",
+        "blockId": "b5-4",
+        "at": {
+          "x": 499.9782841461626,
+          "y": 393.16062319874766
+        }
+      },
+      {
+        "id": "lm-gasworks",
+        "kind": "gasworks",
+        "label": "Gasworks",
+        "blockId": "b8-10",
+        "at": {
+          "x": 1074.6428210716356,
+          "y": 566.8205076028235
         }
       }
     ]

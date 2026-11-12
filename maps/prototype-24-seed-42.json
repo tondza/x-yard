@@ -10,7 +10,8 @@
     "worldWidth": 1200,
     "worldHeight": 900,
     "startStrategy": "farthest",
-    "agentCount": 4
+    "agentCount": 4,
+    "routeDensity": "standard"
   },
   "bounds": {
     "width": 1200,
@@ -2592,6 +2593,36 @@
         "at": {
           "x": 686.4865417408447,
           "y": 231.90271595769696
+        }
+      },
+      {
+        "id": "lm-hospital",
+        "kind": "hospital",
+        "label": "Royal Infirmary",
+        "blockId": "b6-1",
+        "at": {
+          "x": 327.68096487373117,
+          "y": 762.5747962289622
+        }
+      },
+      {
+        "id": "lm-theatre",
+        "kind": "theatre",
+        "label": "Grand Theatre",
+        "blockId": "b5-4",
+        "at": {
+          "x": 861.7819387786091,
+          "y": 665.7619459812662
+        }
+      },
+      {
+        "id": "lm-sportsGround",
+        "kind": "sportsGround",
+        "label": "Sports Ground",
+        "blockId": "b2-0",
+        "at": {
+          "x": 157.45354279453557,
+          "y": 326.98582096222253
         }
       }
     ]
